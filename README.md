@@ -4,8 +4,16 @@ Section command line tool.
 
 ## Usage
 
+Run the command without any arguments to see the help:
+
 ```
 section
+```
+
+To set up credentials so the CLI tool works, run:
+
+```
+section login
 ```
 
 ## Developing
