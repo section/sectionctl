@@ -41,7 +41,13 @@ type LoginCmd struct{}
 // Run executes the `login` command
 func (a *LoginCmd) Run() (err error) {
 	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
 	n, err := netrc.Parse(filepath.Join(usr.HomeDir, ".netrc"))
+	if err != nil {
+		panic(err)
+	}
 	fmt.Println(n.Machine("aperture.section.io").Get("login"))
 	fmt.Println(n.Machine("aperture.section.io").Get("password"))
 	return err
@@ -58,14 +64,20 @@ func main() {
 	)
 	switch ctx.Command() {
 	case "login":
-		ctx.Run()
+		err := ctx.Run()
+		if err != nil {
+			panic(err)
+		}
 	case "apps":
 		fmt.Println("apps")
 	case "apps create":
 		fmt.Println("create an app")
 	case "apps list":
 		fmt.Println("list apps")
-		ctx.Run()
+		err := ctx.Run()
+		if err != nil {
+			panic(err)
+		}
 	case "deploy":
 		fmt.Println("deploy")
 	case "version":
