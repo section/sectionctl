@@ -18,7 +18,7 @@ cd section-cli
 make test
 ```
 
-To build a binary:
+To build a binary in `bin/`
 
 ```
 make build
