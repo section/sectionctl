@@ -8,7 +8,7 @@ import (
 // Version is the version number of the running app
 var Version = "0.0.1"
 
-// VersionCmd handles authenticating the CLI against Section's API
+// VersionCmd handles versioning for the Section CLI
 type VersionCmd struct{}
 
 // Run executes the `login` command
