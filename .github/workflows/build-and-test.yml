@@ -34,6 +34,6 @@ jobs:
       run: make build
 
     - name: Test
-      run:
+      run: |
         make cidep
         make test
