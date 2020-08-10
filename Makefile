@@ -2,7 +2,7 @@
 
 export PATH := bin:$(PATH)
 
-staticcheck := /go/bin/staticcheck
+staticcheck := /home/runner/go/bin/staticcheck
 
 all: test
 
