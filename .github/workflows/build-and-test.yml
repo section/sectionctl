@@ -35,5 +35,6 @@ jobs:
 
     - name: Test
       run: |
+        go version
         make cidep
         make test
