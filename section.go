@@ -1,60 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"github.com/alecthomas/kong"
-	"github.com/jdxcode/netrc"
-	"os/user"
-	"path/filepath"
-	"runtime"
+	"github.com/section/section-cli/commands"
 )
 
-// CLI is the type wrapping all commands
+// CLI exposes all the subcommands available
 var CLI struct {
-	Login   LoginCmd  `cmd help:"Authenticate to Section's API."`
-	Apps    AppsCmd   `cmd help:"Manage apps on Section"`
-	Deploy  DeployCmd `cmd help:"Deploy an app to Section"`
-	Version struct{}  `cmd help:"Print section-cli version"`
+	Login   commands.LoginCmd   `cmd help:"Authenticate to Section's API."`
+	Apps    commands.AppsCmd    `cmd help:"Manage apps on Section"`
+	Deploy  commands.DeployCmd  `cmd help:"Deploy an app to Section"`
+	Version commands.VersionCmd `cmd help:"Print section-cli version"`
 }
-
-// AppsCmd manages apps on Section
-type AppsCmd struct {
-	List   AppsListCmd   `cmd help:"List apps on Section." default:"1"`
-	Create AppsCreateCmd `cmd help:"Create new app on Section."`
-}
-
-// AppsListCmd handles listing apps running on Section
-type AppsListCmd struct{}
-
-// Run executes the `apps list` command
-func (a *AppsListCmd) Run() (err error) {
-	fmt.Println("omgwtfbbq")
-	return err
-}
-
-// AppsCreateCmd handles creating apps on Section
-type AppsCreateCmd struct{}
-
-// LoginCmd handles authenticating the CLI against Section's API
-type LoginCmd struct{}
-
-// Run executes the `login` command
-func (a *LoginCmd) Run() (err error) {
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	n, err := netrc.Parse(filepath.Join(usr.HomeDir, ".netrc"))
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(n.Machine("aperture.section.io").Get("login"))
-	fmt.Println(n.Machine("aperture.section.io").Get("password"))
-	return err
-}
-
-// DeployCmd handles deploying an app to Section
-type DeployCmd struct{}
 
 func main() {
 	ctx := kong.Parse(&CLI,
@@ -62,25 +19,8 @@ func main() {
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
-	switch ctx.Command() {
-	case "login":
-		err := ctx.Run()
-		if err != nil {
-			panic(err)
-		}
-	case "apps":
-		fmt.Println("apps")
-	case "apps create":
-		fmt.Println("create an app")
-	case "apps list":
-		fmt.Println("list apps")
-		err := ctx.Run()
-		if err != nil {
-			panic(err)
-		}
-	case "deploy":
-		fmt.Println("deploy")
-	case "version":
-		fmt.Printf("%s (%s-%s)\n", "0.0.1", runtime.GOOS, runtime.GOARCH)
+	err := ctx.Run()
+	if err != nil {
+		panic(err)
 	}
 }
