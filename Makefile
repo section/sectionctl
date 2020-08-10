@@ -7,8 +7,7 @@ staticcheck := /home/runner/go/bin/staticcheck
 all: test
 
 cidep:
-	wget https://github.com/dominikh/go-tools/releases/download/2019.1.1/staticcheck_linux_amd64 -O $(staticcheck)
-	chmod +x $(staticcheck)
+	go get -u honnef.co/go/tools/cmd/staticcheck
 	go get -u github.com/kisielk/errcheck
 
 test: gotest gostaticcheck goerrcheck
