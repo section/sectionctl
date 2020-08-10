@@ -34,7 +34,6 @@ jobs:
       run: make build
 
     - name: Test
-      run: |
-        echo $PATH
+      run:
         make cidep
         make test
