@@ -1,2 +1,6 @@
 fmt.Fprintf
 (io.ReadCloser).Close
+os.Remove
+(*compress/gzip.Writer).Close
+(*archive/tar.Writer).Close
+(*os.File).Close
