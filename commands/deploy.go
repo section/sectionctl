@@ -23,9 +23,9 @@ type DeployCmd struct {
 }
 
 // Run deploys an app to Section's edge
-func (a *DeployCmd) Run() (err error) {
-	if a.Debug {
-		fmt.Println("Server URL:", a.ServerURL)
+func (c *DeployCmd) Run() (err error) {
+	if c.Debug {
+		fmt.Println("Server URL:", c.ServerURL)
 	}
 	path := "./"
 	var files []string
@@ -45,7 +45,7 @@ func (a *DeployCmd) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to walk path: %v", err)
 	}
-	if a.Debug {
+	if c.Debug {
 		for _, file := range files {
 			fmt.Println(file)
 		}
@@ -75,7 +75,7 @@ func (a *DeployCmd) Run() (err error) {
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	req, err := http.NewRequest(http.MethodPost, a.ServerURL, tempFile)
+	req, err := http.NewRequest(http.MethodPost, c.ServerURL, tempFile)
 	if err != nil {
 		return fmt.Errorf("failed to create upload URL: %v", err)
 	}

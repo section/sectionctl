@@ -9,7 +9,7 @@ import (
 type VersionCmd struct{}
 
 // Run executes the `login` command
-func (a *VersionCmd) Run() (err error) {
+func (c *VersionCmd) Run() (err error) {
 	fmt.Printf("%s (%s-%s)\n", "0.0.1", runtime.GOOS, runtime.GOARCH)
 	return err
 }
