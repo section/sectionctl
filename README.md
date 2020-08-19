@@ -18,6 +18,8 @@ section login
 
 ## Developing
 
+Please ensure you're running at least Go 1.14.
+
 To run tests:
 
 ```
