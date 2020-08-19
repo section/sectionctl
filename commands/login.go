@@ -11,7 +11,7 @@ import (
 type LoginCmd struct{}
 
 // Run executes the `login` command
-func (a *LoginCmd) Run() (err error) {
+func (c *LoginCmd) Run() (err error) {
 	usr, err := user.Current()
 	if err != nil {
 		panic(err)

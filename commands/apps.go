@@ -14,7 +14,7 @@ type AppsCmd struct {
 type AppsListCmd struct{}
 
 // Run executes the `apps list` command
-func (a *AppsListCmd) Run() (err error) {
+func (c *AppsListCmd) Run() (err error) {
 	fmt.Println("omgwtfbbq")
 	return err
 }
