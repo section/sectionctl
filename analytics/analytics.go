@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/denisbrodbeck/machineid"
 	"github.com/tcnksm/go-gitconfig"
 	"net/http"
 	"time"
@@ -39,15 +40,26 @@ type Event struct {
 	Properties map[string]string
 }
 
+// Identity tries to determine the identity of:
+//
+// - the person running the cli
+// - the machine the cli is being run on
+func identity() (id string) {
+	id, err := gitconfig.Email()
+	if err == nil {
+		return id
+	}
+	id, err = machineid.ProtectedID("section-cli")
+	if err == nil {
+		return id
+	}
+	return "unknown"
+}
+
 // Submit submits an analytics event to Section
 func Submit(e Event) (err error) {
-	email, err := gitconfig.Email()
-	if err != nil {
-		return err
-	}
-
 	hte := heapTrackEvent{
-		Identity:   email,
+		Identity:   identity(),
 		Event:      e.Name,
 		Timestamp:  time.Now(),
 		Properties: e.Properties,
