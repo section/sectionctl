@@ -22,8 +22,12 @@ func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
 
 	// Invoke
 	e := Event{
-		Name:       "CLI invoked",
-		Properties: map[string]string{"subcommand": "apps list"},
+		Name: "CLI invoked",
+		Properties: map[string]string{
+			"Args":       "apps list",
+			"Subcommand": "apps list",
+			"Errors":     "",
+		},
 	}
 	err := Submit(e)
 
