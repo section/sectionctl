@@ -9,6 +9,7 @@ import (
 	"github.com/denisbrodbeck/machineid"
 	"github.com/tcnksm/go-gitconfig"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -59,9 +60,14 @@ func identity() (id string) {
 
 // LogInvoke logs an invocation of the cli
 func LogInvoke(ctx *kong.Context) {
+	props := map[string]string{
+		"Subcommand": ctx.Command(),
+		"Args":       strings.Join(ctx.Args, " "),
+		"Error":      ctx.Error.Error(),
+	}
 	e := Event{
 		Name:       "CLI invoked",
-		Properties: map[string]string{"Subcommand": ctx.Command()},
+		Properties: props,
 	}
 	err := Submit(e)
 	if err != nil {
