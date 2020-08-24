@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/alecthomas/kong"
 	"github.com/section/section-cli/analytics"
 	"github.com/section/section-cli/commands"
@@ -21,15 +20,8 @@ func main() {
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
-	e := analytics.Event{
-		Name:       "CLI invoked",
-		Properties: map[string]string{"Subcommand": ctx.Command()},
-	}
-	err := analytics.Submit(e)
-	if err != nil {
-		fmt.Println("Warning: Unable to submit analytics – continuing anyway.")
-	}
-	err = ctx.Run()
+	analytics.LogInvoke(ctx)
+	err := ctx.Run()
 	if err != nil {
 		panic(err)
 	}

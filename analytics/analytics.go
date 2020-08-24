@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/alecthomas/kong"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/tcnksm/go-gitconfig"
 	"net/http"
@@ -54,6 +55,18 @@ func identity() (id string) {
 		return id
 	}
 	return "unknown"
+}
+
+// LogInvoke logs an invocation of the cli
+func LogInvoke(ctx *kong.Context) {
+	e := Event{
+		Name:       "CLI invoked",
+		Properties: map[string]string{"Subcommand": ctx.Command()},
+	}
+	err := Submit(e)
+	if err != nil {
+		fmt.Println("Warning: Unable to submit analytics – continuing anyway.")
+	}
 }
 
 // Submit submits an analytics event to Section
