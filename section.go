@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/alecthomas/kong"
 	"github.com/section/section-cli/analytics"
 	"github.com/section/section-cli/commands"
@@ -24,8 +25,11 @@ func main() {
 		Name:       "CLI invoked",
 		Properties: map[string]string{"Subcommand": ctx.Command()},
 	}
-	analytics.Submit(e)
-	err := ctx.Run()
+	err := analytics.Submit(e)
+	if err != nil {
+		fmt.Println("Warning: Unable to submit analytics – continuing anyway.")
+	}
+	err = ctx.Run()
 	if err != nil {
 		panic(err)
 	}
