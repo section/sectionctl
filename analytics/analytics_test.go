@@ -10,7 +10,7 @@ import (
 
 func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
 	assert := assert.New(t)
-	called := false
+	var called bool
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
@@ -38,7 +38,7 @@ func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
 
 func TestAnalyticsSubmitHandlesErrors(t *testing.T) {
 	assert := assert.New(t)
-	called := false
+	var called bool
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
