@@ -17,6 +17,8 @@ var (
 	HeapBaseURI = "https://heapanalytics.com"
 	// HeapAppID identifies what Heap App events are recorded against
 	HeapAppID = "4248790180"
+	// ConsentGiven records whether tracking consent has been given by the user
+	ConsentGiven bool
 )
 
 // Private type for submitting server side events to Heap
@@ -72,6 +74,10 @@ func LogInvoke(ctx *kong.Context) {
 
 // Submit submits an analytics event to Section
 func Submit(e Event) (err error) {
+	if !ConsentGiven {
+		return err
+	}
+
 	hte := heapTrackEvent{
 		Identity:   identity(),
 		Event:      e.Name,
