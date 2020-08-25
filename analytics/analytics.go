@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/alecthomas/kong"
 	"github.com/denisbrodbeck/machineid"
-	"github.com/tcnksm/go-gitconfig"
 	"net/http"
 	"strings"
 	"time"
@@ -47,11 +46,7 @@ type Event struct {
 // - the person running the cli
 // - the machine the cli is being run on
 func identity() (id string) {
-	id, err := gitconfig.Email()
-	if err == nil {
-		return id
-	}
-	id, err = machineid.ProtectedID("section-cli")
+	id, err := machineid.ProtectedID("section-cli")
 	if err == nil {
 		return id
 	}
