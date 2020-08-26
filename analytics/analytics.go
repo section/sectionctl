@@ -93,7 +93,13 @@ func Submit(e Event) (err error) {
 	json, _ := json.Marshal(ev)
 
 	uri := fmt.Sprintf("%s/api/track", HeapBaseURI)
-	resp, err := http.Post(uri, "application/json", bytes.NewBuffer(json))
+	c := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequest(http.MethodPost, uri, bytes.NewBuffer(json))
+	req.Header.Add("Content-Type", "application/json")
+	if err != nil {
+		return err
+	}
+	resp, err := c.Do(req)
 	if err != nil {
 		return err
 	}
