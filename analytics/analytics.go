@@ -60,7 +60,9 @@ func LogInvoke(ctx *kong.Context) {
 	props := map[string]string{
 		"Subcommand": ctx.Command(),
 		"Args":       strings.Join(ctx.Args, " "),
-		"Error":      ctx.Error.Error(),
+	}
+	if ctx.Error != nil {
+		props["Error"] = ctx.Error.Error()
 	}
 	e := Event{
 		Name:       "CLI invoked",
