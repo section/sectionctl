@@ -8,10 +8,16 @@ import (
 	"testing"
 )
 
-func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
+func TestConsent(t *testing.T) {
+	assert := assert.New(t)
+	ReadConsent()
+	assert.True(true)
+}
+
+func TestConsentSubmitNoopsIfNoConsent(t *testing.T) {
 	assert := assert.New(t)
 	var called bool
-	ConsentGiven = true
+	ConsentGiven = false
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
@@ -34,28 +40,5 @@ func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
 
 	// Test
 	assert.NoError(err)
-	assert.True(called)
-}
-
-func TestAnalyticsSubmitHandlesErrors(t *testing.T) {
-	assert := assert.New(t)
-	var called bool
-	ConsentGiven = true
-	// Setup
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		called = true
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	HeapBaseURI = ts.URL
-
-	// Invoke
-	e := Event{
-		Name:       "CLI invoked",
-		Properties: map[string]string{"Subcommand": "apps list"},
-	}
-	err := Submit(e)
-
-	// Test
-	assert.Error(err)
-	assert.True(called)
+	assert.False(called)
 }
