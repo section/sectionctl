@@ -7,7 +7,11 @@ import (
 	"fmt"
 	"github.com/alecthomas/kong"
 	"github.com/denisbrodbeck/machineid"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"os/user"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -17,6 +21,8 @@ var (
 	HeapBaseURI = "https://heapanalytics.com"
 	// HeapAppID identifies what Heap App events are recorded against
 	HeapAppID = "4248790180"
+	// consentPath is the path on disk to where analytics consent is recorded
+	consentPath string
 	// ConsentGiven records whether tracking consent has been given by the user
 	ConsentGiven bool
 )
@@ -43,10 +49,7 @@ type Event struct {
 	Properties map[string]string
 }
 
-// Identity tries to determine the identity of:
-//
-// - the person running the cli
-// - the machine the cli is being run on
+// Identity tries to determine the identity of the machine the cli is being run on
 func identity() (id string) {
 	id, err := machineid.ProtectedID("section-cli")
 	if err == nil {
@@ -74,8 +77,85 @@ func LogInvoke(ctx *kong.Context) {
 	}
 }
 
+type cliTrackingConsent struct {
+	ConsentGiven bool `json:"consent_given"`
+}
+
+// IsConsentRecorded returns if valid consent has been recorded for tracking
+func IsConsentRecorded() (rec bool) {
+	if len(consentPath) == 0 {
+		usr, err := user.Current()
+		if err != nil {
+			fmt.Println("user")
+			return false
+		}
+		consentPath = filepath.Join(usr.HomeDir, ".config", "section", "cli_tracking_consent")
+	}
+	if _, err := os.Stat(consentPath); err != nil {
+		return false
+	}
+
+	consentFile, err := os.Open(consentPath)
+	if err != nil {
+		return false
+	}
+	defer consentFile.Close()
+
+	var consent cliTrackingConsent
+	contents, err := ioutil.ReadAll(consentFile)
+	if err != nil {
+		return false
+	}
+	err = json.Unmarshal(contents, &consent)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+// ReadConsent finds if consent has been given
+func ReadConsent() {
+	if !IsConsentRecorded() {
+		PromptForConsent()
+	}
+
+	if _, err := os.Stat(consentPath); err != nil {
+		return
+	}
+
+	consentFile, err := os.Open(consentPath)
+	if err != nil {
+		return
+	}
+	defer consentFile.Close()
+
+	var consent cliTrackingConsent
+	contents, err := ioutil.ReadAll(consentFile)
+	if err != nil {
+		return
+	}
+	json.Unmarshal(contents, &consent)
+
+	ConsentGiven = consent.ConsentGiven
+}
+
+// PromptForConsent interactively prompts the user for consent
+func PromptForConsent() {
+}
+
 // Submit submits an analytics event to Section
+//
+// Behavior is determined by consent:
+//
+// if consent not given {
+// 	prompt for consent
+// }
+// if consent == true {
+// 	submit analytics
+// }
 func Submit(e Event) (err error) {
+	ReadConsent()
 	if !ConsentGiven {
 		return err
 	}

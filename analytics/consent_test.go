@@ -8,10 +8,27 @@ import (
 	"testing"
 )
 
-func TestConsent(t *testing.T) {
+func newConsentTempfile(t *testing.T) string {
+	file, err := ioutil.TempFile("", "section-cli-analytics-consent")
+	if err != nil {
+		t.FailNow()
+	}
+	return file.Name()
+}
+
+func TestConsentDetectsIfConsentNotRecorded(t *testing.T) {
 	assert := assert.New(t)
-	ReadConsent()
-	assert.True(true)
+
+	// Setup
+	consentPath = newConsentTempfile(t)
+
+	// Test
+	assert.False(IsConsentRecorded())
+}
+
+func TestConsentPromptsForConsentIfConsentNotRecorded(t *testing.T) {
+	assert := assert.New(t)
+	assert.False(IsConsentRecorded())
 }
 
 func TestConsentSubmitNoopsIfNoConsent(t *testing.T) {
