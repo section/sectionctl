@@ -1,12 +1,14 @@
 package analytics
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/alecthomas/kong"
 	"github.com/denisbrodbeck/machineid"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -25,7 +27,17 @@ var (
 	consentPath string
 	// ConsentGiven records whether tracking consent has been given by the user
 	ConsentGiven bool
+	// out is the buffer to write feedback to users
+	out io.Writer
+	// in is the buffer to read feedback from users
+	in io.Reader
 )
+
+func init() {
+	// Set in + out for normal interactive use
+	in = os.Stdin
+	out = os.Stdout
+}
 
 // Private type for submitting server side events to Heap
 // https://developers.heap.io/reference#track-1
@@ -86,7 +98,6 @@ func IsConsentRecorded() (rec bool) {
 	if len(consentPath) == 0 {
 		usr, err := user.Current()
 		if err != nil {
-			fmt.Println("user")
 			return false
 		}
 		consentPath = filepath.Join(usr.HomeDir, ".config", "section", "cli_tracking_consent")
@@ -101,11 +112,12 @@ func IsConsentRecorded() (rec bool) {
 	}
 	defer consentFile.Close()
 
-	var consent cliTrackingConsent
 	contents, err := ioutil.ReadAll(consentFile)
 	if err != nil {
 		return false
 	}
+
+	var consent cliTrackingConsent
 	err = json.Unmarshal(contents, &consent)
 	if err != nil {
 		return false
@@ -140,8 +152,50 @@ func ReadConsent() {
 	ConsentGiven = consent.ConsentGiven
 }
 
+// Println formats using the default formats for its operands and writes to output.
+// Output can be overridden for testing purposes by setting: analytics.out
+// It returns the number of bytes written and any write error encountered.
+func Println(a ...interface{}) (n int, err error) {
+	return fmt.Fprintln(out, a...)
+}
+
+// Printf formats according to a format specifier and writes to standard output.
+// Output can be overridden for testing purposes by setting: analytics.out
+// It returns the number of bytes written and any write error encountered.
+func Printf(format string, a ...interface{}) (n int, err error) {
+	return fmt.Fprintf(out, format, a...)
+}
+
 // PromptForConsent interactively prompts the user for consent
 func PromptForConsent() {
+	Printf("👋 Hi!\n\n")
+	Printf("Thanks for using the Section CLI.\n\n")
+	Printf("We're still working out how to create the best experience for you.\n\n")
+	Printf("We'd like to collect some anonymous info about how you use the CLI.\n\n")
+	Printf("Are you OK with this? [y/N] ")
+
+	reader := bufio.NewReader(in)
+	text, _ := reader.ReadString('\n')
+	text = strings.Replace(text, "\n", "", -1) // convert CRLF to LF
+
+	if strings.EqualFold(text, "y") {
+		Printf("\nThank you!\n")
+		ConsentGiven = true
+	} else {
+		ConsentGiven = false
+		Printf("\nNo worries! We won't ask again.\n")
+	}
+	c := cliTrackingConsent{ConsentGiven: ConsentGiven}
+	json, err := json.Marshal(c)
+	if err != nil {
+		Println("Error: unable to record consent. Exiting.")
+		os.Exit(2)
+	}
+	err = ioutil.WriteFile(consentPath, json, 0644)
+	if err != nil {
+		Println("Error: unable to record consent. Exiting.")
+		os.Exit(2)
+	}
 }
 
 // Submit submits an analytics event to Section

@@ -1,15 +1,20 @@
 package analytics
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 )
 
 func newConsentTempfile(t *testing.T) string {
-	file, err := ioutil.TempFile("", "section-cli-analytics-consent")
+	pattern := "section-cli-analytics-consent-" + strings.ReplaceAll(t.Name(), "/", "_")
+	file, err := ioutil.TempFile("", pattern)
 	if err != nil {
 		t.FailNow()
 	}
@@ -28,7 +33,84 @@ func TestConsentDetectsIfConsentNotRecorded(t *testing.T) {
 
 func TestConsentPromptsForConsentIfConsentNotRecorded(t *testing.T) {
 	assert := assert.New(t)
-	assert.False(IsConsentRecorded())
+
+	// Setup
+	consentPath = newConsentTempfile(t)
+
+	var buf bytes.Buffer
+	out = &buf
+
+	// Invoke
+	ReadConsent()
+
+	// Test
+	assert.Contains(buf.String(), "[y/N]")
+}
+
+func TestConsentPromptRecordsConsent(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	consentPath = newConsentTempfile(t)
+
+	var outbuf bytes.Buffer
+	out = &outbuf
+
+	var inbuf bytes.Buffer
+	inbuf.Write([]byte("y\n"))
+	in = &inbuf
+
+	// Invoke
+	ReadConsent()
+
+	// Test
+	consentFile, err := os.Open(consentPath)
+	assert.NoError(err)
+	contents, err := ioutil.ReadAll(consentFile)
+	assert.NoError(err)
+	var consent cliTrackingConsent
+	err = json.Unmarshal(contents, &consent)
+	assert.NoError(err)
+	assert.True(consent.ConsentGiven)
+}
+
+func TestConsentPromptDefaultsToFalse(t *testing.T) {
+	assert := assert.New(t)
+
+	testCases := []string{
+		"",
+		"\n",
+		"n\n",
+		"N\n",
+		"OESNAOSENAO\n",
+		"😈\n",
+	}
+	for _, tc := range testCases {
+		t.Run(tc, func(t *testing.T) {
+			// Setup
+			consentPath = newConsentTempfile(t)
+
+			var outbuf bytes.Buffer
+			out = &outbuf
+
+			var inbuf bytes.Buffer
+			inbuf.Write([]byte(tc))
+			in = &inbuf
+
+			// Invoke
+			ReadConsent()
+
+			// Test
+			consentFile, err := os.Open(consentPath)
+			assert.NoError(err)
+			contents, err := ioutil.ReadAll(consentFile)
+			assert.NoError(err)
+			var consent cliTrackingConsent
+			err = json.Unmarshal(contents, &consent)
+			assert.NoError(err)
+			assert.False(consent.ConsentGiven)
+		})
+	}
 }
 
 func TestConsentSubmitNoopsIfNoConsent(t *testing.T) {
