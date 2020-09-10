@@ -119,11 +119,8 @@ func IsConsentRecorded() (rec bool) {
 
 	var consent cliTrackingConsent
 	err = json.Unmarshal(contents, &consent)
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err == nil
 }
 
 // ReadConsent finds if consent has been given
@@ -147,7 +144,10 @@ func ReadConsent() {
 	if err != nil {
 		return
 	}
-	json.Unmarshal(contents, &consent)
+	err = json.Unmarshal(contents, &consent)
+	if err != nil {
+		return
+	}
 
 	ConsentGiven = consent.ConsentGiven
 }
@@ -210,7 +210,7 @@ func PromptForConsent() {
 // }
 func Submit(e Event) (err error) {
 	ReadConsent()
-	if ConsentGiven == false {
+	if !ConsentGiven {
 		return err
 	}
 
