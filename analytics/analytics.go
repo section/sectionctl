@@ -156,7 +156,7 @@ func PromptForConsent() {
 // }
 func Submit(e Event) (err error) {
 	ReadConsent()
-	if !ConsentGiven {
+	if ConsentGiven == false {
 		return err
 	}
 
