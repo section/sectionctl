@@ -123,7 +123,7 @@ func IsConsentRecorded() (rec bool) {
 	return err == nil
 }
 
-// ReadConsent finds if consent has been given
+// ReadConsent finds if consent has been given, either from file or by prompt.
 func ReadConsent() {
 	if !IsConsentRecorded() {
 		PromptForConsent()
@@ -190,11 +190,11 @@ func PromptForConsent() {
 		Printf("\nNo worries! We won't ask again.\n")
 	}
 
-	writeConsent()
+	WriteConsent()
 }
 
-// writeConsent writes the current consent state to a persistent file
-func writeConsent() {
+// WriteConsent writes the current consent state to a persistent file
+func WriteConsent() {
 	c := cliTrackingConsent{ConsentGiven: ConsentGiven}
 	json, err := json.Marshal(c)
 	if err != nil {

@@ -120,7 +120,7 @@ func TestConsentSubmitNoopsIfNoConsent(t *testing.T) {
 	var called bool
 	consentPath = newConsentTempfile(t)
 	ConsentGiven = false
-	writeConsent()
+	WriteConsent()
 
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
