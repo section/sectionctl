@@ -37,14 +37,17 @@ func TestConsentPromptsForConsentIfConsentNotRecorded(t *testing.T) {
 	// Setup
 	consentPath = newConsentTempfile(t)
 
-	var buf bytes.Buffer
-	out = &buf
+	var outbuf bytes.Buffer
+	out = &outbuf
+	var inbuf bytes.Buffer
+	inbuf.Write([]byte("\n"))
+	in = &inbuf
 
 	// Invoke
 	ReadConsent()
 
 	// Test
-	assert.Contains(buf.String(), "[y/N]")
+	assert.Contains(outbuf.String(), "[y/N]")
 }
 
 func TestConsentPromptRecordsConsent(t *testing.T) {
@@ -78,7 +81,6 @@ func TestConsentPromptDefaultsToFalse(t *testing.T) {
 	assert := assert.New(t)
 
 	testCases := []string{
-		"",
 		"\n",
 		"n\n",
 		"N\n",
