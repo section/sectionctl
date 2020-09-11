@@ -11,6 +11,7 @@ import (
 func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
 	assert := assert.New(t)
 	var called bool
+	consentPath = newConsentTempfile(t)
 	ConsentGiven = true
 	WriteConsent()
 
@@ -42,6 +43,7 @@ func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
 func TestAnalyticsSubmitHandlesErrors(t *testing.T) {
 	assert := assert.New(t)
 	var called bool
+	consentPath = newConsentTempfile(t)
 	ConsentGiven = true
 	WriteConsent()
 
