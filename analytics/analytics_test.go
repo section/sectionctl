@@ -12,6 +12,8 @@ func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
 	assert := assert.New(t)
 	var called bool
 	ConsentGiven = true
+	WriteConsent()
+
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
@@ -41,6 +43,8 @@ func TestAnalyticsSubmitHandlesErrors(t *testing.T) {
 	assert := assert.New(t)
 	var called bool
 	ConsentGiven = true
+	WriteConsent()
+
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
