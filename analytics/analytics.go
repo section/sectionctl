@@ -175,7 +175,11 @@ func PromptForConsent() {
 	Printf("Are you OK with this? [y/N] ")
 
 	reader := bufio.NewReader(in)
-	text, _ := reader.ReadString('\n')
+	text, err := reader.ReadString('\n')
+	if err != nil {
+		Println("Error: unable to read your response. Exiting.")
+		os.Exit(2)
+	}
 	text = strings.Replace(text, "\n", "", -1) // convert CRLF to LF
 
 	if strings.EqualFold(text, "y") {
@@ -224,7 +228,10 @@ func Submit(e Event) (err error) {
 		AppID:  HeapAppID,
 		Events: []heapTrackEvent{hte},
 	}
-	json, _ := json.Marshal(ev)
+	json, err := json.Marshal(ev)
+	if err != nil {
+		return err
+	}
 
 	uri := fmt.Sprintf("%s/api/track", HeapBaseURI)
 	c := &http.Client{Timeout: 10 * time.Second}
