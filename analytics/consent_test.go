@@ -116,7 +116,10 @@ func TestConsentPromptDefaultsToFalse(t *testing.T) {
 func TestConsentSubmitNoopsIfNoConsent(t *testing.T) {
 	assert := assert.New(t)
 	var called bool
+	consentPath = newConsentTempfile(t)
 	ConsentGiven = false
+	writeConsent()
+
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true

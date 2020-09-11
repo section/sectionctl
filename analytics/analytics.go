@@ -189,6 +189,12 @@ func PromptForConsent() {
 		ConsentGiven = false
 		Printf("\nNo worries! We won't ask again.\n")
 	}
+
+	writeConsent()
+}
+
+// writeConsent writes the current consent state to a persistent file
+func writeConsent() {
 	c := cliTrackingConsent{ConsentGiven: ConsentGiven}
 	json, err := json.Marshal(c)
 	if err != nil {
