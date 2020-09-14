@@ -22,7 +22,7 @@ var (
 	// HeapBaseURI is the location of Heap API endpoint
 	HeapBaseURI = "https://heapanalytics.com"
 	// HeapAppID identifies what Heap App events are recorded against
-	HeapAppID = "4248790180"
+	HeapAppID = "4248790180" // development id, overridden during `make build`
 	// consentPath is the path on disk to where analytics consent is recorded
 	consentPath string
 	// ConsentGiven records whether tracking consent has been given by the user
