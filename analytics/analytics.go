@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/alecthomas/kong"
-	"github.com/denisbrodbeck/machineid"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +14,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/alecthomas/kong"
+	"github.com/denisbrodbeck/machineid"
 )
 
 var (

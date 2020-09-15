@@ -1,11 +1,12 @@
 package analytics
 
 import (
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
