@@ -124,32 +124,32 @@ func IsConsentRecorded() (rec bool) {
 }
 
 // ReadConsent finds if consent has been given, either from file or by prompt.
-func ReadConsent() {
+func ReadConsent() (c bool, err error) {
 	if !IsConsentRecorded() {
 		PromptForConsent()
 	}
 
 	if _, err := os.Stat(consentPath); err != nil {
-		return
+		return c, err
 	}
 
 	consentFile, err := os.Open(consentPath)
 	if err != nil {
-		return
+		return c, err
 	}
 	defer consentFile.Close()
 
 	var consent cliTrackingConsent
 	contents, err := ioutil.ReadAll(consentFile)
 	if err != nil {
-		return
+		return c, err
 	}
 	err = json.Unmarshal(contents, &consent)
 	if err != nil {
-		return
+		return c, err
 	}
 
-	ConsentGiven = consent.ConsentGiven
+	return consent.ConsentGiven, err
 }
 
 // Println formats using the default formats for its operands and writes to output.
@@ -190,12 +190,12 @@ func PromptForConsent() {
 		Printf("\nNo worries! We won't ask again.\n")
 	}
 
-	WriteConsent()
+	WriteConsent(ConsentGiven)
 }
 
 // WriteConsent writes the current consent state to a persistent file
-func WriteConsent() {
-	c := cliTrackingConsent{ConsentGiven: ConsentGiven}
+func WriteConsent(consent bool) {
+	c := cliTrackingConsent{ConsentGiven: consent}
 	json, err := json.Marshal(c)
 	if err != nil {
 		Println("Error: unable to record consent. Exiting.")
@@ -219,7 +219,10 @@ func WriteConsent() {
 // 	submit analytics
 // }
 func Submit(e Event) (err error) {
-	ReadConsent()
+	ConsentGiven, err = ReadConsent()
+	if err != nil {
+		return err
+	}
 	if !ConsentGiven {
 		return err
 	}
