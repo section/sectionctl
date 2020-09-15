@@ -190,22 +190,27 @@ func PromptForConsent() {
 		Printf("\nNo worries! We won't ask again.\n")
 	}
 
-	WriteConsent(ConsentGiven)
+	err = WriteConsent(ConsentGiven)
+	if err != nil {
+		Println("Error: unable to record consent.")
+		Printf("Details: %s", err)
+		Println("Exiting.")
+		os.Exit(2)
+	}
 }
 
 // WriteConsent writes the current consent state to a persistent file
-func WriteConsent(consent bool) {
+func WriteConsent(consent bool) (err error) {
 	c := cliTrackingConsent{ConsentGiven: consent}
 	json, err := json.Marshal(c)
 	if err != nil {
-		Println("Error: unable to record consent. Exiting.")
-		os.Exit(2)
+		return err
 	}
 	err = ioutil.WriteFile(consentPath, json, 0644)
 	if err != nil {
-		Println("Error: unable to record consent. Exiting.")
-		os.Exit(2)
+		return err
 	}
+	return err
 }
 
 // Submit submits an analytics event to Section
