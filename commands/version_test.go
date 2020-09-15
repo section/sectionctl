@@ -1,22 +1,34 @@
 package commands
 
 import (
-	"github.com/stretchr/testify/assert"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestCommandVersion(t *testing.T) {
+func TestCommandVersionPrintsIfNewVersionAvailable(t *testing.T) {
+}
+
+func TestCommandVersionPrintsIfNoNewVersionAvailable(t *testing.T) {
 	assert := assert.New(t)
 
+	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Logf("Request: %+v\n", r.URL)
+		fmt.Fprintf(w, `{"latest_version":"%s"}`, "0.0.1")
 	}))
 	defer ts.Close()
-	VersionCheckEndpoint = ts.URL
-	c := VersionCmd{}
-	c.Run()
 
-	assert.True(true)
+	VersionCheckURL = ts.URL
+	c := VersionCmd{}
+	v, err := c.checkVersion()
+
+	// Test
+	assert.NoError(err)
+	assert.Equal(v, "0.0.1")
+}
+
+func TestCommandVersioncheckVersionHandlesRequestFailure(t *testing.T) {
 }
