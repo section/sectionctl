@@ -13,7 +13,8 @@ func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
 	var called bool
 	consentPath = newConsentTempfile(t)
 	ConsentGiven = true
-	WriteConsent()
+	err := WriteConsent(ConsentGiven)
+	assert.NoError(err)
 
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +35,7 @@ func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
 			"Errors":     "",
 		},
 	}
-	err := Submit(e)
+	err = Submit(e)
 
 	// Test
 	assert.NoError(err)
@@ -46,7 +47,8 @@ func TestAnalyticsSubmitHandlesErrors(t *testing.T) {
 	var called bool
 	consentPath = newConsentTempfile(t)
 	ConsentGiven = true
-	WriteConsent()
+	err := WriteConsent(ConsentGiven)
+	assert.NoError(err)
 
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +62,7 @@ func TestAnalyticsSubmitHandlesErrors(t *testing.T) {
 		Name:       "CLI invoked",
 		Properties: map[string]string{"Subcommand": "apps list"},
 	}
-	err := Submit(e)
+	err = Submit(e)
 
 	// Test
 	assert.Error(err)
