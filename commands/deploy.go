@@ -2,7 +2,9 @@ package commands
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,9 +23,13 @@ const MaxFileSize = 1073741824 // 1GB
 
 // DeployCmd handles deploying an app to Section.
 type DeployCmd struct {
+	AccountID        int `default:"4322"`  // harc-coded until authentication is implemented
+	AppID            int `default:"65443"` // hard-coded for now until authentication is implmented
 	Debug     bool
 	Directory string   `default:"."`
 	ServerURL *url.URL `default:"https://aperture.section.io/new/code_upload/v1"`
+	ApertureURL      string `default:"https://aperture.section.io/api"`
+	EnvUpdatePathFmt string `default:"/account/%d/application/%d/environment/%s/configuration"`
 }
 
 // Run deploys an app to Section's edge
@@ -95,6 +101,17 @@ func (c *DeployCmd) Run() (err error) {
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
 		return fmt.Errorf("upload failed with status: %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
+	}
+
+	var response uploadResponse
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return fmt.Errorf("failed to decode response %v", err)
+	}
+	svcURL := a.ApertureURL + fmt.Sprintf(a.EnvUpdatePathFmt, a.AccountID, a.AppID, "production")
+	err = triggerUpdate(a.AccountID, a.AppID, response.PayloadID, svcURL, client)
+	if err != nil {
+		return fmt.Errorf("failed to trigger app update %v", err)
 	}
 
 	fmt.Println("Done.")
@@ -178,5 +195,30 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer) error {
 		return fmt.Errorf(fmt.Sprintf("Could not copy the file '%s' data to the tarball, got error '%s'", filePath, err.Error()))
 	}
 
+	return nil
+}
+
+func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.Client) error {
+	var b bytes.Buffer
+	payload := struct {
+		Op    string `json:"op"`
+		Value string `json:"value"`
+	}{
+		Op:    "add",
+		Value: payloadID,
+	}
+	err := json.NewEncoder(&b).Encode(payload)
+	req, err := http.NewRequest(http.MethodPatch, serviceURL, &b)
+	if err != nil {
+		return fmt.Errorf("failed to create trigger request: %v", err)
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to execute trigger request: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 && resp.StatusCode != 204 {
+		return fmt.Errorf("trigger update failed with status %s", resp.Status)
+	}
 	return nil
 }
