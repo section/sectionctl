@@ -181,7 +181,8 @@ func PromptForConsent() {
 		Println("Error: unable to read your response. Exiting.")
 		os.Exit(2)
 	}
-	text = strings.Replace(text, "\n", "", -1) // convert CRLF to LF
+	text = strings.Replace(text, "\n", "", -1)
+	text = strings.Replace(text, "\r", "", -1) // convert CRLF to LF
 
 	if strings.EqualFold(text, "y") {
 		Printf("\nThank you!\n")

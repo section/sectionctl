@@ -123,6 +123,38 @@ func TestConsentPromptDefaultsToFalse(t *testing.T) {
 	}
 }
 
+func TestConsentPromptHandlesNewlines(t *testing.T) {
+	assert := assert.New(t)
+
+	testCases := []string{
+		"y\n",
+		"y\r\n",
+		"Y\n",
+		"Y\r\n",
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc, func(t *testing.T) {
+			// Setup
+			consentPath = newConsentTempfile(t)
+
+			var outbuf bytes.Buffer
+			out = &outbuf
+			var inbuf bytes.Buffer
+			inbuf.Write([]byte(tc))
+			in = &inbuf
+
+			// Invoke
+			ConsentGiven, err := ReadConsent()
+
+			// Test
+			assert.True(ConsentGiven)
+			assert.NoError(err)
+			assert.Contains(outbuf.String(), "[y/N]")
+		})
+	}
+}
+
 func TestConsentSubmitNoopsIfNoConsent(t *testing.T) {
 	assert := assert.New(t)
 	var called bool
