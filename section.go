@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/alecthomas/kong"
+	"github.com/section/section-cli/analytics"
 	"github.com/section/section-cli/commands"
 )
 
@@ -19,6 +20,7 @@ func main() {
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
+	analytics.LogInvoke(ctx)
 	err := ctx.Run()
 	if err != nil {
 		panic(err)
