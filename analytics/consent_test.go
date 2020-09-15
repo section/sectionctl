@@ -44,9 +44,11 @@ func TestConsentPromptsForConsentIfConsentNotRecorded(t *testing.T) {
 	in = &inbuf
 
 	// Invoke
-	ReadConsent()
+	ConsentGiven, err := ReadConsent()
 
 	// Test
+	assert.False(ConsentGiven)
+	assert.NoError(err)
 	assert.Contains(outbuf.String(), "[y/N]")
 }
 
@@ -64,9 +66,11 @@ func TestConsentPromptRecordsConsent(t *testing.T) {
 	in = &inbuf
 
 	// Invoke
-	ReadConsent()
+	ConsentGiven, err := ReadConsent()
 
 	// Test
+	assert.True(ConsentGiven)
+	assert.NoError(err)
 	consentFile, err := os.Open(consentPath)
 	assert.NoError(err)
 	contents, err := ioutil.ReadAll(consentFile)
@@ -89,6 +93,7 @@ func TestConsentPromptDefaultsToFalse(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc, func(t *testing.T) {
+			//			t.Parallel()
 			// Setup
 			consentPath = newConsentTempfile(t)
 
@@ -100,9 +105,11 @@ func TestConsentPromptDefaultsToFalse(t *testing.T) {
 			in = &inbuf
 
 			// Invoke
-			ReadConsent()
+			ConsentGiven, err := ReadConsent()
 
 			// Test
+			assert.False(ConsentGiven)
+			assert.NoError(err)
 			consentFile, err := os.Open(consentPath)
 			assert.NoError(err)
 			contents, err := ioutil.ReadAll(consentFile)
@@ -120,7 +127,8 @@ func TestConsentSubmitNoopsIfNoConsent(t *testing.T) {
 	var called bool
 	consentPath = newConsentTempfile(t)
 	ConsentGiven = false
-	WriteConsent()
+	err := WriteConsent(ConsentGiven)
+	assert.NoError(err)
 
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +148,7 @@ func TestConsentSubmitNoopsIfNoConsent(t *testing.T) {
 			"Errors":     "",
 		},
 	}
-	err := Submit(e)
+	err = Submit(e)
 
 	// Test
 	assert.NoError(err)
