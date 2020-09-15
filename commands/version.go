@@ -6,16 +6,17 @@ import (
 	"runtime"
 )
 
-// Version is the version number of the running app
-var Version = "0.0.1"
-
-// VersionCheckEndpoint is where the CLI should check for version information
-var VersionCheckEndpoint = "https://www.section.io/cli"
+var (
+	// Version is the version number of the running app
+	Version = "0.0.1"
+	// VersionCheckEndpoint is where the CLI should check for version information
+	VersionCheckEndpoint = "https://www.section.io/cli/current_version"
+)
 
 // VersionCmd handles versioning for the Section CLI
 type VersionCmd struct{}
 
-// Run executes the `login` command
+// Run executes the command
 func (c *VersionCmd) Run() (err error) {
 	fmt.Printf("%s (%s-%s)\n", Version, runtime.GOOS, runtime.GOARCH)
 	c.checkVersion()
