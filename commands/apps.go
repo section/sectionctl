@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -63,18 +64,44 @@ func (c *AppsInfoCmd) Run() (err error) {
 		return err
 	}
 
-	table := NewTable(os.Stdout)
-	table.SetHeader([]string{"App ID", "App Name", "Environments", "Domains"})
-	table.SetAutoMergeCells(true)
-
 	for _, env := range app.Environments {
 		for _, dom := range env.Domains {
-			r := []string{strconv.Itoa(app.ID), app.ApplicationName, env.EnvironmentName, dom.Name}
+			fmt.Printf("☁️\n")
+			fmt.Printf("App ID: %d\n", app.ID)
+			fmt.Printf("App Name: %s\n", app.ApplicationName)
+			fmt.Printf("Environment: %s\n", env.EnvironmentName)
+			fmt.Printf("Domain: %s\n", dom.Name)
+			fmt.Println()
+
+			table := NewTable(os.Stdout)
+			table.SetHeader([]string{"Attribute", "Value"})
+			table.SetAutoMergeCells(true)
+			r := [][]string{
+				[]string{"Domain name", dom.Name},
+				[]string{"Zone name", dom.ZoneName},
+				[]string{"CNAME", dom.CNAME},
+				[]string{"Mode", dom.Mode},
+			}
+			table.AppendBulk(r)
+			table.Render()
+
+			fmt.Println()
+		}
+		fmt.Println("🥞 Stack")
+		fmt.Println()
+
+		table := NewTable(os.Stdout)
+		table.SetHeader([]string{"Name", "Image"})
+		table.SetAutoMergeCells(true)
+		for _, p := range env.Stack {
+			r := []string{p.Name, p.Image}
 			table.Append(r)
 		}
+		table.Render()
+
+		fmt.Println()
 	}
 
-	table.Render()
 	return err
 }
 

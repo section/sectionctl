@@ -23,6 +23,7 @@ type Environment struct {
 	Href            string   `json:"href"`
 	EnvironmentName string   `json:"environment_name"`
 	Domains         []Domain `json:"domains"`
+	Stack           []Proxy  `json:"stack"`
 }
 
 // Domain represents an applications environments' domains
@@ -31,6 +32,13 @@ type Domain struct {
 	ZoneName string `json:"zoneName"`
 	CNAME    string `json:"cname"`
 	Mode     string `json:"mode"`
+}
+
+// Proxy represents a proxy in the traffic delivery stack
+type Proxy struct {
+	Name  string `json:"name"`
+	Image string `json:"image"`
+	Href  string `json:"href"`
 }
 
 // Application returns detailed information about a given application.
@@ -67,6 +75,14 @@ func Application(accountID int, applicationID int) (a App, err error) {
 	}
 	a.Environments = envs
 
+	for i, e := range a.Environments {
+		stack, err := ApplicationEnvironmentStack(accountID, applicationID, e.EnvironmentName)
+		if err != nil {
+			return a, err
+		}
+		a.Environments[i].Stack = stack
+	}
+
 	return a, err
 }
 
@@ -98,6 +114,36 @@ func ApplicationEnvironments(accountID int, applicationID int) (es []Environment
 		return es, err
 	}
 	return es, err
+}
+
+// ApplicationEnvironmentStack returns the stack for a given application and environment.
+func ApplicationEnvironmentStack(accountID int, applicationID int, environmentName string) (s []Proxy, err error) {
+	u, err := url.Parse(BaseURL)
+	if err != nil {
+		return s, err
+	}
+	u.Path += fmt.Sprintf("/account/%d/application/%d/environment/%s/stack", accountID, applicationID, environmentName)
+
+	resp, err := request(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return s, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return s, fmt.Errorf("request failed with status %s", resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return s, err
+	}
+
+	err = json.Unmarshal(body, &s)
+	if err != nil {
+		return s, err
+	}
+	return s, err
 }
 
 // Applications returns a list of applications on a given account.
