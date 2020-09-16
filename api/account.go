@@ -7,22 +7,26 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sort"
 )
 
-// Application represents an application deployed on Section
-type Application struct {
-	ID              int    `json:"id"`
-	Href            string `json:"href"`
-	ApplicationName string `json:"application_name"`
+// Account represents an account on Section
+type Account struct {
+	ID          int    `json:"id"`
+	Href        string `json:"href"`
+	AccountName string `json:"account_name"`
+	IsAdmin     bool   `json:"is_admin"`
+	BillingUser int    `json:"billing_user"`
+	Requires2FA bool   `json:"requires_2fa"`
 }
 
-// Applications returns a list of applications on a given account.
-func Applications(accountID int) (as []Application, err error) {
+// Accounts returns a list of account the current user has access to.
+func Accounts() (as []Account, err error) {
 	u, err := url.Parse(BaseURL)
 	if err != nil {
 		log.Fatal(err)
 	}
-	u.Path += fmt.Sprintf("/account/%d/application", accountID)
+	u.Path += "/account"
 
 	resp, err := request(http.MethodGet, u.String(), nil)
 	if err != nil {
@@ -43,5 +47,8 @@ func Applications(accountID int) (as []Application, err error) {
 	if err != nil {
 		return as, err
 	}
+	sort.Slice(as, func(i, j int) bool {
+		return as[i].ID < as[j].ID
+	})
 	return as, err
 }
