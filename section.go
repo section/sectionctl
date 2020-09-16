@@ -8,10 +8,11 @@ import (
 
 // CLI exposes all the subcommands available
 var CLI struct {
-	Login   commands.LoginCmd   `cmd help:"Authenticate to Section's API."`
-	Apps    commands.AppsCmd    `cmd help:"Manage apps on Section"`
-	Deploy  commands.DeployCmd  `cmd help:"Deploy an app to Section"`
-	Version commands.VersionCmd `cmd help:"Print section-cli version"`
+	Login    commands.LoginCmd    `cmd help:"Authenticate to Section's API."`
+	Accounts commands.AccountsCmd `cmd help:"Manage accounts on Section"`
+	Apps     commands.AppsCmd     `cmd help:"Manage apps on Section"`
+	Deploy   commands.DeployCmd   `cmd help:"Deploy an app to Section"`
+	Version  commands.VersionCmd  `cmd help:"Print section-cli version"`
 }
 
 func main() {
