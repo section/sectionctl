@@ -64,13 +64,17 @@ func (c *AppsInfoCmd) Run() (err error) {
 		return err
 	}
 
-	for _, env := range app.Environments {
+	fmt.Printf("🌎🌏🌍\n")
+	fmt.Printf("App Name: %s\n", app.ApplicationName)
+	fmt.Printf("App ID: %d\n", app.ID)
+	fmt.Printf("Environment count: %d\n", len(app.Environments))
+
+	for i, env := range app.Environments {
+		fmt.Printf("\n-----------------\n\n")
+		fmt.Printf("Environment #%d: %s\n\n", i+1, env.EnvironmentName)
+		fmt.Printf("💬 Domains (%d total)\n", len(env.Domains))
+
 		for _, dom := range env.Domains {
-			fmt.Printf("☁️\n")
-			fmt.Printf("App ID: %d\n", app.ID)
-			fmt.Printf("App Name: %s\n", app.ApplicationName)
-			fmt.Printf("Environment: %s\n", env.EnvironmentName)
-			fmt.Printf("Domain: %s\n", dom.Name)
 			fmt.Println()
 
 			table := NewTable(os.Stdout)
@@ -84,10 +88,10 @@ func (c *AppsInfoCmd) Run() (err error) {
 			}
 			table.AppendBulk(r)
 			table.Render()
-
-			fmt.Println()
 		}
-		fmt.Println("🥞 Stack")
+
+		fmt.Println()
+		fmt.Printf("🥞 Stack (%d proxies total)\n", len(env.Stack))
 		fmt.Println()
 
 		table := NewTable(os.Stdout)
@@ -98,9 +102,9 @@ func (c *AppsInfoCmd) Run() (err error) {
 			table.Append(r)
 		}
 		table.Render()
-
-		fmt.Println()
 	}
+
+	fmt.Println()
 
 	return err
 }
