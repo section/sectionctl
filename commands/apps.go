@@ -12,6 +12,7 @@ import (
 // AppsCmd manages apps on Section
 type AppsCmd struct {
 	List   AppsListCmd   `cmd help:"List apps on Section." default:"1"`
+	Info   AppsInfoCmd   `cmd help:"Show detailed app information on Section."`
 	Create AppsCreateCmd `cmd help:"Create new app on Section."`
 }
 
@@ -30,7 +31,7 @@ func NewTable(out io.Writer) (t *tablewriter.Table) {
 	return t
 }
 
-// Run executes the `apps list` command
+// Run executes the command
 func (c *AppsListCmd) Run() (err error) {
 	apps, err := api.Applications(c.AccountID)
 	if err != nil {
@@ -43,6 +44,34 @@ func (c *AppsListCmd) Run() (err error) {
 	for _, a := range apps {
 		r := []string{strconv.Itoa(a.ID), a.ApplicationName}
 		table.Append(r)
+	}
+
+	table.Render()
+	return err
+}
+
+// AppsInfoCmd shows detailed information on an app running on Section
+type AppsInfoCmd struct {
+	AccountID     int `required short:"a"`
+	ApplicationID int `required short:"i"`
+}
+
+// Run executes the command
+func (c *AppsInfoCmd) Run() (err error) {
+	app, err := api.Application(c.AccountID, c.ApplicationID)
+	if err != nil {
+		return err
+	}
+
+	table := NewTable(os.Stdout)
+	table.SetHeader([]string{"App ID", "App Name", "Environments", "Domains"})
+	table.SetAutoMergeCells(true)
+
+	for _, env := range app.Environments {
+		for _, dom := range env.Domains {
+			r := []string{strconv.Itoa(app.ID), app.ApplicationName, env.EnvironmentName, dom.Name}
+			table.Append(r)
+		}
 	}
 
 	table.Render()
