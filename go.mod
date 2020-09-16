@@ -8,6 +8,7 @@ require (
 	github.com/jdxcode/netrc v0.0.0-20190329161231-b36f1c51d91d
 	github.com/kisielk/errcheck v1.4.0 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/olekukonko/tablewriter v0.0.4
 	github.com/stretchr/testify v1.2.2
 	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd // indirect
 	golang.org/x/tools v0.0.0-20200909210914-44a2922940c2 // indirect
