@@ -47,7 +47,17 @@ func Setup() (err error) {
 	if !IsCredentialRecorded() {
 		Printf("No API credentials recorded.\n\n")
 		Printf("Let's get you authenticated to the Section API!\n\n")
-		err = PromptForAndSaveCredential()
+
+		m, u, p, err := PromptForCredential()
+		if err != nil {
+			return fmt.Errorf("error when prompting for credential: %s", err)
+		}
+
+		err = WriteCredential(m, u, p)
+		if err != nil {
+			return fmt.Errorf("unable to save credential: %s", err)
+		}
+		return err
 	}
 
 	return err
@@ -96,31 +106,24 @@ func readPasswordInput() (text string, err error) {
 	return string(password), err
 }
 
-// PromptForAndSaveCredential interactively prompts the user for a credential to authenticate to the Section API
-func PromptForAndSaveCredential() (err error) {
-	machine := "aperture.section.io"
-	fmt.Println("machine:", machine)
+// PromptForCredential interactively prompts the user for a credential to authenticate to the Section API
+func PromptForCredential() (m, u, p string, err error) {
+	m = "aperture.section.io"
+	fmt.Println("machine:", m)
 
 	Printf("Username: ")
-	username, err := readInput()
+	u, err = readInput()
 	if err != nil {
-		return fmt.Errorf("unable to read username: %s", err)
+		return m, u, p, fmt.Errorf("unable to read username: %s", err)
 	}
-	fmt.Println("username:", username)
 
 	Printf("Password: ")
-	password, err := readPasswordInput()
+	p, err = readPasswordInput()
 	if err != nil {
-		return fmt.Errorf("unable to read password: %s", err)
+		return m, u, p, fmt.Errorf("unable to read password: %s", err)
 	}
-	fmt.Println("password:", password)
 
-	err = WriteCredential(machine, username, password)
-	if err != nil {
-		fmt.Errorf("unable to save credential: %s", err)
-		return err
-	}
-	return err
+	return m, u, p, err
 }
 
 // WriteCredential saves Section API credentials to disk
