@@ -12,11 +12,14 @@ import (
 
 	"github.com/jdxcode/netrc"
 	"github.com/section/section-cli/version"
+
+	"github.com/section/section-cli/api/auth"
 )
 
 var (
 	// PrefixURI is the root of the Section API
 	PrefixURI = "https://aperture.section.io"
+	timeout   = 20 * time.Second
 )
 
 // BaseURL returns a URL for building requests on
@@ -40,7 +43,7 @@ func getBasicAuth() (u, p string, err error) {
 
 func request(method string, url string, body io.Reader) (resp *http.Response, err error) {
 	client := &http.Client{
-		Timeout: 20 * time.Second,
+		Timeout: timeout,
 	}
 
 	req, err := http.NewRequest(method, url, body)
@@ -51,7 +54,7 @@ func request(method string, url string, body io.Reader) (resp *http.Response, er
 	ua := fmt.Sprintf("section-cli (%s; %s-%s)", version.Version, runtime.GOARCH, runtime.GOOS)
 	req.Header.Set("User-Agent", ua)
 
-	username, password, err := getBasicAuth()
+	username, password, err := auth.GetBasicAuth()
 	if err != nil {
 		return resp, err
 	}
