@@ -80,114 +80,88 @@ func Exit(c int) {
 	os.Exit(c)
 }
 
+// Printf writes a string to an output
+func Printf(tty *os.File, str string, a ...interface{}) {
+	s := fmt.Sprintf(str, a...)
+	if tty == os.Stdin {
+		tty.Write([]byte(s))
+	} else {
+		fmt.Printf(s)
+	}
+}
+
 func main() {
 	c := exec.Command("echo", "spoons\nofdoom\n")
 	tty, err := pty.Start(c)
 	if err != nil {
-		fmt.Printf("error: %s\n", err)
+		Printf(tty, "error: %s\n", err)
 		Exit(1)
 	}
 	defer tty.Close()
-	fmt.Printf("tty: %+v\n", tty)
+	Printf(tty, "tty: %+v\n", tty)
 
 	fd := int(tty.Fd())
-	fmt.Printf("fd: %s\n", fd) // 3
+	Printf(tty, "fd: %d\n", fd) // 3
 
-	tty = os.Stdin
-	fmt.Println("is terminal?", terminal.IsTerminal(fd))
+	if len(os.Args) > 1 && os.Args[1] == "interactive" {
+		tty = os.Stdin
+	}
+	Printf(tty, "is terminal? %v\n", terminal.IsTerminal(fd))
 
-	fmt.Printf("%+v\n%+v\n", tty, os.Stdin)
+	Printf(tty, "%+v\n%+v\n", tty, os.Stdin)
 
 	var restoreTerminal func()
+	if tty == os.Stdin {
+		oldState, err := terminal.MakeRaw(int(tty.Fd()))
+		if err != nil {
+			Printf(tty, "error: %s\n", err)
+			Exit(1)
+		}
+		restoreTerminal = func() {
+			err = terminal.Restore(int(tty.Fd()), oldState)
+			if err != nil {
+				fmt.Printf("error: %s\n", err)
+				Exit(1)
+			}
+			fmt.Println()
+		}
+		handler := exitHandler{Name: "Restore Terminal", handler: restoreTerminal}
+		exitHandlers = append(exitHandlers, handler)
+	}
 
 	t := terminal.NewTerminal(tty, "")
 
-	/*
-		for i := 0; i < 10; i++ {
-			time.Sleep(1 * time.Second)
-			fmt.Println("Waiting...")
-		}
-	*/
-
-	//t.Write([]byte("Username: "))
-	fmt.Printf("Username: ")
-
-	if tty == os.Stdin {
-		oldState, err := terminal.MakeRaw(int(tty.Fd()))
-		if err != nil {
-			fmt.Printf("error: %s\n", err)
-			Exit(1)
-		}
-		restoreTerminal = func() {
-			err = terminal.Restore(int(tty.Fd()), oldState)
-			if err != nil {
-				fmt.Printf("error: %s\n", err)
-				Exit(1)
-			}
-			fmt.Println()
-		}
-		handler := exitHandler{Name: "Restore Terminal", handler: restoreTerminal}
-		exitHandlers = append(exitHandlers, handler)
-	}
-
+	Printf(tty, "Username: ")
 	username, err := t.ReadLine()
-
-	if tty == os.Stdin {
-		restoreTerminal()
-	}
-
 	if err != nil {
-		fmt.Println()
-		fmt.Printf("error: %s\n", err)
+		Printf(tty, "\nerror: %s\n", err)
 		Exit(1)
 	}
 
-	//t.Write([]byte("Password: "))
-	fmt.Printf("Password: ")
-
-	if tty == os.Stdin {
-		oldState, err := terminal.MakeRaw(int(tty.Fd()))
-		if err != nil {
-			fmt.Printf("error: %s\n", err)
-			Exit(1)
-		}
-		restoreTerminal = func() {
-			err = terminal.Restore(int(tty.Fd()), oldState)
-			if err != nil {
-				fmt.Printf("error: %s\n", err)
-				Exit(1)
-			}
-			fmt.Println()
-		}
-		handler := exitHandler{Name: "Restore Terminal", handler: restoreTerminal}
-		exitHandlers = append(exitHandlers, handler)
-	}
-
+	Printf(tty, "Password: ")
 	password, err := t.ReadPassword("")
-
-	if tty == os.Stdin {
-		restoreTerminal()
-	}
-
 	if err != nil {
-		fmt.Println()
-		fmt.Printf("error: %s\n", err)
+		Printf(tty, "\nerror: %s\n", err)
 		Exit(1)
 	}
 
-	fmt.Printf("%s:%s\n", username, password)
+	Printf(tty, "%s:%s\n", username, password)
 
 	creds := map[string]string{"username": username, "password": password}
 
 	j, err := json.Marshal(creds)
 	if err != nil {
-		fmt.Printf("error: %s\n", err)
+		Printf(tty, "error: %s\n", err)
 		Exit(1)
 	}
 	err = ioutil.WriteFile("password.json", j, 0600)
 	if err != nil {
-		fmt.Printf("error: %s\n", err)
+		Printf(tty, "error: %s\n", err)
 		Exit(1)
+	}
+
+	if tty == os.Stdin {
+		restoreTerminal()
 	}
 
 	Exit(0)
