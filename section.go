@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/alecthomas/kong"
 	"github.com/section/section-cli/analytics"
 	"github.com/section/section-cli/commands"
@@ -24,6 +27,7 @@ func main() {
 	analytics.LogInvoke(ctx)
 	err := ctx.Run()
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(2)
 	}
 }
