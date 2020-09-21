@@ -45,7 +45,7 @@ func TestAPIAuthDetectsIfCredentialNotRecorded(t *testing.T) {
 	}
 }
 
-func TestAPIAuthPromptsForCredentialIfCredentialNotRecorded(t *testing.T) {
+func TestAPIAuthPromptsForCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
@@ -62,7 +62,7 @@ func TestAPIAuthPromptsForCredentialIfCredentialNotRecorded(t *testing.T) {
 	defer func() { in = os.Stdin }()
 
 	// Invoke
-	err = PromptForAndSaveCredential()
+	_, _, _, err = PromptForCredential()
 
 	t.Logf("outbuf: %s", outbuf.String())
 	// Test
@@ -94,42 +94,40 @@ func TestAPIAuthWriteCredentialCreatesFile(t *testing.T) {
 			info, err := os.Stat(credentialPath)
 			assert.NoError(err)
 			assert.Equal(info.Mode().Perm(), os.FileMode(0x180)) // 0600
+
+			u, p, err := GetBasicAuth()
+			assert.NoError(err)
+			assert.Equal(u, username)
+			assert.Equal(p, password)
 		})
 	}
 }
 
-func TestAPIAuthPromptRecordsCredential(t *testing.T) {
+func TestAPIAuthGetBasicAuthReturnsCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	credentialPath = newCredentialTempfile(t)
+	credentialPath = filepath.Join("testdata", "valid-credentials")
 
-	var outbuf bytes.Buffer
-	out = &outbuf
+	// Test
+	assert.True(IsCredentialRecorded())
 
-	text := "jane@section.example\ns3cr3t\n"
-	c := exec.Command("echo", "-e", "'"+text+"'")
-	tty, err := pty.Start(c)
+	u, p, err := GetBasicAuth()
 	assert.NoError(err)
-	in = tty
-	defer func() { in = os.Stdin }()
-
-	/*
-		// Invoke
-		ConsentGiven, err := ReadConsent()
-
-		// Test
-		assert.True(ConsentGiven)
-		assert.NoError(err)
-		consentFile, err := os.Open(consentPath)
-		assert.NoError(err)
-		contents, err := ioutil.ReadAll(consentFile)
-		assert.NoError(err)
-		var consent cliTrackingConsent
-		err = json.Unmarshal(contents, &consent)
-		assert.NoError(err)
-		assert.True(consent.ConsentGiven)
-	*/
+	assert.Equal("ada@section.example", u)
+	assert.Equal("v4l1ds3cr3t", p)
 }
-func TestAPIAuthGetBasicAuthReturnsCredential(t *testing.T)               {}
-func TestAPIAuthGetBasicAuthReturnsErrorIfCredentialInvalid(t *testing.T) {}
+
+func TestAPIAuthGetBasicAuthReturnsErrorIfCredentialInvalid(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	credentialPath = filepath.Join("testdata", "empty-file")
+
+	// Invoke
+	_, _, err := GetBasicAuth()
+
+	// Test
+	assert.Error(err)
+	assert.False(IsCredentialRecorded())
+}
