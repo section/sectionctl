@@ -20,6 +20,13 @@ var (
 func init() {
 	// Set tty for normal interactive use
 	tty = os.Stdin
+
+	// Set CredentialPath for normal interactive use
+	usr, err := user.Current()
+	if err != nil {
+		return
+	}
+	CredentialPath = filepath.Join(usr.HomeDir, ".config", "section", "netrc")
 }
 
 // GetBasicAuth returns credentials for authenticating to the Section API
@@ -59,14 +66,6 @@ func Setup() (err error) {
 
 // IsCredentialRecorded returns if API credentials have been recorded
 func IsCredentialRecorded() bool {
-	if len(CredentialPath) == 0 {
-		usr, err := user.Current()
-		if err != nil {
-			return false
-		}
-		CredentialPath = filepath.Join(usr.HomeDir, ".config", "section", "netrc")
-	}
-
 	n, err := netrc.Parse(CredentialPath)
 	if err != nil {
 		return false
@@ -83,8 +82,6 @@ func IsCredentialRecorded() bool {
 // PromptForCredential interactively prompts the user for a credential to authenticate to the Section API
 func PromptForCredential() (m, u, p string, err error) {
 	m = "aperture.section.io"
-	//u = "jane@section.example"
-	//p = "s3cr3t"
 
 	var restoreTerminal func()
 	if tty == os.Stdin {
@@ -118,6 +115,7 @@ func PromptForCredential() (m, u, p string, err error) {
 		return m, u, p, fmt.Errorf("unable to read password: %s", err)
 	}
 
+	restoreTerminal()
 	return m, u, p, err
 }
 

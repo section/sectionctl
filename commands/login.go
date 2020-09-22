@@ -2,25 +2,28 @@ package commands
 
 import (
 	"fmt"
-	"github.com/jdxcode/netrc"
-	"os/user"
-	"path/filepath"
+
+	"github.com/section/section-cli/api/auth"
 )
 
 // LoginCmd handles authenticating the CLI against Section's API
 type LoginCmd struct{}
 
-// Run executes the `login` command
+// Run executes the command
 func (c *LoginCmd) Run() (err error) {
-	usr, err := user.Current()
+	fmt.Printf("Setting up your authentication for the Section API...\n\n")
+
+	m, u, p, err := auth.PromptForCredential()
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error when prompting for credential: %s", err)
 	}
-	n, err := netrc.Parse(filepath.Join(usr.HomeDir, ".netrc"))
+
+	err = auth.WriteCredential(m, u, p)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("unable to save credential: %s", err)
 	}
-	fmt.Println(n.Machine("aperture.section.io").Get("login"))
-	fmt.Println(n.Machine("aperture.section.io").Get("password"))
+
+	fmt.Println("Success!")
+
 	return err
 }
