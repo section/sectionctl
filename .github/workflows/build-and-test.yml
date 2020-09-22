@@ -33,6 +33,9 @@ jobs:
     - name: Build
       run: make build
 
+    - name: "[temporary] add test data"
+      run: echo -e "machine aperture.section.io\n\tlogin grace@section.example\n\tpassword s3cr3t\n" | tee $HOME/.netrc
+
     - name: Test
       run: |
         go version

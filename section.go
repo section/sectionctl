@@ -1,17 +1,23 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/alecthomas/kong"
 	"github.com/section/section-cli/analytics"
+	"github.com/section/section-cli/api"
 	"github.com/section/section-cli/commands"
 )
 
 // CLI exposes all the subcommands available
 var CLI struct {
-	Login   commands.LoginCmd   `cmd help:"Authenticate to Section's API."`
-	Apps    commands.AppsCmd    `cmd help:"Manage apps on Section"`
-	Deploy  commands.DeployCmd  `cmd help:"Deploy an app to Section"`
-	Version commands.VersionCmd `cmd help:"Print section-cli version"`
+	Login            commands.LoginCmd    `cmd help:"Authenticate to Section's API."`
+	Accounts         commands.AccountsCmd `cmd help:"Manage accounts on Section"`
+	Apps             commands.AppsCmd     `cmd help:"Manage apps on Section"`
+	Deploy           commands.DeployCmd   `cmd help:"Deploy an app to Section"`
+	Version          commands.VersionCmd  `cmd help:"Print section-cli version"`
+	SectionAPIPrefix string               `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
 }
 
 func main() {
@@ -20,9 +26,11 @@ func main() {
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
+	api.PrefixURI = CLI.SectionAPIPrefix
 	analytics.LogInvoke(ctx)
 	err := ctx.Run()
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(2)
 	}
 }
