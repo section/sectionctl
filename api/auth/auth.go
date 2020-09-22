@@ -151,6 +151,6 @@ func Printf(tty *os.File, str string, a ...interface{}) {
 	if tty == os.Stdin {
 		tty.Write([]byte(s))
 	} else {
-		fmt.Printf(s)
+		fmt.Printf("%s", s)
 	}
 }
