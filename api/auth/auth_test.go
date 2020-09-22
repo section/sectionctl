@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"bytes"
 	"github.com/creack/pty"
 	"io/ioutil"
 	"os"
@@ -49,26 +48,25 @@ func TestAPIAuthPromptsForCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	credentialPath = newCredentialTempfile(t)
-	t.Logf(credentialPath)
+	machine := "aperture.section.io"
+	username := "ada@section.example"
+	password := "s3cr3t"
+	input := username + "\n" + password + "\n"
 
-	var outbuf bytes.Buffer
-	out = &outbuf
-
-	c := exec.Command("echo", "jane@section.example\n")
-	tty, err := pty.Start(c)
+	c := exec.Command("echo", input)
+	ptty, err := pty.Start(c)
+	tty = ptty
 	assert.NoError(err)
-	in = tty
-	defer func() { in = os.Stdin }()
+	defer func() { tty = os.Stdin }()
 
 	// Invoke
-	_, _, _, err = PromptForCredential()
+	m, u, p, err := PromptForCredential()
 
-	t.Logf("outbuf: %s", outbuf.String())
 	// Test
 	assert.NoError(err)
-	assert.Contains(outbuf.String(), "Username:")
-	assert.Contains(outbuf.String(), "Password:")
+	assert.Equal(machine, m)
+	assert.Equal(username, u)
+	assert.Equal(password, p)
 }
 
 func TestAPIAuthWriteCredentialCreatesFile(t *testing.T) {

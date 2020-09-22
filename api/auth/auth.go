@@ -1,13 +1,10 @@
 package auth
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"os/user"
 	"path/filepath"
-	"strings"
 
 	"github.com/jdxcode/netrc"
 	"golang.org/x/crypto/ssh/terminal"
@@ -16,16 +13,13 @@ import (
 var (
 	// consentPath is the path on disk to where credential is recorded
 	credentialPath string
-	// out is the buffer to write feedback to users
-	out io.Writer
-	// in is the buffer to read feedback from users
-	in *os.File
+	// tty is the terminal for reading credentials from users
+	tty *os.File
 )
 
 func init() {
-	// Set in + out for normal interactive use
-	in = os.Stdin
-	out = os.Stdout
+	// Set tty for normal interactive use
+	tty = os.Stdin
 }
 
 // GetBasicAuth returns credentials for authenticating to the Section API
@@ -45,8 +39,8 @@ func GetBasicAuth() (u, p string, err error) {
 // Setup ensures authentication is set up
 func Setup() (err error) {
 	if !IsCredentialRecorded() {
-		Printf("No API credentials recorded.\n\n")
-		Printf("Let's get you authenticated to the Section API!\n\n")
+		Printf(tty, "No API credentials recorded.\n\n")
+		Printf(tty, "Let's get you authenticated to the Section API!\n\n")
 
 		m, u, p, err := PromptForCredential()
 		if err != nil {
@@ -86,40 +80,41 @@ func IsCredentialRecorded() bool {
 	return (len(u) > 0 && len(p) > 0)
 }
 
-func readInput() (text string, err error) {
-	reader := bufio.NewReader(in)
-	text, err = reader.ReadString('\n')
-	if err != nil {
-		return text, fmt.Errorf("unable to read your response: %s", err)
-	}
-	text = strings.Replace(text, "\n", "", -1)
-	text = strings.Replace(text, "\r", "", -1) // convert CRLF to LF
-	return text, err
-}
-
-func readPasswordInput() (text string, err error) {
-	fd := int(in.Fd())
-	password, err := terminal.ReadPassword(fd)
-	if err != nil {
-		return text, fmt.Errorf("unable to read your response: %s", err)
-	}
-	return string(password), err
-}
-
 // PromptForCredential interactively prompts the user for a credential to authenticate to the Section API
 func PromptForCredential() (m, u, p string, err error) {
 	m = "aperture.section.io"
-	fmt.Println("machine:", m)
+	//u = "jane@section.example"
+	//p = "s3cr3t"
 
-	Printf("Username: ")
-	u, err = readInput()
+	var restoreTerminal func()
+	if tty == os.Stdin {
+		oldState, err := terminal.MakeRaw(int(tty.Fd()))
+		if err != nil {
+			return m, u, p, fmt.Errorf("unable to set up terminal: %s", err)
+		}
+		restoreTerminal = func() {
+			err = terminal.Restore(int(tty.Fd()), oldState)
+			if err != nil {
+				fmt.Printf("unable to restore terminal: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Println()
+		}
+	}
+
+	t := terminal.NewTerminal(tty, "")
+
+	Printf(tty, "Username: ")
+	u, err = t.ReadLine()
 	if err != nil {
+		restoreTerminal()
 		return m, u, p, fmt.Errorf("unable to read username: %s", err)
 	}
 
-	Printf("Password: ")
-	p, err = readPasswordInput()
+	Printf(tty, "Password: ")
+	p, err = t.ReadPassword("")
 	if err != nil {
+		restoreTerminal()
 		return m, u, p, fmt.Errorf("unable to read password: %s", err)
 	}
 
@@ -149,16 +144,13 @@ func WriteCredential(machine, username, password string) (err error) {
 	return err
 }
 
-// Println formats using the default formats for its operands and writes to output.
-// Output can be overridden for testing purposes by setting: analytics.out
-// It returns the number of bytes written and any write error encountered.
-func Println(a ...interface{}) (n int, err error) {
-	return fmt.Fprintln(out, a...)
-}
-
-// Printf formats according to a format specifier and writes to standard output.
-// Output can be overridden for testing purposes by setting: analytics.out
-// It returns the number of bytes written and any write error encountered.
-func Printf(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(out, format, a...)
+// Printf formats according to a format specifier and writes to an output.
+// Output can be overridden for testing purposes by setting: auth.tty
+func Printf(tty *os.File, str string, a ...interface{}) {
+	s := fmt.Sprintf(str, a...)
+	if tty == os.Stdin {
+		tty.Write([]byte(s))
+	} else {
+		fmt.Printf(s)
+	}
 }
