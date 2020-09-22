@@ -3,6 +3,7 @@ package api
 import (
 	"io"
 	"net/http"
+	"net/url"
 	"os/user"
 	"path/filepath"
 	"time"
@@ -11,9 +12,14 @@ import (
 )
 
 var (
-	// BaseURL is the root of the Section API
-	BaseURL = "https://aperture.section.io/api/v1"
+	// PrefixURI is the root of the Section API
+	PrefixURI = "https://aperture.section.io"
 )
+
+// BaseURL returns a URL for building requests on
+func BaseURL() (*url.URL, error) {
+	return url.Parse(PrefixURI + "/api/v1")
+}
 
 func getBasicAuth() (u, p string, err error) {
 	usr, err := user.Current()

@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"sort"
 )
 
@@ -22,7 +21,7 @@ type Account struct {
 
 // Accounts returns a list of account the current user has access to.
 func Accounts() (as []Account, err error) {
-	u, err := url.Parse(BaseURL)
+	u, err := BaseURL()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -19,8 +19,7 @@ type AppsCmd struct {
 
 // AppsListCmd handles listing apps running on Section
 type AppsListCmd struct {
-	APIBase   string `default:"https://aperture.section.io/api/v1"`
-	AccountID int    `required short:"a"`
+	AccountID int `required short:"a"`
 }
 
 // NewTable returns a table with section-cli standard formatting

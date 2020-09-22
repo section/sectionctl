@@ -13,9 +13,7 @@ type AccountsCmd struct {
 }
 
 // AccountsListCmd handles listing accounts on Section
-type AccountsListCmd struct {
-	APIBase string `default:"https://aperture.section.io/api/v1"`
-}
+type AccountsListCmd struct{}
 
 // Run executes the command
 func (c *AccountsListCmd) Run() (err error) {

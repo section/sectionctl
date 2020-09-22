@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 )
 
 // App represents an application deployed on Section
@@ -43,7 +42,7 @@ type Proxy struct {
 
 // Application returns detailed information about a given application.
 func Application(accountID int, applicationID int) (a App, err error) {
-	u, err := url.Parse(BaseURL)
+	u, err := BaseURL()
 	if err != nil {
 		return a, err
 	}
@@ -88,7 +87,7 @@ func Application(accountID int, applicationID int) (a App, err error) {
 
 // ApplicationEnvironments returns environment information for a given application.
 func ApplicationEnvironments(accountID int, applicationID int) (es []Environment, err error) {
-	u, err := url.Parse(BaseURL)
+	u, err := BaseURL()
 	if err != nil {
 		return es, err
 	}
@@ -118,7 +117,7 @@ func ApplicationEnvironments(accountID int, applicationID int) (es []Environment
 
 // ApplicationEnvironmentStack returns the stack for a given application and environment.
 func ApplicationEnvironmentStack(accountID int, applicationID int, environmentName string) (s []Proxy, err error) {
-	u, err := url.Parse(BaseURL)
+	u, err := BaseURL()
 	if err != nil {
 		return s, err
 	}
@@ -148,7 +147,7 @@ func ApplicationEnvironmentStack(accountID int, applicationID int, environmentNa
 
 // Applications returns a list of applications on a given account.
 func Applications(accountID int) (as []App, err error) {
-	u, err := url.Parse(BaseURL)
+	u, err := BaseURL()
 	if err != nil {
 		log.Fatal(err)
 	}
