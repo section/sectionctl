@@ -1,14 +1,17 @@
 package api
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/jdxcode/netrc"
+	"github.com/section/section-cli/version"
 )
 
 var (
@@ -44,6 +47,9 @@ func request(method string, url string, body io.Reader) (resp *http.Response, er
 	if err != nil {
 		return resp, err
 	}
+
+	ua := fmt.Sprintf("section-cli (%s; %s-%s)", version.Version, runtime.GOARCH, runtime.GOOS)
+	req.Header.Set("User-Agent", ua)
 
 	username, password, err := getBasicAuth()
 	if err != nil {
