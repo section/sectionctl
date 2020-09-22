@@ -5,15 +5,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os/user"
-	"path/filepath"
 	"runtime"
 	"time"
 
-	"github.com/jdxcode/netrc"
-	"github.com/section/section-cli/version"
-
 	"github.com/section/section-cli/api/auth"
+	"github.com/section/section-cli/version"
 )
 
 var (
@@ -25,20 +21,6 @@ var (
 // BaseURL returns a URL for building requests on
 func BaseURL() (*url.URL, error) {
 	return url.Parse(PrefixURI + "/api/v1")
-}
-
-func getBasicAuth() (u, p string, err error) {
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	n, err := netrc.Parse(filepath.Join(usr.HomeDir, ".netrc"))
-	if err != nil {
-		return u, p, err
-	}
-	u = n.Machine("aperture.section.io").Get("login")
-	p = n.Machine("aperture.section.io").Get("password")
-	return u, p, err
 }
 
 func request(method string, url string, body io.Reader) (resp *http.Response, err error) {

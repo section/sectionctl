@@ -36,7 +36,7 @@ func TestAPIAuthDetectsIfCredentialNotRecorded(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc, func(t *testing.T) {
 			// Setup
-			credentialPath = tc
+			CredentialPath = tc
 
 			// Test
 			assert.False(IsCredentialRecorded())
@@ -79,7 +79,7 @@ func TestAPIAuthWriteCredentialCreatesFile(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc, func(t *testing.T) {
 			// Setup
-			credentialPath = tc
+			CredentialPath = tc
 			machine := "aperture.section.io"
 			username := "ada@lovelace.example"
 			password := "s3cr3t"
@@ -89,7 +89,7 @@ func TestAPIAuthWriteCredentialCreatesFile(t *testing.T) {
 
 			// Test
 			assert.NoError(err)
-			info, err := os.Stat(credentialPath)
+			info, err := os.Stat(CredentialPath)
 			assert.NoError(err)
 			assert.Equal(info.Mode().Perm(), os.FileMode(0x180)) // 0600
 
@@ -105,7 +105,7 @@ func TestAPIAuthGetBasicAuthReturnsCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	credentialPath = filepath.Join("testdata", "valid-credentials")
+	CredentialPath = filepath.Join("testdata", "valid-credentials")
 
 	// Test
 	assert.True(IsCredentialRecorded())
@@ -120,7 +120,7 @@ func TestAPIAuthGetBasicAuthReturnsErrorIfCredentialInvalid(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	credentialPath = filepath.Join("testdata", "empty-file")
+	CredentialPath = filepath.Join("testdata", "empty-file")
 
 	// Invoke
 	_, _, err := GetBasicAuth()

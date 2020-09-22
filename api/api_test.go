@@ -4,8 +4,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"testing"
 
+	"github.com/section/section-cli/api/auth"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,6 +23,8 @@ func TestAPIClientSetsUserAgent(t *testing.T) {
 
 	u, err := url.Parse(ts.URL)
 	assert.NoError(err)
+
+	auth.CredentialPath = filepath.Join("auth", "testdata", "valid-credentials")
 
 	// Invoke
 	_, err = request(http.MethodGet, u.String(), nil)

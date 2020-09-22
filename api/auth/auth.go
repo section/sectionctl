@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	// consentPath is the path on disk to where credential is recorded
-	credentialPath string
+	// CredentialPath is the path on disk to where credential is recorded
+	CredentialPath string
 	// tty is the terminal for reading credentials from users
 	tty *os.File
 )
@@ -24,12 +24,12 @@ func init() {
 
 // GetBasicAuth returns credentials for authenticating to the Section API
 func GetBasicAuth() (u, p string, err error) {
-	n, err := netrc.Parse(credentialPath)
+	n, err := netrc.Parse(CredentialPath)
 	if err != nil {
 		return u, p, err
 	}
 	if n.Machine("aperture.section.io") == nil {
-		return u, p, fmt.Errorf("invalid credentials file at %s", credentialPath)
+		return u, p, fmt.Errorf("invalid credentials file at %s", CredentialPath)
 	}
 	u = n.Machine("aperture.section.io").Get("login")
 	p = n.Machine("aperture.section.io").Get("password")
@@ -59,15 +59,15 @@ func Setup() (err error) {
 
 // IsCredentialRecorded returns if API credentials have been recorded
 func IsCredentialRecorded() bool {
-	if len(credentialPath) == 0 {
+	if len(CredentialPath) == 0 {
 		usr, err := user.Current()
 		if err != nil {
 			return false
 		}
-		credentialPath = filepath.Join(usr.HomeDir, ".config", "section", "netrc")
+		CredentialPath = filepath.Join(usr.HomeDir, ".config", "section", "netrc")
 	}
 
-	n, err := netrc.Parse(credentialPath)
+	n, err := netrc.Parse(CredentialPath)
 	if err != nil {
 		return false
 	}
@@ -123,19 +123,19 @@ func PromptForCredential() (m, u, p string, err error) {
 
 // WriteCredential saves Section API credentials to disk
 func WriteCredential(machine, username, password string) (err error) {
-	_, err = os.Stat(credentialPath)
+	_, err = os.Stat(CredentialPath)
 	if os.IsNotExist(err) {
-		file, err := os.Create(credentialPath)
+		file, err := os.Create(CredentialPath)
 		if err != nil {
 			return err
 		}
 		file.Close()
 	}
-	if err := os.Chmod(credentialPath, 0600); err != nil {
+	if err := os.Chmod(CredentialPath, 0600); err != nil {
 		return err
 	}
 
-	n, err := netrc.Parse(credentialPath)
+	n, err := netrc.Parse(CredentialPath)
 	if err != nil {
 		return err
 	}
