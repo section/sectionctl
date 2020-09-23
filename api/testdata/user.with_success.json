@@ -1,0 +1,14 @@
+{
+  "id": 1,
+  "first_name": "Ada",
+  "last_name": "Lovelace",
+  "email": "ada@lovelace.example",
+  "email_hash": "3fdff2c5b5893d78d915d962f7925688",
+  "company_name": "Example Corp",
+  "phone_number": "+13125550690",
+  "verified": true,
+  "requires2fa": true,
+  "auto_send_sms": false,
+  "can_edit_profile": true,
+  "enforce2fa": true
+}
