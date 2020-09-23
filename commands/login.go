@@ -2,7 +2,10 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
+	"github.com/section/section-cli/api"
 	"github.com/section/section-cli/api/auth"
 )
 
@@ -23,7 +26,17 @@ func (c *LoginCmd) Run() (err error) {
 		return fmt.Errorf("unable to save credential: %s", err)
 	}
 
-	fmt.Println("Success!")
+	fmt.Print("Validating credentials...")
+	_, err = api.CurrentUser()
+	if err != nil {
+		fmt.Println("error!")
+		if strings.Contains(err.Error(), "401") {
+			fmt.Println("\nInvalid credentials. Please try again.\n")
+			os.Exit(1)
+		}
+		return fmt.Errorf("\ncould not fetch current user: %s", err)
+	}
+	fmt.Println("success!")
 
 	return err
 }
