@@ -83,7 +83,7 @@ func IsCredentialRecorded() bool {
 func PromptForCredential() (m, u, p string, err error) {
 	m = "aperture.section.io"
 
-	var restoreTerminal func()
+	restoreTerminal := func() {}
 	if tty == os.Stdin {
 		oldState, err := terminal.MakeRaw(int(tty.Fd()))
 		if err != nil {
