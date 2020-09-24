@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/section/section-cli/api/auth"
+	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,5 +52,5 @@ func TestAPIClientSetsUserAgent(t *testing.T) {
 	assert.NoError(err)
 
 	// Test
-	assert.Regexp("^section-cli (.+)$", userAgent)
+	assert.Regexp("^sectionctl (.+)$", userAgent)
 }

@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/section/section-cli/api/auth"
-	"github.com/section/section-cli/version"
+	"github.com/section/sectionctl/api/auth"
+	"github.com/section/sectionctl/version"
 )
 
 var (
@@ -35,7 +35,7 @@ func request(method string, u *url.URL, body io.Reader) (resp *http.Response, er
 		return resp, err
 	}
 
-	ua := fmt.Sprintf("section-cli (%s; %s-%s)", version.Version, runtime.GOARCH, runtime.GOOS)
+	ua := fmt.Sprintf("sectionctl (%s; %s-%s)", version.Version, runtime.GOARCH, runtime.GOOS)
 	req.Header.Set("User-Agent", ua)
 
 	username, password, err := auth.GetCredential(u.Host)

@@ -12,13 +12,13 @@ import (
 	"testing"
 
 	"github.com/creack/pty"
-	"github.com/section/section-cli/api"
-	"github.com/section/section-cli/api/auth"
+	"github.com/section/sectionctl/api"
+	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
 )
 
 func newCredentialTempfile(t *testing.T) string {
-	pattern := "section-cli-api-auth-credential-" + strings.ReplaceAll(t.Name(), "/", "_")
+	pattern := "sectionctl-api-auth-credential-" + strings.ReplaceAll(t.Name(), "/", "_")
 	file, err := ioutil.TempFile("", pattern)
 	if err != nil {
 		t.FailNow()

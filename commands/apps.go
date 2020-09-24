@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"github.com/olekukonko/tablewriter"
-	"github.com/section/section-cli/api"
-	"github.com/section/section-cli/api/auth"
+	"github.com/section/sectionctl/api"
+	"github.com/section/sectionctl/api/auth"
 )
 
 // AppsCmd manages apps on Section
@@ -23,7 +23,7 @@ type AppsListCmd struct {
 	AccountID int `required short:"a"`
 }
 
-// NewTable returns a table with section-cli standard formatting
+// NewTable returns a table with sectionctl standard formatting
 func NewTable(out io.Writer) (t *tablewriter.Table) {
 	t = tablewriter.NewWriter(out)
 	t.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})

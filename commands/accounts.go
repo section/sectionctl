@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/section/section-cli/api"
+	"github.com/section/sectionctl/api"
 )
 
 // AccountsCmd manages accounts on Section

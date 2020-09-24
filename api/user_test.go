@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/section/section-cli/api/auth"
+	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
 )
 
