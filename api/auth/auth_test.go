@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"github.com/creack/pty"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -9,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/creack/pty"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,10 +54,10 @@ func TestAPIAuthPromptsForCredential(t *testing.T) {
 	input := username + "\n" + password + "\n"
 
 	c := exec.Command("echo", input)
-	ptty, err := pty.Start(c)
-	tty = ptty
+	tty, err := pty.Start(c)
+	TTY = tty
 	assert.NoError(err)
-	defer func() { tty = os.Stdin }()
+	defer func() { TTY = os.Stdin }()
 
 	// Invoke
 	m, u, p, err := PromptForCredential()

@@ -13,13 +13,13 @@ import (
 var (
 	// CredentialPath is the path on disk to where credential is recorded
 	CredentialPath string
-	// tty is the terminal for reading credentials from users
-	tty *os.File
+	// TTY is the terminal for reading credentials from users
+	TTY *os.File
 )
 
 func init() {
 	// Set tty for normal interactive use
-	tty = os.Stdin
+	TTY = os.Stdin
 
 	// Set CredentialPath for normal interactive use
 	usr, err := user.Current()
@@ -46,8 +46,8 @@ func GetBasicAuth() (u, p string, err error) {
 // Setup ensures authentication is set up
 func Setup() (err error) {
 	if !IsCredentialRecorded() {
-		Printf(tty, "No API credentials recorded.\n\n")
-		Printf(tty, "Let's get you authenticated to the Section API!\n\n")
+		Printf(TTY, "No API credentials recorded.\n\n")
+		Printf(TTY, "Let's get you authenticated to the Section API!\n\n")
 
 		m, u, p, err := PromptForCredential()
 		if err != nil {
@@ -84,13 +84,13 @@ func PromptForCredential() (m, u, p string, err error) {
 	m = "aperture.section.io"
 
 	restoreTerminal := func() {}
-	if tty == os.Stdin {
-		oldState, err := terminal.MakeRaw(int(tty.Fd()))
+	if TTY == os.Stdin {
+		oldState, err := terminal.MakeRaw(int(TTY.Fd()))
 		if err != nil {
 			return m, u, p, fmt.Errorf("unable to set up terminal: %s", err)
 		}
 		restoreTerminal = func() {
-			err = terminal.Restore(int(tty.Fd()), oldState)
+			err = terminal.Restore(int(TTY.Fd()), oldState)
 			if err != nil {
 				fmt.Printf("unable to restore terminal: %s\n", err)
 				os.Exit(1)
@@ -99,16 +99,16 @@ func PromptForCredential() (m, u, p string, err error) {
 		}
 	}
 
-	t := terminal.NewTerminal(tty, "")
+	t := terminal.NewTerminal(TTY, "")
 
-	Printf(tty, "Username: ")
+	Printf(TTY, "Username: ")
 	u, err = t.ReadLine()
 	if err != nil {
 		restoreTerminal()
 		return m, u, p, fmt.Errorf("unable to read username: %s", err)
 	}
 
-	Printf(tty, "Password: ")
+	Printf(TTY, "Password: ")
 	p, err = t.ReadPassword("")
 	if err != nil {
 		restoreTerminal()
@@ -143,11 +143,11 @@ func WriteCredential(machine, username, password string) (err error) {
 }
 
 // Printf formats according to a format specifier and writes to an output.
-// Output can be overridden for testing purposes by setting: auth.tty
-func Printf(tty *os.File, str string, a ...interface{}) {
+// Output can be overridden for testing purposes by setting: auth.TTY
+func Printf(out *os.File, str string, a ...interface{}) {
 	s := fmt.Sprintf(str, a...)
-	if tty == os.Stdin {
-		tty.Write([]byte(s))
+	if out == os.Stdin {
+		out.Write([]byte(s))
 	} else {
 		fmt.Printf("%s", s)
 	}
