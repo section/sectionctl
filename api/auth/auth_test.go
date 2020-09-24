@@ -21,6 +21,15 @@ func newCredentialTempfile(t *testing.T) string {
 	return file.Name()
 }
 
+func newCredentialTempdir(t *testing.T) string {
+	pattern := "section-cli-api-auth-credential-" + strings.ReplaceAll(t.Name(), "/", "_")
+	dir, err := ioutil.TempDir("", pattern)
+	if err != nil {
+		t.FailNow()
+	}
+	return dir
+}
+
 func TestAPIAuthDetectsIfCredentialNotRecorded(t *testing.T) {
 	assert := assert.New(t)
 
@@ -77,6 +86,7 @@ func TestAPIAuthWriteCredentialCreatesFile(t *testing.T) {
 	testCases := []string{
 		newCredentialTempfile(t),
 		newCredentialTempfile(t) + ".new",
+		newCredentialTempdir(t) + "/subdir/netrc",
 	}
 	for _, tc := range testCases {
 		t.Run(tc, func(t *testing.T) {

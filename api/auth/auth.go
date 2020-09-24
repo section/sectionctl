@@ -121,6 +121,12 @@ func PromptForCredential() (m, u, p string, err error) {
 
 // WriteCredential saves Section API credentials to disk
 func WriteCredential(machine, username, password string) (err error) {
+	basedir := filepath.Dir(CredentialPath)
+	err = os.MkdirAll(basedir, os.ModeDir+0700)
+	if err != nil {
+		return err
+	}
+
 	_, err = os.Stat(CredentialPath)
 	if os.IsNotExist(err) {
 		file, err := os.Create(CredentialPath)
