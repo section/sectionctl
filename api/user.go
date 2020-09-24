@@ -22,13 +22,10 @@ type User struct {
 
 // CurrentUser returns details for the currently authenticated user
 func CurrentUser() (u User, err error) {
-	ur, err := BaseURL()
-	if err != nil {
-		return u, err
-	}
+	ur := BaseURL()
 	ur.Path += "/user"
 
-	resp, err := request(http.MethodGet, ur.String(), nil)
+	resp, err := request(http.MethodGet, ur, nil)
 	if err != nil {
 		return u, err
 	}

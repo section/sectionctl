@@ -29,32 +29,18 @@ func init() {
 	CredentialPath = filepath.Join(usr.HomeDir, ".config", "section", "netrc")
 }
 
-// GetBasicAuth returns credentials for authenticating to the Section API
-func GetBasicAuth() (u, p string, err error) {
-	n, err := netrc.Parse(CredentialPath)
-	if err != nil {
-		return u, p, err
-	}
-	if n.Machine("aperture.section.io") == nil {
-		return u, p, fmt.Errorf("invalid credentials file at %s", CredentialPath)
-	}
-	u = n.Machine("aperture.section.io").Get("login")
-	p = n.Machine("aperture.section.io").Get("password")
-	return u, p, err
-}
-
 // Setup ensures authentication is set up
-func Setup() (err error) {
+func Setup(endpoint string) (err error) {
 	if !IsCredentialRecorded() {
 		Printf(TTY, "No API credentials recorded.\n\n")
 		Printf(TTY, "Let's get you authenticated to the Section API!\n\n")
 
-		m, u, p, err := PromptForCredential()
+		u, p, err := PromptForCredential(endpoint)
 		if err != nil {
 			return fmt.Errorf("error when prompting for credential: %s", err)
 		}
 
-		err = WriteCredential(m, u, p)
+		err = WriteCredential(endpoint, u, p)
 		if err != nil {
 			return fmt.Errorf("unable to save credential: %s", err)
 		}
@@ -80,14 +66,12 @@ func IsCredentialRecorded() bool {
 }
 
 // PromptForCredential interactively prompts the user for a credential to authenticate to the Section API
-func PromptForCredential() (m, u, p string, err error) {
-	m = "aperture.section.io"
-
+func PromptForCredential(m string) (u, p string, err error) {
 	restoreTerminal := func() {}
 	if TTY == os.Stdin {
 		oldState, err := terminal.MakeRaw(int(TTY.Fd()))
 		if err != nil {
-			return m, u, p, fmt.Errorf("unable to set up terminal: %s", err)
+			return u, p, fmt.Errorf("unable to set up terminal: %s", err)
 		}
 		restoreTerminal = func() {
 			err = terminal.Restore(int(TTY.Fd()), oldState)
@@ -105,22 +89,22 @@ func PromptForCredential() (m, u, p string, err error) {
 	u, err = t.ReadLine()
 	if err != nil {
 		restoreTerminal()
-		return m, u, p, fmt.Errorf("unable to read username: %s", err)
+		return u, p, fmt.Errorf("unable to read username: %s", err)
 	}
 
 	Printf(TTY, "Password: ")
 	p, err = t.ReadPassword("")
 	if err != nil {
 		restoreTerminal()
-		return m, u, p, fmt.Errorf("unable to read password: %s", err)
+		return u, p, fmt.Errorf("unable to read password: %s", err)
 	}
 
 	restoreTerminal()
-	return m, u, p, err
+	return u, p, err
 }
 
 // WriteCredential saves Section API credentials to disk
-func WriteCredential(machine, username, password string) (err error) {
+func WriteCredential(endpoint, username, password string) (err error) {
 	basedir := filepath.Dir(CredentialPath)
 	err = os.MkdirAll(basedir, os.ModeDir+0700)
 	if err != nil {
@@ -143,9 +127,23 @@ func WriteCredential(machine, username, password string) (err error) {
 	if err != nil {
 		return err
 	}
-	n.AddMachine(machine, username, password)
+	n.AddMachine(endpoint, username, password)
 	err = n.Save()
 	return err
+}
+
+// GetCredential returns Basic Auth credentials for authenticating to the Section API
+func GetCredential(endpoint string) (u, p string, err error) {
+	n, err := netrc.Parse(CredentialPath)
+	if err != nil {
+		return u, p, err
+	}
+	if n.Machine(endpoint) == nil {
+		return u, p, fmt.Errorf("invalid credentials file at %s", CredentialPath)
+	}
+	u = n.Machine(endpoint).Get("login")
+	p = n.Machine(endpoint).Get("password")
+	return u, p, err
 }
 
 // Printf formats according to a format specifier and writes to an output.

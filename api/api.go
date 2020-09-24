@@ -14,21 +14,23 @@ import (
 
 var (
 	// PrefixURI is the root of the Section API
-	PrefixURI = "https://aperture.section.io"
+	PrefixURI = &url.URL{Scheme: "https", Host: "aperture.section.io"}
 	timeout   = 20 * time.Second
 )
 
 // BaseURL returns a URL for building requests on
-func BaseURL() (*url.URL, error) {
-	return url.Parse(PrefixURI + "/api/v1")
+func BaseURL() (u *url.URL) {
+	u = PrefixURI
+	u.Path += "/api/v1"
+	return u
 }
 
-func request(method string, url string, body io.Reader) (resp *http.Response, err error) {
+func request(method string, u *url.URL, body io.Reader) (resp *http.Response, err error) {
 	client := &http.Client{
 		Timeout: timeout,
 	}
 
-	req, err := http.NewRequest(method, url, body)
+	req, err := http.NewRequest(method, u.String(), body)
 	if err != nil {
 		return resp, err
 	}
@@ -36,7 +38,7 @@ func request(method string, url string, body io.Reader) (resp *http.Response, er
 	ua := fmt.Sprintf("section-cli (%s; %s-%s)", version.Version, runtime.GOARCH, runtime.GOOS)
 	req.Header.Set("User-Agent", ua)
 
-	username, password, err := auth.GetBasicAuth()
+	username, password, err := auth.GetCredential(u.Host)
 	if err != nil {
 		return resp, err
 	}

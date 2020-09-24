@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"sort"
 )
@@ -21,13 +20,10 @@ type Account struct {
 
 // Accounts returns a list of account the current user has access to.
 func Accounts() (as []Account, err error) {
-	u, err := BaseURL()
-	if err != nil {
-		log.Fatal(err)
-	}
+	u := BaseURL()
 	u.Path += "/account"
 
-	resp, err := request(http.MethodGet, u.String(), nil)
+	resp, err := request(http.MethodGet, u, nil)
 	if err != nil {
 		return as, err
 	}

@@ -69,13 +69,10 @@ func TestAPIAuthPromptsForCredential(t *testing.T) {
 	defer func() { TTY = os.Stdin }()
 
 	// Invoke
-	m, u, p, err := PromptForCredential()
+	u, p, err := PromptForCredential(machine)
 
 	// Test
 	assert.NoError(err)
-	t.Logf("expected: %s,%s,%s", machine, username, password)
-	t.Logf("actual: %s,%s,%s", m, u, p)
-	assert.Equal(machine, m)
 	assert.Equal(username, u)
 	assert.Equal(password, p)
 }
@@ -105,7 +102,7 @@ func TestAPIAuthWriteCredentialCreatesFile(t *testing.T) {
 			assert.NoError(err)
 			assert.Equal(info.Mode().Perm(), os.FileMode(0x180)) // 0600
 
-			u, p, err := GetBasicAuth()
+			u, p, err := GetCredential(machine)
 			assert.NoError(err)
 			assert.Equal(u, username)
 			assert.Equal(p, password)
@@ -113,31 +110,52 @@ func TestAPIAuthWriteCredentialCreatesFile(t *testing.T) {
 	}
 }
 
-func TestAPIAuthGetBasicAuthReturnsCredential(t *testing.T) {
+func TestAPIAuthGetCredentialReturnsBasicAuthCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
 	CredentialPath = filepath.Join("testdata", "valid-credentials")
 
-	// Test
-	assert.True(IsCredentialRecorded())
+	// Invoke
+	u, p, err := GetCredential("valid.example")
 
-	u, p, err := GetBasicAuth()
+	// Test
 	assert.NoError(err)
 	assert.Equal("ada@section.example", u)
 	assert.Equal("v4l1ds3cr3t", p)
 }
 
-func TestAPIAuthGetBasicAuthReturnsErrorIfCredentialInvalid(t *testing.T) {
+func TestAPIAuthGetCredentialReturnsErrorIfCredentialInvalid(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
 	CredentialPath = filepath.Join("testdata", "empty-file")
 
 	// Invoke
-	_, _, err := GetBasicAuth()
+	_, _, err := GetCredential("foobar")
 
 	// Test
 	assert.Error(err)
 	assert.False(IsCredentialRecorded())
+}
+
+func TestAPIAuthCanReadWrittenCredentials(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	endpoint := "127.0.0.1:8080"
+	username := "grace@hopper.example"
+	password := "s3cr3t"
+
+	CredentialPath = newCredentialTempfile(t)
+
+	// Invoke
+	err := WriteCredential(endpoint, username, password)
+	assert.NoError(err)
+
+	// Test
+	u, p, err := GetCredential(endpoint)
+	assert.NoError(err)
+	assert.Equal(username, u)
+	assert.Equal(password, p)
 }
