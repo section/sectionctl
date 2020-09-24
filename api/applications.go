@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
@@ -42,13 +41,10 @@ type Module struct {
 
 // Application returns detailed information about a given application.
 func Application(accountID int, applicationID int) (a App, err error) {
-	u, err := BaseURL()
-	if err != nil {
-		return a, err
-	}
+	u := BaseURL()
 	u.Path += fmt.Sprintf("/account/%d/application/%d", accountID, applicationID)
 
-	resp, err := request(http.MethodGet, u.String(), nil)
+	resp, err := request(http.MethodGet, u, nil)
 	if err != nil {
 		return a, err
 	}
@@ -87,13 +83,10 @@ func Application(accountID int, applicationID int) (a App, err error) {
 
 // ApplicationEnvironments returns environment information for a given application.
 func ApplicationEnvironments(accountID int, applicationID int) (es []Environment, err error) {
-	u, err := BaseURL()
-	if err != nil {
-		return es, err
-	}
+	u := BaseURL()
 	u.Path += fmt.Sprintf("/account/%d/application/%d/environment", accountID, applicationID)
 
-	resp, err := request(http.MethodGet, u.String(), nil)
+	resp, err := request(http.MethodGet, u, nil)
 	if err != nil {
 		return es, err
 	}
@@ -117,13 +110,10 @@ func ApplicationEnvironments(accountID int, applicationID int) (es []Environment
 
 // ApplicationEnvironmentStack returns the stack for a given application and environment.
 func ApplicationEnvironmentStack(accountID int, applicationID int, environmentName string) (s []Module, err error) {
-	u, err := BaseURL()
-	if err != nil {
-		return s, err
-	}
+	u := BaseURL()
 	u.Path += fmt.Sprintf("/account/%d/application/%d/environment/%s/stack", accountID, applicationID, environmentName)
 
-	resp, err := request(http.MethodGet, u.String(), nil)
+	resp, err := request(http.MethodGet, u, nil)
 	if err != nil {
 		return s, err
 	}
@@ -147,13 +137,10 @@ func ApplicationEnvironmentStack(accountID int, applicationID int, environmentNa
 
 // Applications returns a list of applications on a given account.
 func Applications(accountID int) (as []App, err error) {
-	u, err := BaseURL()
-	if err != nil {
-		log.Fatal(err)
-	}
+	u := BaseURL()
 	u.Path += fmt.Sprintf("/account/%d/application", accountID)
 
-	resp, err := request(http.MethodGet, u.String(), nil)
+	resp, err := request(http.MethodGet, u, nil)
 	if err != nil {
 		return as, err
 	}

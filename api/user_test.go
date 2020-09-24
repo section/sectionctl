@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"path/filepath"
 	"testing"
 
 	"github.com/section/sectionctl/api/auth"
@@ -23,9 +22,10 @@ func TestAPIUserReturnsRecord(t *testing.T) {
 
 	ur, err := url.Parse(ts.URL)
 	assert.NoError(err)
-	PrefixURI = ur.String()
+	PrefixURI = ur
 
-	auth.CredentialPath = filepath.Join("auth", "testdata", "valid-credentials")
+	auth.CredentialPath = newCredentialTempfile(t)
+	auth.WriteCredential(ur.Host, "foo", "bar")
 
 	// Invoke
 	u, err := CurrentUser()
@@ -51,9 +51,10 @@ func TestAPIUserHandlesErrors(t *testing.T) {
 
 	ur, err := url.Parse(ts.URL)
 	assert.NoError(err)
-	PrefixURI = ur.String()
+	PrefixURI = ur
 
-	auth.CredentialPath = filepath.Join("auth", "testdata", "valid-credentials")
+	auth.CredentialPath = newCredentialTempfile(t)
+	auth.WriteCredential(ur.Host, "foo", "bar")
 
 	// Invoke
 	u, err := CurrentUser()

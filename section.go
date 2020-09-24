@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/alecthomas/kong"
@@ -17,7 +18,7 @@ var CLI struct {
 	Apps             commands.AppsCmd     `cmd help:"Manage apps on Section"`
 	Deploy           commands.DeployCmd   `cmd help:"Deploy an app to Section"`
 	Version          commands.VersionCmd  `cmd help:"Print sectionctl version"`
-	SectionAPIPrefix string               `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
+	SectionAPIPrefix *url.URL             `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
 }
 
 func main() {

@@ -49,7 +49,7 @@ func TestCommandsLoginValidatesGoodCredentials(t *testing.T) {
 
 	ur, err := url.Parse(ts.URL)
 	assert.NoError(err)
-	api.PrefixURI = ur.String()
+	api.PrefixURI = ur
 
 	// Invoke
 	cmd := LoginCmd{}
@@ -82,7 +82,7 @@ func TestCommandsLoginValidatesBadCredentials(t *testing.T) {
 
 	ur, err := url.Parse(ts.URL)
 	assert.NoError(err)
-	api.PrefixURI = ur.String()
+	api.PrefixURI = ur
 
 	// Invoke
 	cmd := LoginCmd{}

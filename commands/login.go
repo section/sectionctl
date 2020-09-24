@@ -13,14 +13,14 @@ type LoginCmd struct{}
 
 // Run executes the command
 func (c *LoginCmd) Run() (err error) {
-	fmt.Printf("Setting up your authentication for the Section API...\n\n")
+	fmt.Printf("Setting up your authentication for %s...\n\n", api.PrefixURI.Host)
 
-	m, u, p, err := auth.PromptForCredential()
+	u, p, err := auth.PromptForCredential(api.PrefixURI.Host)
 	if err != nil {
 		return fmt.Errorf("error when prompting for credential: %s", err)
 	}
 
-	err = auth.WriteCredential(m, u, p)
+	err = auth.WriteCredential(api.PrefixURI.Host, u, p)
 	if err != nil {
 		return fmt.Errorf("unable to save credential: %s", err)
 	}

@@ -34,7 +34,7 @@ func NewTable(out io.Writer) (t *tablewriter.Table) {
 
 // Run executes the command
 func (c *AppsListCmd) Run() (err error) {
-	err = auth.Setup()
+	err = auth.Setup(api.PrefixURI.Host)
 	if err != nil {
 		return err
 	}
