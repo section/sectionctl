@@ -30,7 +30,7 @@ func main() {
 	analytics.LogInvoke(ctx)
 	err := ctx.Run()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("\nError: %s\n", err)
 		os.Exit(2)
 	}
 }
