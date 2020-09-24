@@ -4,3 +4,4 @@ os.Remove
 (*compress/gzip.Writer).Close
 (*archive/tar.Writer).Close
 (*os.File).Close
+(*os.File).Write

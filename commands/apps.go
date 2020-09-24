@@ -8,6 +8,7 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/section/section-cli/api"
+	"github.com/section/section-cli/api/auth"
 )
 
 // AppsCmd manages apps on Section
@@ -33,6 +34,10 @@ func NewTable(out io.Writer) (t *tablewriter.Table) {
 
 // Run executes the command
 func (c *AppsListCmd) Run() (err error) {
+	err = auth.Setup(api.PrefixURI.Host)
+	if err != nil {
+		return err
+	}
 	apps, err := api.Applications(c.AccountID)
 	if err != nil {
 		return err
