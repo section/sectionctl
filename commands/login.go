@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/section/section-cli/api"
@@ -31,8 +30,7 @@ func (c *LoginCmd) Run() (err error) {
 	if err != nil {
 		fmt.Println("error!")
 		if strings.Contains(err.Error(), "401") {
-			fmt.Print("\nInvalid credentials. Please try again.\n\n")
-			os.Exit(1)
+			return fmt.Errorf("invalid credentials. Please try again")
 		}
 		return fmt.Errorf("\ncould not fetch current user: %s", err)
 	}
