@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/section/section-cli/api"
-	"github.com/section/section-cli/api/auth"
+	"github.com/section/sectionctl/api"
+	"github.com/section/sectionctl/api/auth"
 )
 
 // LoginCmd handles authenticating the CLI against Section's API

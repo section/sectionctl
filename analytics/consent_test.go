@@ -14,7 +14,7 @@ import (
 )
 
 func newConsentTempfile(t *testing.T) string {
-	pattern := "section-cli-analytics-consent-" + strings.ReplaceAll(t.Name(), "/", "_")
+	pattern := "sectionctl-analytics-consent-" + strings.ReplaceAll(t.Name(), "/", "_")
 	file, err := ioutil.TempFile("", pattern)
 	if err != nil {
 		t.FailNow()

@@ -1,4 +1,4 @@
-# section-cli
+# sectionctl
 
 Section command line tool.
 
@@ -23,8 +23,8 @@ Please ensure you're running at least Go 1.14.
 To run tests:
 
 ```
-git clone https://github.com/section/section-cli
-cd section-cli
+git clone https://github.com/section/sectionctl
+cd sectionctl
 make test
 ```
 

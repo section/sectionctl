@@ -1,4 +1,4 @@
-module github.com/section/section-cli
+module github.com/section/sectionctl
 
 go 1.13
 

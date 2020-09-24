@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/alecthomas/kong"
-	"github.com/section/section-cli/analytics"
-	"github.com/section/section-cli/api"
-	"github.com/section/section-cli/commands"
+	"github.com/section/sectionctl/analytics"
+	"github.com/section/sectionctl/api"
+	"github.com/section/sectionctl/commands"
 )
 
 // CLI exposes all the subcommands available
@@ -16,7 +16,7 @@ var CLI struct {
 	Accounts         commands.AccountsCmd `cmd help:"Manage accounts on Section"`
 	Apps             commands.AppsCmd     `cmd help:"Manage apps on Section"`
 	Deploy           commands.DeployCmd   `cmd help:"Deploy an app to Section"`
-	Version          commands.VersionCmd  `cmd help:"Print section-cli version"`
+	Version          commands.VersionCmd  `cmd help:"Print sectionctl version"`
 	SectionAPIPrefix string               `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
 }
 

@@ -64,7 +64,7 @@ type Event struct {
 
 // Identity tries to determine the identity of the machine the cli is being run on
 func identity() (id string) {
-	id, err := machineid.ProtectedID("section-cli")
+	id, err := machineid.ProtectedID("sectionctl")
 	if err == nil {
 		return id
 	}
