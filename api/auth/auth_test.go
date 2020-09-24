@@ -22,7 +22,7 @@ func newCredentialTempfile(t *testing.T) string {
 }
 
 func newCredentialTempdir(t *testing.T) string {
-	pattern := "section-cli-api-auth-credential-" + strings.ReplaceAll(t.Name(), "/", "_")
+	pattern := "sectionctl-api-auth-credential-" + strings.ReplaceAll(t.Name(), "/", "_")
 	dir, err := ioutil.TempDir("", pattern)
 	if err != nil {
 		t.FailNow()

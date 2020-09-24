@@ -14,7 +14,7 @@ import (
 )
 
 func newCredentialTempfile(t *testing.T) string {
-	pattern := "section-cli-api-auth-credential-" + strings.ReplaceAll(t.Name(), "/", "_")
+	pattern := "sectionctl-api-auth-credential-" + strings.ReplaceAll(t.Name(), "/", "_")
 	file, err := ioutil.TempFile("", pattern)
 	if err != nil {
 		t.FailNow()

@@ -22,4 +22,4 @@ goerrcheck:
 	errcheck -exclude .lint/errcheck-excludes -blank -ignoretests -ignore 'github.com/section/sectionctl/analytics:^Print' ./...
 
 build:
-	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=892134159'" -o bin/section section.go
+	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=892134159'" -o bin/sectionctl sectionctl.go
