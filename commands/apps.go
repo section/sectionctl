@@ -95,7 +95,11 @@ func (c *AppsInfoCmd) Run() (err error) {
 		}
 
 		fmt.Println()
-		fmt.Printf("🥞 Stack (%d proxies total)\n", len(env.Stack))
+		mod := "modules"
+		if len(env.Stack) == 1 {
+			mod = "module"
+		}
+		fmt.Printf("🥞 Stack (%d %s total)\n", len(env.Stack), mod)
 		fmt.Println()
 
 		table := NewTable(os.Stdout)

@@ -21,7 +21,7 @@ type Environment struct {
 	Href            string   `json:"href"`
 	EnvironmentName string   `json:"environment_name"`
 	Domains         []Domain `json:"domains"`
-	Stack           []Proxy  `json:"stack"`
+	Stack           []Module `json:"stack"`
 }
 
 // Domain represents an applications environments' domains
@@ -32,8 +32,8 @@ type Domain struct {
 	Mode     string `json:"mode"`
 }
 
-// Proxy represents a proxy in the traffic delivery stack
-type Proxy struct {
+// Module represents a proxy in the traffic delivery stack
+type Module struct {
 	Name  string `json:"name"`
 	Image string `json:"image"`
 	Href  string `json:"href"`
@@ -109,7 +109,7 @@ func ApplicationEnvironments(accountID int, applicationID int) (es []Environment
 }
 
 // ApplicationEnvironmentStack returns the stack for a given application and environment.
-func ApplicationEnvironmentStack(accountID int, applicationID int, environmentName string) (s []Proxy, err error) {
+func ApplicationEnvironmentStack(accountID int, applicationID int, environmentName string) (s []Module, err error) {
 	u := BaseURL()
 	u.Path += fmt.Sprintf("/account/%d/application/%d/environment/%s/stack", accountID, applicationID, environmentName)
 
