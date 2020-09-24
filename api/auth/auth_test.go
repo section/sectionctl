@@ -64,6 +64,8 @@ func TestAPIAuthPromptsForCredential(t *testing.T) {
 
 	// Test
 	assert.NoError(err)
+	t.Logf("expected: %s,%s,%s", machine, username, password)
+	t.Logf("actual: %s,%s,%s", m, u, p)
 	assert.Equal(machine, m)
 	assert.Equal(username, u)
 	assert.Equal(password, p)
