@@ -1,6 +1,7 @@
 .PHONY: test
 
 export PATH := bin:$(PATH)
+export HEAPAPPID := 892134159
 
 staticcheck := /home/runner/go/bin/staticcheck
 
@@ -26,7 +27,7 @@ build: clean
 	@if [ -z "$(VERSION)" ]; then echo "Missing VERSION"; exit 1 ; fi
 	@if [ -z "$(GOOS)" ]; then echo "Missing GOOS"; exit 1 ; fi
 	@if [ -z "$(GOARCH)" ]; then echo "Missing GOARCH"; exit 1 ; fi
-	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=892134159'" -o build/sectionctl sectionctl.go
+	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)'" -o build/sectionctl sectionctl.go
 	cp README.md LICENSE build/
 	mkdir -p dist
 	tar --create --gzip --verbose --strip-components 1 -f dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz build/
