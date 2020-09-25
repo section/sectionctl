@@ -46,6 +46,7 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("failed to walk path: %v", err)
 	}
 	if c.Debug {
+		fmt.Println("Archiving files:")
 		for _, file := range files {
 			fmt.Println(file)
 		}
