@@ -1,0 +1,43 @@
+name: Build and release sectionctl binaries
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GOOS: [ linux, darwin, windows ]
+    env:
+      VERSION: 0.0.1
+      GOARCH: amd64
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.14
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: |
+        go get -v -t -d ./...
+        if [ -f Gopkg.toml ]; then
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            dep ensure
+        fi
+
+    - name: Build
+      run: GOOS={{ matrix.GOOS }} make build
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: sectionctl-{{ env.VERSION }}-{{ matrix.GOOS }}-{{ env.GOARCH }}.tar.gz
+        path: sectionctl-{{ env.VERSION }}-{{ matrix.GOOS }}-{{ env.GOARCH }}.tar.gz
