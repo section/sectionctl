@@ -35,7 +35,7 @@ func TestCommandsDeployBuildFilelistErrorsOnNonExistentDirectory(t *testing.T) {
 		filepath.Join("testdata", "deploy", "non-existent-tree"),
 		filepath.Join("testdata", "deploy", "file"),
 	}
-	ignores := []string{}
+	var ignores []string
 
 	for _, tc := range testCases {
 		t.Run(tc, func(t *testing.T) {
