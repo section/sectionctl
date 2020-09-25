@@ -19,7 +19,7 @@ const MaxFileSize = 1073741824 // 1GB
 // DeployCmd handles deploying an app to Section.
 type DeployCmd struct {
 	Debug     bool
-	Directory string `default:"./"`
+	Directory string `default:"."`
 	ServerURL string `default:"https://aperture.section.io/new/code_upload/v1"`
 }
 
