@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: 🚧 Build binaries for target platforms
+    name: 🚧 Build binaries
     runs-on: ubuntu-latest
     strategy:
       matrix:
