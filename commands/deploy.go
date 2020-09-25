@@ -19,6 +19,7 @@ const MaxFileSize = 1073741824 // 1GB
 // DeployCmd handles deploying an app to Section.
 type DeployCmd struct {
 	Debug     bool
+	Directory string `default:"."`
 	ServerURL string `default:"https://aperture.section.io/new/code_upload/v1"`
 }
 
@@ -27,31 +28,17 @@ func (c *DeployCmd) Run() (err error) {
 	if c.Debug {
 		fmt.Println("Server URL:", c.ServerURL)
 	}
-	path := "./"
-	var files []string
-	err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
-		}
-		if strings.Contains(path, ".git/") {
-			return nil
-		}
-		if strings.Contains(path, ".lint/") {
-			return nil
-		}
-		files = append(files, path)
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed to walk path: %v", err)
-	}
+
+	ignores := []string{".lint/", ".git/"}
+	files, err := BuildFilelist(c.Directory, ignores)
 	if c.Debug {
+		fmt.Println("Archiving files:")
 		for _, file := range files {
 			fmt.Println(file)
 		}
 	}
 
-	fmt.Printf("Packaging %s\n", path)
+	fmt.Printf("Packaging %s\n", c.Directory)
 
 	tempFile, err := ioutil.TempFile("", "section")
 	if err != nil {
@@ -91,6 +78,35 @@ func (c *DeployCmd) Run() (err error) {
 	fmt.Println("Done.")
 
 	return nil
+}
+
+// BuildFilelist builds a list of files to be tarballed, with optional ignores.
+func BuildFilelist(dir string, ignores []string) (files []string, err error) {
+	var fi os.FileInfo
+	if fi, err = os.Stat(dir); os.IsNotExist(err) {
+		return files, err
+	}
+	if !fi.IsDir() {
+		return files, fmt.Errorf("specified path is not a directory: %s", dir)
+	}
+
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		for _, i := range ignores {
+			if strings.Contains(path, i) {
+				return nil
+
+			}
+		}
+		files = append(files, path)
+		return nil
+	})
+	if err != nil {
+		return files, fmt.Errorf("failed to walk path: %v", err)
+	}
+	return files, err
 }
 
 // CreateTarball creates a tarball containing all the files in filePaths and writes it to w.

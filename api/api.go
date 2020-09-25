@@ -19,13 +19,13 @@ var (
 )
 
 // BaseURL returns a URL for building requests on
-func BaseURL() (u *url.URL) {
-	u = PrefixURI
+func BaseURL() (u url.URL) {
+	u = *PrefixURI
 	u.Path += "/api/v1"
 	return u
 }
 
-func request(method string, u *url.URL, body io.Reader) (resp *http.Response, err error) {
+func request(method string, u url.URL, body io.Reader) (resp *http.Response, err error) {
 	client := &http.Client{
 		Timeout: timeout,
 	}
