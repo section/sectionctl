@@ -13,10 +13,6 @@ jobs:
     strategy:
       matrix:
         GOOS: [ linux, darwin, windows ]
-    env:
-      VERSION: 0.0.1
-      GOARCH: amd64
-      GOOS: {{ matrix.GOOS }}
     steps:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
@@ -37,6 +33,10 @@ jobs:
 
     - name: Build
       run: make build
+      env:
+        VERSION: 0.0.1
+        GOARCH: amd64
+        GOOS: {{ matrix.GOOS }}
 
     - uses: actions/upload-artifact@v2
       with:
