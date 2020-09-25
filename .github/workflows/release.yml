@@ -9,6 +9,8 @@ jobs:
   release:
     name: 🎬 Create the release
     runs-on: ubuntu-latest
+    outputs:
+      release_upload_url: ${{ steps.create_release_outputs_upload_url }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v2
@@ -71,7 +73,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ needs.release.steps.create_release.outputs.upload_url }}
+        upload_url: ${{ needs.release.outputs.release_upload_url }}
         asset_path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.tar.gz
         asset_name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.tar.gz
         asset_content_type: application/gzip
