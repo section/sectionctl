@@ -27,10 +27,10 @@ build: clean
 	@if [ -z "$(VERSION)" ]; then echo "Missing VERSION"; exit 1 ; fi
 	@if [ -z "$(GOOS)" ]; then echo "Missing GOOS"; exit 1 ; fi
 	@if [ -z "$(GOARCH)" ]; then echo "Missing GOARCH"; exit 1 ; fi
-	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)'" -o build/sectionctl sectionctl.go
-	cp README.md LICENSE build/
-	mkdir -p dist
-	tar --create --gzip --verbose --strip-components 1 -f dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz build/
+	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)'" -o bin/sectionctl sectionctl.go
+	mkdir -p dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
+	cp README.md LICENSE bin/sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
+	tar --create --gzip --verbose --strip-components 2 --file dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)
 
 clean:
 	rm -rf build
