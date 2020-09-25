@@ -10,7 +10,7 @@ jobs:
     name: 🎬 Create the release
     runs-on: ubuntu-latest
     outputs:
-      release_upload_url: ${{ steps.create_release_outputs_upload_url }}
+      release_upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v2
