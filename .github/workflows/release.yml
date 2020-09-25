@@ -36,7 +36,7 @@ jobs:
       env:
         VERSION: 0.0.1
         GOARCH: amd64
-        GOOS: {{ matrix.GOOS }}
+        GOOS: ${{ matrix.GOOS }}
 
     - uses: actions/upload-artifact@v2
       with:
