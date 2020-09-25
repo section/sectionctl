@@ -16,6 +16,7 @@ jobs:
     env:
       VERSION: 0.0.1
       GOARCH: amd64
+      GOOS: {{ matrix.GOOS }}
     steps:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
@@ -35,9 +36,9 @@ jobs:
         fi
 
     - name: Build
-      run: GOOS={{ matrix.GOOS }} make build
+      run: make build
 
     - uses: actions/upload-artifact@v2
       with:
-        name: sectionctl-{{ env.VERSION }}-{{ matrix.GOOS }}-{{ env.GOARCH }}.tar.gz
-        path: sectionctl-{{ env.VERSION }}-{{ matrix.GOOS }}-{{ env.GOARCH }}.tar.gz
+        name: sectionctl-{{ env.VERSION }}-{{ env.GOOS }}-{{ env.GOARCH }}.tar.gz
+        path: sectionctl-{{ env.VERSION }}-{{ env.GOOS }}-{{ env.GOARCH }}.tar.gz
