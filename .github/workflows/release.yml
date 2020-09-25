@@ -2,9 +2,8 @@ name: Build and release sectionctl binaries
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    tags:
+      - 'v*' # Push events to matching v*, for example v1.0, v10.15.10
 
 jobs:
   release:
