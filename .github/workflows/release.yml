@@ -40,5 +40,5 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: sectionctl-{{ env.VERSION }}-{{ env.GOOS }}-{{ env.GOARCH }}.tar.gz
-        path: dist/sectionctl-{{ env.VERSION }}-{{ env.GOOS }}-{{ env.GOARCH }}.tar.gz
+        name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.tar.gz
+        path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.tar.gz
