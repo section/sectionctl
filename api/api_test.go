@@ -48,7 +48,7 @@ func TestAPIClientSetsUserAgent(t *testing.T) {
 	auth.WriteCredential(u.Host, "foo", "bar")
 
 	// Invoke
-	_, err = request(http.MethodGet, u, nil)
+	_, err = request(http.MethodGet, *u, nil)
 	assert.NoError(err)
 
 	// Test
