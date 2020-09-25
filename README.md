@@ -7,13 +7,13 @@ Section command line tool.
 Run the command without any arguments to see the help:
 
 ```
-section
+sectionctl
 ```
 
 To set up credentials so the CLI tool works, run:
 
 ```
-section login
+sectionctl login
 ```
 
 ## Developing
