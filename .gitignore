@@ -16,3 +16,5 @@
 
 # Build outputs
 bin/
+build/
+dist/
