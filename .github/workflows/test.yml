@@ -1,4 +1,4 @@
-name: Go
+name: Test
 
 on:
   push:
@@ -8,8 +8,8 @@ on:
 
 jobs:
 
-  build:
-    name: Build
+  test:
+    name: Run test suite
     runs-on: ubuntu-latest
     steps:
 
@@ -30,14 +30,10 @@ jobs:
             dep ensure
         fi
 
-    - name: Build
-      run: make build
-
     - name: "[temporary] add test data"
       run: echo -e "machine aperture.section.io\n\tlogin grace@section.example\n\tpassword s3cr3t\n" | tee $HOME/.netrc
 
     - name: Test
       run: |
-        go version
         make cidep
         make test
