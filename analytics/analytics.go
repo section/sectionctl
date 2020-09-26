@@ -127,7 +127,12 @@ func IsConsentRecorded() (rec bool) {
 // ReadConsent finds if consent has been given, either from file or by prompt.
 func ReadConsent() (c bool, err error) {
 	if !IsConsentRecorded() {
-		PromptForConsent()
+		c, err = PromptForConsent()
+
+		err = WriteConsent(c)
+		if err != nil {
+			return c, fmt.Errorf("unable to record consent: %s", err)
+		}
 	}
 
 	if _, err := os.Stat(consentPath); err != nil {
@@ -168,7 +173,7 @@ func Printf(format string, a ...interface{}) (n int, err error) {
 }
 
 // PromptForConsent interactively prompts the user for consent
-func PromptForConsent() {
+func PromptForConsent() (c bool, err error) {
 	Printf("👋 Hi!\n\n")
 	Printf("Thanks for using the Section CLI.\n\n")
 	Printf("We're still working out how to create the best experience for you.\n\n")
@@ -178,27 +183,17 @@ func PromptForConsent() {
 	reader := bufio.NewReader(in)
 	text, err := reader.ReadString('\n')
 	if err != nil {
-		Println("Error: unable to read your response. Exiting.")
-		os.Exit(2)
+		return c, fmt.Errorf("unable to read your response: %s", err)
 	}
 	text = strings.Replace(text, "\n", "", -1)
 	text = strings.Replace(text, "\r", "", -1) // convert CRLF to LF
 
 	if strings.EqualFold(text, "y") {
 		Printf("\nThank you!\n")
-		ConsentGiven = true
-	} else {
-		ConsentGiven = false
-		Printf("\nNo worries! We won't ask again.\n")
+		return true, err
 	}
-
-	err = WriteConsent(ConsentGiven)
-	if err != nil {
-		Println("Error: unable to record consent.")
-		Printf("Details: %s", err)
-		Println("Exiting.")
-		os.Exit(2)
-	}
+	Printf("\nNo worries! We won't ask again.\n")
+	return false, err
 }
 
 // WriteConsent writes the current consent state to a persistent file

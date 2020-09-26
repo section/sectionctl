@@ -63,11 +63,31 @@ func TestConsentPromptsForConsentIfConsentNotRecorded(t *testing.T) {
 	assert.Contains(outbuf.String(), "[y/N]")
 }
 
+func TestConsentPromptForConsent(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	var outbuf bytes.Buffer
+	out = &outbuf
+
+	var inbuf bytes.Buffer
+	inbuf.Write([]byte("y\n"))
+	in = &inbuf
+
+	// Invoke
+	c, err := PromptForConsent()
+
+	// Test
+	assert.NoError(err)
+	assert.True(c)
+}
+
 func TestConsentPromptRecordsConsent(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
 	consentPath = newConsentTempfile(t)
+	assert.False(IsConsentRecorded())
 
 	var outbuf bytes.Buffer
 	out = &outbuf
