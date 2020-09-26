@@ -208,6 +208,11 @@ func WriteConsent(consent bool) (err error) {
 	if err != nil {
 		return err
 	}
+	consentPathBasedir := filepath.Dir(consentPath)
+	err = os.MkdirAll(consentPathBasedir, os.ModeDir+0700)
+	if err != nil {
+		return err
+	}
 	err = ioutil.WriteFile(consentPath, json, 0644)
 	if err != nil {
 		return err
