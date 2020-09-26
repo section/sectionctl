@@ -66,20 +66,31 @@ func TestConsentPromptsForConsentIfConsentNotRecorded(t *testing.T) {
 func TestConsentPromptForConsent(t *testing.T) {
 	assert := assert.New(t)
 
-	// Setup
-	var outbuf bytes.Buffer
-	out = &outbuf
+	var testCases = []struct {
+		input  string
+		retval bool
+	}{
+		{"y\n", true},
+		{"n\n", false},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.input, func(t *testing.T) {
+			// Setup
+			var outbuf bytes.Buffer
+			out = &outbuf
 
-	var inbuf bytes.Buffer
-	inbuf.Write([]byte("y\n"))
-	in = &inbuf
+			var inbuf bytes.Buffer
+			inbuf.Write([]byte(tc.input))
+			in = &inbuf
 
-	// Invoke
-	c, err := PromptForConsent()
+			// Invoke
+			c, err := PromptForConsent()
 
-	// Test
-	assert.NoError(err)
-	assert.True(c)
+			// Test
+			assert.NoError(err)
+			assert.Equal(c, tc.retval)
+		})
+	}
 }
 
 func TestConsentPromptRecordsConsent(t *testing.T) {
