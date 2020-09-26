@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -20,6 +21,15 @@ func newConsentTempfile(t *testing.T) string {
 		t.FailNow()
 	}
 	return file.Name()
+}
+
+func newConsentTempdir(t *testing.T) string {
+	pattern := "sectionctl-analytics-consent-" + strings.ReplaceAll(t.Name(), "/", "_")
+	dir, err := ioutil.TempDir("", pattern)
+	if err != nil {
+		t.FailNow()
+	}
+	return dir
 }
 
 func TestConsentDetectsIfConsentNotRecorded(t *testing.T) {
@@ -53,11 +63,42 @@ func TestConsentPromptsForConsentIfConsentNotRecorded(t *testing.T) {
 	assert.Contains(outbuf.String(), "[y/N]")
 }
 
+func TestConsentPromptForConsent(t *testing.T) {
+	assert := assert.New(t)
+
+	var testCases = []struct {
+		input  string
+		retval bool
+	}{
+		{"y\n", true},
+		{"n\n", false},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.input, func(t *testing.T) {
+			// Setup
+			var outbuf bytes.Buffer
+			out = &outbuf
+
+			var inbuf bytes.Buffer
+			inbuf.Write([]byte(tc.input))
+			in = &inbuf
+
+			// Invoke
+			c, err := PromptForConsent()
+
+			// Test
+			assert.NoError(err)
+			assert.Equal(c, tc.retval)
+		})
+	}
+}
+
 func TestConsentPromptRecordsConsent(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
 	consentPath = newConsentTempfile(t)
+	assert.False(IsConsentRecorded())
 
 	var outbuf bytes.Buffer
 	out = &outbuf
@@ -153,6 +194,23 @@ func TestConsentPromptHandlesNewlines(t *testing.T) {
 			assert.Contains(outbuf.String(), "[y/N]")
 		})
 	}
+}
+
+func TestConsentWriteConsentCreatesPathIfItDoesNotExist(t *testing.T) {
+	assert := assert.New(t)
+	// Setup
+	consentPath = filepath.Join(newConsentTempdir(t), "does", "not", "exist")
+
+	err := WriteConsent(ConsentGiven)
+	assert.NoError(err)
+
+	info, err := os.Stat(consentPath)
+	assert.NoError(err)
+	assert.False(info.IsDir())
+
+	info, err = os.Stat(filepath.Dir(consentPath))
+	assert.NoError(err)
+	assert.True(info.IsDir())
 }
 
 func TestConsentSubmitNoopsIfNoConsent(t *testing.T) {
