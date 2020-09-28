@@ -203,10 +203,7 @@ func WriteConsent(consent bool) (err error) {
 // }
 func Submit(e Event, a ...interface{}) (err error) {
 	ConsentGiven, err = ReadConsent(os.Stdin, os.Stdout)
-	if err != nil {
-		return err
-	}
-	if !ConsentGiven {
+	if err != nil || !ConsentGiven {
 		return err
 	}
 
