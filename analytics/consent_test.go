@@ -49,13 +49,11 @@ func TestConsentPromptsForConsentIfConsentNotRecorded(t *testing.T) {
 	consentPath = newConsentTempfile(t)
 
 	var outbuf bytes.Buffer
-	out := &outbuf
 	var inbuf bytes.Buffer
 	inbuf.Write([]byte("\n"))
-	in := &inbuf
 
 	// Invoke
-	ConsentGiven, err := ReadConsent(in, out)
+	ConsentGiven, err := ReadConsent(&inbuf, &outbuf)
 
 	// Test
 	assert.False(ConsentGiven)
@@ -77,14 +75,11 @@ func TestConsentPromptForConsent(t *testing.T) {
 		t.Run(tc.input, func(t *testing.T) {
 			// Setup
 			var outbuf bytes.Buffer
-			out := &outbuf
-
 			var inbuf bytes.Buffer
 			inbuf.Write([]byte(tc.input))
-			in := &inbuf
 
 			// Invoke
-			c, err := PromptForConsent(in, out)
+			c, err := PromptForConsent(&inbuf, &outbuf)
 
 			// Test
 			assert.NoError(err)
@@ -101,14 +96,11 @@ func TestConsentPromptRecordsConsent(t *testing.T) {
 	assert.False(IsConsentRecorded())
 
 	var outbuf bytes.Buffer
-	out := &outbuf
-
 	var inbuf bytes.Buffer
 	inbuf.Write([]byte("y\n"))
-	in := &inbuf
 
 	// Invoke
-	ConsentGiven, err := ReadConsent(in, out)
+	ConsentGiven, err := ReadConsent(&inbuf, &outbuf)
 
 	// Test
 	assert.True(ConsentGiven)
@@ -140,13 +132,11 @@ func TestConsentPromptDefaultsToFalse(t *testing.T) {
 			consentPath = newConsentTempfile(t)
 
 			var outbuf bytes.Buffer
-			out := &outbuf
 			var inbuf bytes.Buffer
 			inbuf.Write([]byte(tc))
-			in := &inbuf
 
 			// Invoke
-			ConsentGiven, err := ReadConsent(in, out)
+			ConsentGiven, err := ReadConsent(&inbuf, &outbuf)
 
 			// Test
 			assert.False(ConsentGiven)
@@ -179,13 +169,11 @@ func TestConsentPromptHandlesNewlines(t *testing.T) {
 			consentPath = newConsentTempfile(t)
 
 			var outbuf bytes.Buffer
-			out := &outbuf
 			var inbuf bytes.Buffer
 			inbuf.Write([]byte(tc))
-			in := &inbuf
 
 			// Invoke
-			ConsentGiven, err := ReadConsent(in, out)
+			ConsentGiven, err := ReadConsent(&inbuf, &outbuf)
 
 			// Test
 			assert.True(ConsentGiven)
