@@ -201,7 +201,7 @@ func WriteConsent(consent bool) (err error) {
 // if consent == true {
 // 	submit analytics
 // }
-func Submit(e Event, a ...interface{}) (err error) {
+func Submit(e Event) (err error) {
 	ConsentGiven, err = ReadConsent(os.Stdin, os.Stdout)
 	if err != nil || !ConsentGiven {
 		return err
