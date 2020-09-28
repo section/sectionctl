@@ -1,4 +1,5 @@
 fmt.Fprintf
+fmt.Fprint
 (io.ReadCloser).Close
 os.Remove
 (*compress/gzip.Writer).Close
