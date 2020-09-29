@@ -39,7 +39,14 @@ func (c *DeployCmd) Run() (err error) {
 		}
 	}
 
-	fmt.Printf("Packaging %s\n", c.Directory)
+	dir := c.Directory
+	if dir == "." {
+		abs, err := filepath.Abs(dir)
+		if err == nil {
+			dir = abs
+		}
+	}
+	fmt.Printf("Packaging app in: %s\n", dir)
 
 	tempFile, err := ioutil.TempFile("", "section")
 	if err != nil {
@@ -58,7 +65,7 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("failed to upload tarball: file size (%d) is greater than (%d)", stat.Size(), MaxFileSize)
 	}
 
-	fmt.Println("Deploying...")
+	fmt.Println("Pushing...")
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
