@@ -28,17 +28,7 @@ var (
 	consentPath string
 	// ConsentGiven records whether tracking consent has been given by the user
 	ConsentGiven bool
-	// out is the buffer to write feedback to users
-	out io.Writer
-	// in is the buffer to read feedback from users
-	in io.Reader
 )
-
-func init() {
-	// Set in + out for normal interactive use
-	in = os.Stdin
-	out = os.Stdout
-}
 
 // Private type for submitting server side events to Heap
 // https://developers.heap.io/reference#track-1
@@ -125,9 +115,9 @@ func IsConsentRecorded() (rec bool) {
 }
 
 // ReadConsent finds if consent has been given, either from file or by prompt.
-func ReadConsent() (c bool, err error) {
+func ReadConsent(in io.Reader, out io.Writer) (c bool, err error) {
 	if !IsConsentRecorded() {
-		c, err = PromptForConsent()
+		c, err = PromptForConsent(in, out)
 
 		err = WriteConsent(c)
 		if err != nil {
@@ -158,27 +148,13 @@ func ReadConsent() (c bool, err error) {
 	return consent.ConsentGiven, err
 }
 
-// Println formats using the default formats for its operands and writes to output.
-// Output can be overridden for testing purposes by setting: analytics.out
-// It returns the number of bytes written and any write error encountered.
-func Println(a ...interface{}) (n int, err error) {
-	return fmt.Fprintln(out, a...)
-}
-
-// Printf formats according to a format specifier and writes to standard output.
-// Output can be overridden for testing purposes by setting: analytics.out
-// It returns the number of bytes written and any write error encountered.
-func Printf(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(out, format, a...)
-}
-
 // PromptForConsent interactively prompts the user for consent
-func PromptForConsent() (c bool, err error) {
-	Printf("👋 Hi!\n\n")
-	Printf("Thanks for using the Section CLI.\n\n")
-	Printf("We're still working out how to create the best experience for you.\n\n")
-	Printf("We'd like to collect some anonymous info about how you use the CLI.\n\n")
-	Printf("Are you OK with this? [y/N] ")
+func PromptForConsent(in io.Reader, out io.Writer) (c bool, err error) {
+	fmt.Fprintf(out, "👋 Hi!\n\n")
+	fmt.Fprintf(out, "Thanks for using the Section CLI.\n\n")
+	fmt.Fprintf(out, "We're still working out how to create the best experience for you.\n\n")
+	fmt.Fprintf(out, "We'd like to collect some anonymous info about how you use the CLI.\n\n")
+	fmt.Fprintf(out, "Are you OK with this? [y/N] ")
 
 	reader := bufio.NewReader(in)
 	text, err := reader.ReadString('\n')
@@ -189,10 +165,10 @@ func PromptForConsent() (c bool, err error) {
 	text = strings.Replace(text, "\r", "", -1) // convert CRLF to LF
 
 	if strings.EqualFold(text, "y") {
-		Printf("\nThank you!\n")
+		fmt.Fprintf(out, "\nThank you!\n")
 		return true, err
 	}
-	Printf("\nNo worries! We won't ask again.\n")
+	fmt.Fprint(out, "\nNo worries! We won't ask again.\n")
 	return false, err
 }
 
@@ -226,11 +202,8 @@ func WriteConsent(consent bool) (err error) {
 // 	submit analytics
 // }
 func Submit(e Event) (err error) {
-	ConsentGiven, err = ReadConsent()
-	if err != nil {
-		return err
-	}
-	if !ConsentGiven {
+	ConsentGiven, err = ReadConsent(os.Stdin, os.Stdout)
+	if err != nil || !ConsentGiven {
 		return err
 	}
 
