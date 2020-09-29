@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/section/sectionctl/api/auth"
 )
 
 // MaxFileSize is the tarball file size allowed to be uploaded in bytes.
@@ -70,10 +72,17 @@ func (c *DeployCmd) Run() (err error) {
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	req, err := http.NewRequest(http.MethodPost, c.ServerURL, tempFile)
+	req, err := http.NewRequest(http.MethodPost, c.ServerURL.String(), tempFile)
 	if err != nil {
 		return fmt.Errorf("failed to create upload URL: %v", err)
 	}
+
+	username, password, err := auth.GetCredential(c.ServerURL.Host)
+	if err != nil {
+		return fmt.Errorf("unable to read credentials: %s", err)
+	}
+	req.SetBasicAuth(username, password)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("upload request failed: %v", err)
