@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,14 +20,14 @@ const MaxFileSize = 1073741824 // 1GB
 // DeployCmd handles deploying an app to Section.
 type DeployCmd struct {
 	Debug     bool
-	Directory string `default:"."`
-	ServerURL string `default:"https://aperture.section.io/new/code_upload/v1"`
+	Directory string   `default:"."`
+	ServerURL *url.URL `default:"https://aperture.section.io/new/code_upload/v1"`
 }
 
 // Run deploys an app to Section's edge
 func (c *DeployCmd) Run() (err error) {
 	if c.Debug {
-		fmt.Println("Server URL:", c.ServerURL)
+		fmt.Println("Server URL:", c.ServerURL.String())
 	}
 
 	ignores := []string{".lint/", ".git/"}
