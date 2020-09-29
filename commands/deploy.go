@@ -29,7 +29,7 @@ type DeployCmd struct {
 	Directory string   `default:"."`
 	ServerURL *url.URL `default:"https://aperture.section.io/new/code_upload/v1"`
 	ApertureURL      string `default:"https://aperture.section.io/api"`
-	EnvUpdatePathFmt string `default:"/account/%d/application/%d/environment/%s/configuration"`
+	EnvUpdatePathFmt string `default:"/account/%d/application/%d/environment/%s/update"`
 }
 
 // Run deploys an app to Section's edge
@@ -198,15 +198,26 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer) error {
 	return nil
 }
 
+// PayloadValue represents the value of a trigger update payload.
+type PayloadValue struct {
+	ID string `json:"section_payload_id"`
+}
+
 func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.Client) error {
 	var b bytes.Buffer
-	payload := struct {
-		Op    string `json:"op"`
-		Value string `json:"value"`
+	payload := []struct {
+		Op    string       `json:"op"`
+		Path  string       `json:"path"`
+		Value PayloadValue `json:"value"`
 	}{
-		Op:    "add",
-		Value: payloadID,
+		{
+			Op: "replace",
+			Value: PayloadValue{
+				ID: payloadID,
+			},
+		},
 	}
+
 	err := json.NewEncoder(&b).Encode(payload)
 	req, err := http.NewRequest(http.MethodPatch, serviceURL, &b)
 	if err != nil {
