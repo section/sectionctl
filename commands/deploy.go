@@ -7,10 +7,13 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/section/sectionctl/api/auth"
 )
 
 // MaxFileSize is the tarball file size allowed to be uploaded in bytes.
@@ -19,14 +22,14 @@ const MaxFileSize = 1073741824 // 1GB
 // DeployCmd handles deploying an app to Section.
 type DeployCmd struct {
 	Debug     bool
-	Directory string `default:"."`
-	ServerURL string `default:"https://aperture.section.io/new/code_upload/v1"`
+	Directory string   `default:"."`
+	ServerURL *url.URL `default:"https://aperture.section.io/new/code_upload/v1"`
 }
 
 // Run deploys an app to Section's edge
 func (c *DeployCmd) Run() (err error) {
 	if c.Debug {
-		fmt.Println("Server URL:", c.ServerURL)
+		fmt.Println("Server URL:", c.ServerURL.String())
 	}
 
 	ignores := []string{".lint/", ".git/"}
@@ -38,7 +41,14 @@ func (c *DeployCmd) Run() (err error) {
 		}
 	}
 
-	fmt.Printf("Packaging %s\n", c.Directory)
+	dir := c.Directory
+	if dir == "." {
+		abs, err := filepath.Abs(dir)
+		if err == nil {
+			dir = abs
+		}
+	}
+	fmt.Printf("Packaging app in: %s\n", dir)
 
 	tempFile, err := ioutil.TempFile("", "section")
 	if err != nil {
@@ -57,22 +67,29 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("failed to upload tarball: file size (%d) is greater than (%d)", stat.Size(), MaxFileSize)
 	}
 
-	fmt.Println("Deploying...")
+	fmt.Println("Pushing...")
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	req, err := http.NewRequest(http.MethodPost, c.ServerURL, tempFile)
+	req, err := http.NewRequest(http.MethodPost, c.ServerURL.String(), tempFile)
 	if err != nil {
 		return fmt.Errorf("failed to create upload URL: %v", err)
 	}
+
+	username, password, err := auth.GetCredential(c.ServerURL.Host)
+	if err != nil {
+		return fmt.Errorf("unable to read credentials: %s", err)
+	}
+	req.SetBasicAuth(username, password)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("upload request failed: %v", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
-		return fmt.Errorf("upload failed with status %s", resp.Status)
+		return fmt.Errorf("upload failed with status: %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
 	}
 
 	fmt.Println("Done.")
