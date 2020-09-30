@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -8,6 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
 )
@@ -62,6 +64,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 		called   bool
 		username string
 		password string
+		body     []byte
 	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, p, ok := r.BasicAuth()
@@ -71,7 +74,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 		req.password = p
 		b, err := ioutil.ReadAll(r.Body)
 		assert.NoError(err)
-		t.Logf("body: %+v\n", b)
+		req.body = b
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -94,4 +97,9 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	assert.True(req.called)
 	assert.Equal(username, req.username)
 	assert.Equal(password, req.password)
+	assert.NotZero(len(req.body))
+
+	mime, err := mimetype.DetectReader(bytes.NewReader(req.body))
+	assert.NoError(err)
+	assert.Equal("application/gzip", mime.String())
 }
