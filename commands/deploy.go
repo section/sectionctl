@@ -2,7 +2,9 @@ package commands
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,9 +23,18 @@ const MaxFileSize = 1073741824 // 1GB
 
 // DeployCmd handles deploying an app to Section.
 type DeployCmd struct {
-	Debug     bool
-	Directory string   `default:"."`
-	ServerURL *url.URL `default:"https://aperture.section.io/new/code_upload/v1"`
+	AccountID        int `default:"4322"`  // harc-coded until authentication is implemented
+	AppID            int `default:"65443"` // hard-coded for now until authentication is implmented
+	Debug            bool
+	Directory        string   `default:"."`
+	ServerURL        *url.URL `default:"https://aperture.section.io/new/code_upload/v1"`
+	ApertureURL      string   `default:"https://aperture.section.io/api/v1"`
+	EnvUpdatePathFmt string   `default:"/account/%d/application/%d/environment/%s/update"`
+}
+
+// UploadResponse represents the response from a request to the upload service.
+type UploadResponse struct {
+	PayloadID string `json:"payloadID"`
 }
 
 // Run deploys an app to Section's edge
@@ -95,6 +106,17 @@ func (c *DeployCmd) Run() (err error) {
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
 		return fmt.Errorf("upload failed with status: %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
+	}
+
+	var response UploadResponse
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return fmt.Errorf("failed to decode response %v", err)
+	}
+	svcURL := c.ApertureURL + fmt.Sprintf(c.EnvUpdatePathFmt, c.AccountID, c.AppID, "production")
+	err = triggerUpdate(c.AccountID, c.AppID, response.PayloadID, svcURL, client)
+	if err != nil {
+		return fmt.Errorf("failed to trigger app update %v", err)
 	}
 
 	fmt.Println("Done.")
@@ -178,5 +200,53 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer) error {
 		return fmt.Errorf(fmt.Sprintf("Could not copy the file '%s' data to the tarball, got error '%s'", filePath, err.Error()))
 	}
 
+	return nil
+}
+
+// PayloadValue represents the value of a trigger update payload.
+type PayloadValue struct {
+	ID string `json:"section_payload_id"`
+}
+
+func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.Client) error {
+	var b bytes.Buffer
+	payload := []struct {
+		Op    string       `json:"op"`
+		Path  string       `json:"path"`
+		Value PayloadValue `json:"value"`
+	}{
+		{
+			Op: "replace",
+			Value: PayloadValue{
+				ID: payloadID,
+			},
+		},
+	}
+
+	err := json.NewEncoder(&b).Encode(payload)
+	if err != nil {
+		return fmt.Errorf("failed to encode json payload: %v", err)
+	}
+	req, err := http.NewRequest(http.MethodPatch, serviceURL, &b)
+	if err != nil {
+		return fmt.Errorf("failed to create trigger request: %v", err)
+	}
+	u, err := url.Parse(serviceURL)
+	if err != nil {
+		return fmt.Errorf("failed to build URL for triggerUpdate action: %v", err)
+	}
+	username, password, err := auth.GetCredential(u.Host)
+	if err != nil {
+		return fmt.Errorf("unable to read credentials: %s", err)
+	}
+	req.SetBasicAuth(username, password)
+	resp, err := c.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to execute trigger request: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 && resp.StatusCode != 204 {
+		return fmt.Errorf("trigger update failed with status %s", resp.Status)
+	}
 	return nil
 }

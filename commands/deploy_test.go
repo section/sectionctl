@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,15 @@ import (
 	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
 )
+
+func helperLoadBytes(t *testing.T, name string) []byte {
+	path := filepath.Join("testdata", name) // relative path
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return bytes
+}
 
 func TestCommandsDeployBuildFilelistIgnoresFiles(t *testing.T) {
 	assert := assert.New(t)
@@ -58,22 +68,40 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	var req struct {
+	type req struct {
 		called   bool
 		username string
 		password string
 		body     []byte
 	}
+	var uploadReq req
+	var triggerUpdateReq req
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, p, ok := r.BasicAuth()
 		assert.True(ok)
-		req.called = true
-		req.username = u
-		req.password = p
-		b, err := ioutil.ReadAll(r.Body)
-		assert.NoError(err)
-		req.body = b
-		w.WriteHeader(http.StatusOK)
+
+		switch r.URL.Path {
+		case "/":
+			uploadReq.called = true
+			uploadReq.username = u
+			uploadReq.password = p
+			b, err := ioutil.ReadAll(r.Body)
+			assert.NoError(err)
+			uploadReq.body = b
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, string(helperLoadBytes(t, "deploy/upload.response.with_success.json")))
+		case "/api/v1/account/100/application/200/environment/production/update":
+			triggerUpdateReq.called = true
+			triggerUpdateReq.username = u
+			triggerUpdateReq.password = p
+			b, err := ioutil.ReadAll(r.Body)
+			assert.NoError(err)
+			triggerUpdateReq.body = b
+			w.WriteHeader(http.StatusOK)
+		default:
+			assert.FailNow("unhandled URL %s", r.URL.Path)
+		}
+
 	}))
 
 	url, err := url.Parse(ts.URL)
@@ -88,13 +116,30 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	dir := filepath.Join("testdata", "deploy", "tree")
 
 	// Invoke
-	c := DeployCmd{Directory: dir, ServerURL: url}
+	c := DeployCmd{
+		Directory:        dir,
+		ServerURL:        url,
+		ApertureURL:      url.String() + "/api/v1",
+		AccountID:        100,
+		AppID:            200,
+		EnvUpdatePathFmt: "/account/%d/application/%d/environment/%s/update",
+	}
 	err = c.Run()
 
+	// Test
 	assert.NoError(err)
-	assert.True(req.called)
-	assert.Equal(username, req.username)
-	assert.Equal(password, req.password)
-	assert.NotZero(len(req.body))
-	assert.Equal([]byte{0x1f, 0x8b}, req.body[0:2]) // gzip header
+
+	// upload request
+	assert.True(uploadReq.called)
+	assert.Equal(username, uploadReq.username)
+	assert.Equal(password, uploadReq.password)
+	assert.NotZero(len(uploadReq.body))
+	assert.Equal([]byte{0x1f, 0x8b}, uploadReq.body[0:2]) // gzip header
+
+	// trigger update request
+	assert.True(triggerUpdateReq.called)
+	assert.Equal(username, triggerUpdateReq.username)
+	assert.Equal(password, triggerUpdateReq.password)
+	assert.NotZero(len(triggerUpdateReq.body))
+	//t.Logf("%s\n", triggerUpdateReq.body)
 }
