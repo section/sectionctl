@@ -228,6 +228,15 @@ func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.C
 	if err != nil {
 		return fmt.Errorf("failed to create trigger request: %v", err)
 	}
+	u, err := url.Parse(serviceURL)
+	if err != nil {
+		return fmt.Errorf("failed to build URL for triggerUpdate action: %v", err)
+	}
+	username, password, err := auth.GetCredential(u.Host)
+	if err != nil {
+		return fmt.Errorf("unable to read credentials: %s", err)
+	}
+	req.SetBasicAuth(username, password)
 	resp, err := c.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to execute trigger request: %v", err)
