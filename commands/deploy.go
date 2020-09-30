@@ -67,7 +67,12 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("failed to upload tarball: file size (%d) is greater than (%d)", stat.Size(), MaxFileSize)
 	}
 
-	fmt.Println("Pushing...")
+	_, err = tempFile.Seek(0, 0)
+	if err != nil {
+		return fmt.Errorf("unable to seek to beginning of tarball: %s", err)
+	}
+
+	fmt.Printf("Pushing %d bytes...\n", stat.Size())
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
