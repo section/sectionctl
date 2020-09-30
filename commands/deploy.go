@@ -28,7 +28,7 @@ type DeployCmd struct {
 	Debug            bool
 	Directory        string   `default:"."`
 	ServerURL        *url.URL `default:"https://aperture.section.io/new/code_upload/v1"`
-	ApertureURL      string   `default:"https://aperture.section.io/api"`
+	ApertureURL      string   `default:"https://aperture.section.io/api/v1"`
 	EnvUpdatePathFmt string   `default:"/account/%d/application/%d/environment/%s/update"`
 }
 
