@@ -1,12 +1,14 @@
 package commands
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
 	"testing"
 
+	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,20 +58,40 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	var called bool
+	var req struct {
+		called   bool
+		username string
+		password string
+	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, p, ok := r.BasicAuth()
+		assert.True(ok)
+		req.called = true
+		req.username = u
+		req.password = p
+		b, err := ioutil.ReadAll(r.Body)
+		assert.NoError(err)
+		t.Logf("body: %+v\n", b)
 		w.WriteHeader(http.StatusOK)
-		called = true
 	}))
 
-	dir := filepath.Join("testdata", "deploy", "tree")
 	url, err := url.Parse(ts.URL)
 	assert.NoError(err)
+
+	auth.CredentialPath = newCredentialTempfile(t)
+	endpoint := url.Host
+	username := "hello"
+	password := "s3cr3t"
+	auth.WriteCredential(endpoint, username, password)
+
+	dir := filepath.Join("testdata", "deploy", "tree")
 
 	// Invoke
 	c := DeployCmd{Directory: dir, ServerURL: url}
 	err = c.Run()
 
 	assert.NoError(err)
-	assert.True(called)
+	assert.True(req.called)
+	assert.Equal(username, req.username)
+	assert.Equal(password, req.password)
 }
