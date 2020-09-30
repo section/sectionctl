@@ -89,7 +89,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 			assert.NoError(err)
 			uploadReq.body = b
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, string(helperLoadBytes(t, "deploy/upload.response.with_success.json")))
+			fmt.Fprint(w, string(helperLoadBytes(t, "deploy/upload.response.with_success.json")))
 		case "/api/v1/account/100/application/200/environment/production/update":
 			triggerUpdateReq.called = true
 			triggerUpdateReq.username = u
