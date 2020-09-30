@@ -25,11 +25,16 @@ const MaxFileSize = 1073741824 // 1GB
 type DeployCmd struct {
 	AccountID        int `default:"4322"`  // harc-coded until authentication is implemented
 	AppID            int `default:"65443"` // hard-coded for now until authentication is implmented
-	Debug     bool
-	Directory string   `default:"."`
-	ServerURL *url.URL `default:"https://aperture.section.io/new/code_upload/v1"`
-	ApertureURL      string `default:"https://aperture.section.io/api"`
-	EnvUpdatePathFmt string `default:"/account/%d/application/%d/environment/%s/update"`
+	Debug            bool
+	Directory        string   `default:"."`
+	ServerURL        *url.URL `default:"https://aperture.section.io/new/code_upload/v1"`
+	ApertureURL      string   `default:"https://aperture.section.io/api"`
+	EnvUpdatePathFmt string   `default:"/account/%d/application/%d/environment/%s/update"`
+}
+
+// UploadResponse represents the response from a request to the upload service.
+type UploadResponse struct {
+	PayloadID string `json:"payloadID"`
 }
 
 // Run deploys an app to Section's edge
@@ -103,13 +108,13 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("upload failed with status: %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
 	}
 
-	var response uploadResponse
+	var response UploadResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
-	svcURL := a.ApertureURL + fmt.Sprintf(a.EnvUpdatePathFmt, a.AccountID, a.AppID, "production")
-	err = triggerUpdate(a.AccountID, a.AppID, response.PayloadID, svcURL, client)
+	svcURL := c.ApertureURL + fmt.Sprintf(c.EnvUpdatePathFmt, c.AccountID, c.AppID, "production")
+	err = triggerUpdate(c.AccountID, c.AppID, response.PayloadID, svcURL, client)
 	if err != nil {
 		return fmt.Errorf("failed to trigger app update %v", err)
 	}
