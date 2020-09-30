@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"bytes"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +8,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
 )
@@ -98,8 +96,5 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	assert.Equal(username, req.username)
 	assert.Equal(password, req.password)
 	assert.NotZero(len(req.body))
-
-	mime, err := mimetype.DetectReader(bytes.NewReader(req.body))
-	assert.NoError(err)
-	assert.Equal("application/gzip", mime.String())
+	assert.Equal([]byte{0x1f, 0x8b}, req.body[0:2]) // gzip header
 }
