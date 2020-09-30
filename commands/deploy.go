@@ -224,6 +224,9 @@ func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.C
 	}
 
 	err := json.NewEncoder(&b).Encode(payload)
+	if err != nil {
+		return fmt.Errorf("failed to encode json payload: %v", err)
+	}
 	req, err := http.NewRequest(http.MethodPatch, serviceURL, &b)
 	if err != nil {
 		return fmt.Errorf("failed to create trigger request: %v", err)
