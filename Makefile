@@ -37,5 +37,7 @@ clean:
 
 release:
 	@if [ -z "$(VERSION)" ]; then echo "Missing VERSION"; exit 1 ; fi
+	@if [ "$(shell echo $(VERSION) | cut -c 1)" != "v" ]; then echo "VERSION must be in the format v0.0.5"; exit 1 ; fi
+	exit 0
 	git tag -f -a $(VERSION) -m ''
 	git push --tags
