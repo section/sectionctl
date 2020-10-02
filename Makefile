@@ -34,3 +34,8 @@ build: clean
 
 clean:
 	rm -rf build
+
+release:
+	@if [ -z "$(VERSION)" ]; then echo "Missing VERSION"; exit 1 ; fi
+	git tag -f -a $(VERSION) -m ''
+	git push --tags
