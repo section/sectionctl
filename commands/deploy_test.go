@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/section/sectionctl/api/auth"
@@ -69,10 +70,12 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 
 	// Setup
 	type req struct {
-		called   bool
-		username string
-		password string
-		body     []byte
+		called    bool
+		username  string
+		password  string
+		body      []byte
+		accountID int
+		file      []byte
 	}
 	var uploadReq req
 	var triggerUpdateReq req
@@ -85,9 +88,19 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 			uploadReq.called = true
 			uploadReq.username = u
 			uploadReq.password = p
-			b, err := ioutil.ReadAll(r.Body)
+
+			r.ParseMultipartForm(MaxFileSize)
+
+			file, _, err := r.FormFile("file")
 			assert.NoError(err)
-			uploadReq.body = b
+			b, err := ioutil.ReadAll(file)
+			assert.NoError(err)
+			uploadReq.file = b
+
+			aid, err := strconv.Atoi(r.FormValue("account_id"))
+			assert.NoError(err)
+			uploadReq.accountID = aid
+
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprint(w, string(helperLoadBytes(t, "deploy/upload.response.with_success.json")))
 		case "/api/v1/account/100/application/200/environment/production/update":
@@ -133,8 +146,9 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	assert.True(uploadReq.called)
 	assert.Equal(username, uploadReq.username)
 	assert.Equal(password, uploadReq.password)
-	assert.NotZero(len(uploadReq.body))
-	assert.Equal([]byte{0x1f, 0x8b}, uploadReq.body[0:2]) // gzip header
+	assert.NotZero(len(uploadReq.file))
+	assert.Equal([]byte{0x1f, 0x8b}, uploadReq.file[0:2]) // gzip header
+	assert.Equal(c.AccountID, uploadReq.accountID)
 
 	// trigger update request
 	assert.True(triggerUpdateReq.called)
