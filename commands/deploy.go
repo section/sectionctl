@@ -267,10 +267,19 @@ func newFileUploadRequest(c *DeployCmd, f *os.File) (r *http.Request, err error)
 	if err != nil {
 		return nil, err
 	}
-	part.Write(contents)
+	_, err = part.Write(contents)
+	if err != nil {
+		return nil, err
+	}
 
-	writer.WriteField("account_id", strconv.Itoa(c.AccountID))
-	writer.WriteField("app_id", strconv.Itoa(c.AppID))
+	err = writer.WriteField("account_id", strconv.Itoa(c.AccountID))
+	if err != nil {
+		return nil, err
+	}
+	err = writer.WriteField("app_id", strconv.Itoa(c.AppID))
+	if err != nil {
+		return nil, err
+	}
 
 	err = writer.Close()
 	if err != nil {
