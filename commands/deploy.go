@@ -27,7 +27,7 @@ type DeployCmd struct {
 	AppID            int `default:"65443"` // hard-coded for now until authentication is implmented
 	Debug            bool
 	Directory        string   `default:"."`
-	ServerURL        *url.URL `default:"https://aperture.section.io/new/code_upload/v1"`
+	ServerURL        *url.URL `default:"https://aperture.section.io/new/code_upload/v1/upload"`
 	ApertureURL      string   `default:"https://aperture.section.io/api/v1"`
 	EnvUpdatePathFmt string   `default:"/account/%d/application/%d/environment/%s/update"`
 }
