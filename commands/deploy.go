@@ -28,10 +28,11 @@ type DeployCmd struct {
 	AccountID        int `default:"4322"`  // harc-coded until authentication is implemented
 	AppID            int `default:"65443"` // hard-coded for now until authentication is implmented
 	Debug            bool
-	Directory        string   `default:"."`
-	ServerURL        *url.URL `default:"https://aperture.section.io/new/code_upload/v1/upload"`
-	ApertureURL      string   `default:"https://aperture.section.io/api/v1"`
-	EnvUpdatePathFmt string   `default:"/account/%d/application/%d/environment/%s/update"`
+	Directory        string        `default:"."`
+	ServerURL        *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload"`
+	ApertureURL      string        `default:"https://aperture.section.io/api/v1"`
+	EnvUpdatePathFmt string        `default:"/account/%d/application/%d/environment/%s/update"`
+	Timeout          time.Duration `default:"60s"`
 }
 
 // UploadResponse represents the response from a request to the upload service.
@@ -99,7 +100,7 @@ func (c *DeployCmd) Run() (err error) {
 	req.SetBasicAuth(username, password)
 
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: c.Timeout,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
