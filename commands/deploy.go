@@ -262,8 +262,8 @@ func newFileUploadRequest(c *DeployCmd, f *os.File) (r *http.Request, err error)
 	}
 	defer f.Close()
 
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
 	part, err := writer.CreateFormFile("file", filepath.Base(f.Name()))
 	if err != nil {
 		return nil, err
@@ -287,7 +287,7 @@ func newFileUploadRequest(c *DeployCmd, f *os.File) (r *http.Request, err error)
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, c.ServerURL.String(), body)
+	req, err := http.NewRequest(http.MethodPost, c.ServerURL.String(), &body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create upload URL: %v", err)
 	}
