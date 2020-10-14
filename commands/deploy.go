@@ -261,7 +261,7 @@ func newFileUploadRequest(c *DeployCmd, f *os.File) (r *http.Request, err error)
 	}
 	defer f.Close()
 
-	body := new(bytes.Buffer)
+	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	part, err := writer.CreateFormFile("file", filepath.Base(f.Name()))
 	if err != nil {
