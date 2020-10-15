@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,10 +28,11 @@ type DeployCmd struct {
 	AccountID        int `default:"4322"`  // harc-coded until authentication is implemented
 	AppID            int `default:"65443"` // hard-coded for now until authentication is implmented
 	Debug            bool
-	Directory        string   `default:"."`
-	ServerURL        *url.URL `default:"https://aperture.section.io/new/code_upload/v1"`
-	ApertureURL      string   `default:"https://aperture.section.io/api/v1"`
-	EnvUpdatePathFmt string   `default:"/account/%d/application/%d/environment/%s/update"`
+	Directory        string        `default:"."`
+	ServerURL        *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload"`
+	ApertureURL      string        `default:"https://aperture.section.io/api/v1"`
+	EnvUpdatePathFmt string        `default:"/account/%d/application/%d/environment/%s/update"`
+	Timeout          time.Duration `default:"60s"`
 }
 
 // UploadResponse represents the response from a request to the upload service.
@@ -85,12 +88,9 @@ func (c *DeployCmd) Run() (err error) {
 
 	fmt.Printf("Pushing %d bytes...\n", stat.Size())
 
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-	req, err := http.NewRequest(http.MethodPost, c.ServerURL.String(), tempFile)
+	req, err := newFileUploadRequest(c, tempFile)
 	if err != nil {
-		return fmt.Errorf("failed to create upload URL: %v", err)
+		return fmt.Errorf("unable to build file upload: %s", err)
 	}
 
 	username, password, err := auth.GetCredential(c.ServerURL.Host)
@@ -99,6 +99,9 @@ func (c *DeployCmd) Run() (err error) {
 	}
 	req.SetBasicAuth(username, password)
 
+	client := &http.Client{
+		Timeout: c.Timeout,
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("upload request failed: %v", err)
@@ -249,4 +252,46 @@ func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.C
 		return fmt.Errorf("trigger update failed with status %s", resp.Status)
 	}
 	return nil
+}
+
+// newFileUploadRequest builds a HTTP request for uploading an app and the account + app it belongs to
+func newFileUploadRequest(c *DeployCmd, f *os.File) (r *http.Request, err error) {
+	contents, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	part, err := writer.CreateFormFile("file", filepath.Base(f.Name()))
+	if err != nil {
+		return nil, err
+	}
+	_, err = part.Write(contents)
+	if err != nil {
+		return nil, err
+	}
+
+	err = writer.WriteField("account_id", strconv.Itoa(c.AccountID))
+	if err != nil {
+		return nil, err
+	}
+	err = writer.WriteField("app_id", strconv.Itoa(c.AppID))
+	if err != nil {
+		return nil, err
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, c.ServerURL.String(), &body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create upload URL: %v", err)
+	}
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+
+	return req, err
 }
