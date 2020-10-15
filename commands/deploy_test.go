@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"testing"
 
@@ -155,5 +156,64 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	assert.Equal(username, triggerUpdateReq.username)
 	assert.Equal(password, triggerUpdateReq.password)
 	assert.NotZero(len(triggerUpdateReq.body))
-	//t.Logf("%s\n", triggerUpdateReq.body)
+}
+
+func TestCommandsDeployDoesNotBalloonMemory(t *testing.T) {
+	assert := assert.New(t)
+
+	PrintMemUsage()
+	s0 := SnapshotMemUsage()
+
+	// Setup
+	url, err := url.Parse("http://127.0.0.1/")
+	assert.NoError(err)
+
+	dir := filepath.Join("testdata", "deploy", "tree")
+	c := DeployCmd{
+		Directory: dir,
+		ServerURL: url,
+	}
+
+	ignores := []string{".lint/", ".git/"}
+	files, err := BuildFilelist(c.Directory, ignores)
+	assert.NoError(err)
+
+	tempFile, err := ioutil.TempFile("", "section")
+	assert.NoError(err)
+	err = CreateTarball(tempFile, files)
+	assert.NoError(err)
+	_, err = tempFile.Seek(0, 0)
+	assert.NoError(err)
+	PrintMemUsage()
+	s1 := SnapshotMemUsage()
+
+	// Invoke
+	_, err = newFileUploadRequest(&c, tempFile)
+	assert.NoError(err)
+
+	// Test
+	PrintMemUsage()
+	s2 := SnapshotMemUsage()
+
+	t.Logf("%+v\n%+v\n%+v\n", s0.Alloc, s1.Alloc, s2.Alloc)
+	assert.Less(s2.Alloc, uint64(10000000))
+}
+
+func SnapshotMemUsage() (m runtime.MemStats) {
+	runtime.ReadMemStats(&m)
+	return m
+}
+
+func PrintMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+	fmt.Printf("Alloc = %v MiB", bToMb(m.Alloc))
+	fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
+	fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
+	fmt.Printf("\tNumGC = %v\n", m.NumGC)
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }

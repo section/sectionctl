@@ -256,7 +256,6 @@ func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.C
 
 // newFileUploadRequest builds a HTTP request for uploading an app and the account + app it belongs to
 func newFileUploadRequest(c *DeployCmd, f *os.File) (r *http.Request, err error) {
-	contents, err := ioutil.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +267,7 @@ func newFileUploadRequest(c *DeployCmd, f *os.File) (r *http.Request, err error)
 	if err != nil {
 		return nil, err
 	}
-	_, err = part.Write(contents)
+	_, err = io.Copy(part, f)
 	if err != nil {
 		return nil, err
 	}
