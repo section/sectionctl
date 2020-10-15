@@ -254,43 +254,53 @@ func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.C
 	return nil
 }
 
+const boundary = "e4ef8847482d240d0a3ac612876ba8d1"
+
 // newFileUploadRequest builds a HTTP request for uploading an app and the account + app it belongs to
 func newFileUploadRequest(c *DeployCmd, f *os.File) (r *http.Request, err error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
 
-	var body bytes.Buffer
-	writer := multipart.NewWriter(&body)
-	part, err := writer.CreateFormFile("file", filepath.Base(f.Name()))
-	if err != nil {
-		return nil, err
-	}
-	_, err = io.Copy(part, f)
-	if err != nil {
-		return nil, err
-	}
+	pr, pw := io.Pipe()
 
-	err = writer.WriteField("account_id", strconv.Itoa(c.AccountID))
-	if err != nil {
-		return nil, err
-	}
-	err = writer.WriteField("app_id", strconv.Itoa(c.AppID))
-	if err != nil {
-		return nil, err
-	}
+	go func() {
+		writer := multipart.NewWriter(pw)
 
-	err = writer.Close()
-	if err != nil {
-		return nil, err
-	}
+		err = writer.WriteField("account_id", strconv.Itoa(c.AccountID))
+		if err != nil {
+			panic(err)
+		}
+		err = writer.WriteField("app_id", strconv.Itoa(c.AppID))
+		if err != nil {
+			panic(err)
+		}
 
-	req, err := http.NewRequest(http.MethodPost, c.ServerURL.String(), &body)
+		writer.SetBoundary(boundary)
+		partw, err0 := writer.CreateFormFile("file", filepath.Base(f.Name()))
+		if err0 != nil {
+			panic(err)
+		}
+
+		connector := io.TeeReader(f, partw)
+		buf := make([]byte, 256)
+		for {
+			_, err := connector.Read(buf)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				fmt.Printf("error when reading file: %s", err)
+				os.Exit(2)
+			}
+		}
+	}()
+
+	req, err := http.NewRequest(http.MethodPost, c.ServerURL.String(), pr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create upload URL: %v", err)
 	}
-	req.Header.Add("Content-Type", writer.FormDataContentType())
+	req.Header.Add("Content-Type", fmt.Sprintf("multipart/form-data; boundary=%s", boundary))
 
 	return req, err
 }
