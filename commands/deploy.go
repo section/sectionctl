@@ -42,16 +42,12 @@ type UploadResponse struct {
 
 // Run deploys an app to Section's edge
 func (c *DeployCmd) Run() (err error) {
-	if c.Debug {
-		fmt.Println("Server URL:", c.ServerURL.String())
-	}
-
 	ignores := []string{".lint/", ".git/"}
 	files, err := BuildFilelist(c.Directory, ignores)
 	if c.Debug {
-		fmt.Println("Archiving files:")
+		fmt.Println("[debug] Archiving files:")
 		for _, file := range files {
-			fmt.Println(file)
+			fmt.Println("[debug]", file)
 		}
 	}
 
@@ -64,7 +60,7 @@ func (c *DeployCmd) Run() (err error) {
 	}
 	fmt.Printf("Packaging app in: %s\n", dir)
 
-	tempFile, err := ioutil.TempFile("", "section")
+	tempFile, err := ioutil.TempFile("", "sectionctl-deploy")
 	if err != nil {
 		return fmt.Errorf("couldn't create a temp file: %v", err)
 	}
@@ -72,6 +68,9 @@ func (c *DeployCmd) Run() (err error) {
 	err = CreateTarball(tempFile, files)
 	if err != nil {
 		return fmt.Errorf("failed to pack files: %v", err)
+	}
+	if c.Debug {
+		fmt.Println("[debug] Temporary tarball path:", tempFile.Name())
 	}
 	stat, err := tempFile.Stat()
 	if err != nil {
@@ -86,7 +85,7 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("unable to seek to beginning of tarball: %s", err)
 	}
 
-	fmt.Printf("Pushing %d bytes...\n", stat.Size())
+	fmt.Printf("Pushing %dMB...\n", stat.Size()/1024)
 
 	req, err := newFileUploadRequest(c, tempFile)
 	if err != nil {
@@ -98,6 +97,10 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("unable to read credentials: %s", err)
 	}
 	req.SetBasicAuth(username, password)
+
+	if c.Debug {
+		fmt.Println("[debug] Request URL:", req.URL)
+	}
 
 	client := &http.Client{
 		Timeout: c.Timeout,
@@ -116,10 +119,13 @@ func (c *DeployCmd) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
-	svcURL := c.ApertureURL + fmt.Sprintf(c.EnvUpdatePathFmt, c.AccountID, c.AppID, "production")
-	err = triggerUpdate(c.AccountID, c.AppID, response.PayloadID, svcURL, client)
+	serviceURL := c.ApertureURL + fmt.Sprintf(c.EnvUpdatePathFmt, c.AccountID, c.AppID, "production")
+	err = triggerUpdate(response.PayloadID, serviceURL, client)
 	if err != nil {
-		return fmt.Errorf("failed to trigger app update %v", err)
+		if c.Debug {
+			fmt.Println("[debug] Request URL:", serviceURL)
+		}
+		return fmt.Errorf("failed to trigger app update: %v", err)
 	}
 
 	fmt.Println("Done.")
@@ -211,7 +217,7 @@ type PayloadValue struct {
 	ID string `json:"section_payload_id"`
 }
 
-func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.Client) error {
+func triggerUpdate(payloadID, serviceURL string, client *http.Client) error {
 	var b bytes.Buffer
 	payload := []struct {
 		Op    string       `json:"op"`
@@ -243,13 +249,13 @@ func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.C
 		return fmt.Errorf("unable to read credentials: %s", err)
 	}
 	req.SetBasicAuth(username, password)
-	resp, err := c.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to execute trigger request: %v", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
-		return fmt.Errorf("trigger update failed with status %s", resp.Status)
+		return fmt.Errorf("trigger update failed with status: %s", resp.Status)
 	}
 	return nil
 }
