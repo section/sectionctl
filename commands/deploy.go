@@ -49,9 +49,9 @@ func (c *DeployCmd) Run() (err error) {
 	ignores := []string{".lint/", ".git/"}
 	files, err := BuildFilelist(c.Directory, ignores)
 	if c.Debug {
-		fmt.Println("Archiving files:")
+		fmt.Println("[debug] Archiving files:")
 		for _, file := range files {
-			fmt.Println(file)
+			fmt.Println("[debug]", file)
 		}
 	}
 
