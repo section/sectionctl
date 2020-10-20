@@ -120,7 +120,7 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
 	serviceURL := c.ApertureURL + fmt.Sprintf(c.EnvUpdatePathFmt, c.AccountID, c.AppID, "production")
-	err = triggerUpdate(response.PayloadID, serviceURL, client)
+	err = triggerUpdate(c, response.PayloadID, serviceURL, client)
 	if err != nil {
 		if c.Debug {
 			fmt.Println("[debug] Request URL:", serviceURL)
@@ -217,8 +217,7 @@ type PayloadValue struct {
 	ID string `json:"section_payload_id"`
 }
 
-func triggerUpdate(payloadID, serviceURL string, client *http.Client) error {
-	var b bytes.Buffer
+func triggerUpdate(c *DeployCmd, payloadID, serviceURL string, client *http.Client) error {
 	payload := []struct {
 		Op    string       `json:"op"`
 		Path  string       `json:"path"`
@@ -232,11 +231,14 @@ func triggerUpdate(payloadID, serviceURL string, client *http.Client) error {
 		},
 	}
 
-	err := json.NewEncoder(&b).Encode(payload)
+	b, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to encode json payload: %v", err)
 	}
-	req, err := http.NewRequest(http.MethodPatch, serviceURL, &b)
+	if c.Debug {
+		fmt.Printf("[debug] JSON payload: %s\n", b)
+	}
+	req, err := http.NewRequest(http.MethodPatch, serviceURL, bytes.NewBuffer(b))
 	if err != nil {
 		return fmt.Errorf("failed to create trigger request: %v", err)
 	}
