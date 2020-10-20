@@ -42,10 +42,6 @@ type UploadResponse struct {
 
 // Run deploys an app to Section's edge
 func (c *DeployCmd) Run() (err error) {
-	if c.Debug {
-		fmt.Println("Server URL:", c.ServerURL.String())
-	}
-
 	ignores := []string{".lint/", ".git/"}
 	files, err := BuildFilelist(c.Directory, ignores)
 	if c.Debug {
@@ -99,6 +95,10 @@ func (c *DeployCmd) Run() (err error) {
 	}
 	req.SetBasicAuth(username, password)
 
+	if c.Debug {
+		fmt.Println("[debug] Request URL:", req.URL)
+	}
+
 	client := &http.Client{
 		Timeout: c.Timeout,
 	}
@@ -119,7 +119,10 @@ func (c *DeployCmd) Run() (err error) {
 	svcURL := c.ApertureURL + fmt.Sprintf(c.EnvUpdatePathFmt, c.AccountID, c.AppID, "production")
 	err = triggerUpdate(c.AccountID, c.AppID, response.PayloadID, svcURL, client)
 	if err != nil {
-		return fmt.Errorf("failed to trigger app update %v", err)
+		if c.Debug {
+			fmt.Println("[debug] Request URL:", serviceURL)
+		}
+		return fmt.Errorf("failed to trigger app update: %v", err)
 	}
 
 	fmt.Println("Done.")
