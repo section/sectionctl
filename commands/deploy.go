@@ -69,6 +69,9 @@ func (c *DeployCmd) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to pack files: %v", err)
 	}
+	if c.Debug {
+		fmt.Println("[debug] Temporary tarball path:", tempFile.Name())
+	}
 	stat, err := tempFile.Stat()
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("Could not get stat for file '%s', got error '%s'", tempFile.Name(), err.Error()))
