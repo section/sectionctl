@@ -266,7 +266,7 @@ func triggerUpdate(payloadID, serviceURL string, client *http.Client) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
-		return fmt.Errorf("trigger update failed with status: %s", resp.Status)
+		return fmt.Errorf("trigger update failed with status: %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
 	}
 	return nil
 }
