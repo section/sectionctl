@@ -64,7 +64,7 @@ func (c *DeployCmd) Run() (err error) {
 	}
 	fmt.Printf("Packaging app in: %s\n", dir)
 
-	tempFile, err := ioutil.TempFile("", "section")
+	tempFile, err := ioutil.TempFile("", "sectionctl-deploy")
 	if err != nil {
 		return fmt.Errorf("couldn't create a temp file: %v", err)
 	}
