@@ -249,6 +249,17 @@ func triggerUpdate(payloadID, serviceURL string, client *http.Client) error {
 		return fmt.Errorf("unable to read credentials: %s", err)
 	}
 	req.SetBasicAuth(username, password)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("filepath", "nodejs/.section-external-source.json")
+
+	if c.Debug {
+		for k, vs := range req.Header {
+			for _, v := range vs {
+				fmt.Printf("[debug] Header: %s: %v\n", k, v)
+			}
+		}
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to execute trigger request: %v", err)
