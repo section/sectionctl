@@ -119,8 +119,8 @@ func (c *DeployCmd) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
-	svcURL := c.ApertureURL + fmt.Sprintf(c.EnvUpdatePathFmt, c.AccountID, c.AppID, "production")
-	err = triggerUpdate(c.AccountID, c.AppID, response.PayloadID, svcURL, client)
+	serviceURL := c.ApertureURL + fmt.Sprintf(c.EnvUpdatePathFmt, c.AccountID, c.AppID, "production")
+	err = triggerUpdate(response.PayloadID, serviceURL, client)
 	if err != nil {
 		if c.Debug {
 			fmt.Println("[debug] Request URL:", serviceURL)
@@ -217,7 +217,7 @@ type PayloadValue struct {
 	ID string `json:"section_payload_id"`
 }
 
-func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.Client) error {
+func triggerUpdate(payloadID, serviceURL string, client *http.Client) error {
 	var b bytes.Buffer
 	payload := []struct {
 		Op    string       `json:"op"`
@@ -249,7 +249,7 @@ func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.C
 		return fmt.Errorf("unable to read credentials: %s", err)
 	}
 	req.SetBasicAuth(username, password)
-	resp, err := c.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to execute trigger request: %v", err)
 	}
