@@ -255,7 +255,7 @@ func triggerUpdate(accountID, appID int, payloadID, serviceURL string, c *http.C
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
-		return fmt.Errorf("trigger update failed with status %s", resp.Status)
+		return fmt.Errorf("trigger update failed with status: %s", resp.Status)
 	}
 	return nil
 }
