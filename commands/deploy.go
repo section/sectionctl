@@ -120,7 +120,7 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
 	serviceURL := c.ApertureURL + fmt.Sprintf(c.EnvUpdatePathFmt, c.AccountID, c.AppID, "production")
-	err = triggerUpdate(response.PayloadID, serviceURL, client)
+	err = triggerUpdate(c, response.PayloadID, serviceURL, client)
 	if err != nil {
 		if c.Debug {
 			fmt.Println("[debug] Request URL:", serviceURL)
@@ -217,8 +217,7 @@ type PayloadValue struct {
 	ID string `json:"section_payload_id"`
 }
 
-func triggerUpdate(payloadID, serviceURL string, client *http.Client) error {
-	var b bytes.Buffer
+func triggerUpdate(c *DeployCmd, payloadID, serviceURL string, client *http.Client) error {
 	payload := []struct {
 		Op    string       `json:"op"`
 		Path  string       `json:"path"`
@@ -232,11 +231,14 @@ func triggerUpdate(payloadID, serviceURL string, client *http.Client) error {
 		},
 	}
 
-	err := json.NewEncoder(&b).Encode(payload)
+	b, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to encode json payload: %v", err)
 	}
-	req, err := http.NewRequest(http.MethodPatch, serviceURL, &b)
+	if c.Debug {
+		fmt.Printf("[debug] JSON payload: %s\n", b)
+	}
+	req, err := http.NewRequest(http.MethodPatch, serviceURL, bytes.NewBuffer(b))
 	if err != nil {
 		return fmt.Errorf("failed to create trigger request: %v", err)
 	}
@@ -249,16 +251,26 @@ func triggerUpdate(payloadID, serviceURL string, client *http.Client) error {
 		return fmt.Errorf("unable to read credentials: %s", err)
 	}
 	req.SetBasicAuth(username, password)
-	req.Header.Add("Accept", "application/json")
+
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
 	req.Header.Add("filepath", "nodejs/.section-external-source.json")
+
+	if c.Debug {
+		for k, vs := range req.Header {
+			for _, v := range vs {
+				fmt.Printf("[debug] Header: %s: %v\n", k, v)
+			}
+		}
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to execute trigger request: %v", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
-		return fmt.Errorf("trigger update failed with status: %s", resp.Status)
+		return fmt.Errorf("trigger update failed with status: %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
 	}
 	return nil
 }
