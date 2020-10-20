@@ -251,6 +251,7 @@ func triggerUpdate(c *DeployCmd, payloadID, serviceURL string, client *http.Clie
 		return fmt.Errorf("unable to read credentials: %s", err)
 	}
 	req.SetBasicAuth(username, password)
+
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("filepath", "nodejs/.section-external-source.json")
@@ -262,6 +263,7 @@ func triggerUpdate(c *DeployCmd, payloadID, serviceURL string, client *http.Clie
 			}
 		}
 	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to execute trigger request: %v", err)
