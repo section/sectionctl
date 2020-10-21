@@ -60,6 +60,16 @@ func (c *DeployCmd) Run() (err error) {
 	}
 	fmt.Printf("Packaging app in: %s\n", dir)
 
+	errs := IsValidNodeApp(dir)
+	if len(errs) > 0 {
+		var se []string
+		for _, err := range errs {
+			se = append(se, fmt.Sprintf("- %s", err))
+		}
+		errstr := strings.Join(se, "\n")
+		return fmt.Errorf("not a valid Node.js app: \n\n%s", errstr)
+	}
+
 	tempFile, err := ioutil.TempFile("", "sectionctl-deploy")
 	if err != nil {
 		return fmt.Errorf("couldn't create a temp file: %v", err)
@@ -131,6 +141,26 @@ func (c *DeployCmd) Run() (err error) {
 	fmt.Println("Done.")
 
 	return nil
+}
+
+// IsValidNodeApp detects if a Node.js app is present in a given directory
+func IsValidNodeApp(dir string) (errs []error) {
+	packageJSONPath := filepath.Join(dir, "package.json")
+	if _, err := os.Stat(packageJSONPath); os.IsNotExist(err) {
+		errs = append(errs, fmt.Errorf("%s is not a file", packageJSONPath))
+	}
+
+	nodeModulesPath := filepath.Join(dir, "node_modules")
+	fi, err := os.Stat(nodeModulesPath)
+	if os.IsNotExist(err) {
+		errs = append(errs, fmt.Errorf("%s is not a directory", nodeModulesPath))
+	} else {
+		if !fi.IsDir() {
+			errs = append(errs, fmt.Errorf("%s is not a directory", nodeModulesPath))
+		}
+	}
+
+	return errs
 }
 
 // BuildFilelist builds a list of files to be tarballed, with optional ignores.
