@@ -65,6 +65,30 @@ func TestCommandsDeployBuildFilelistErrorsOnNonExistentDirectory(t *testing.T) {
 	}
 }
 
+func TestCommandsDeployValidatesPresenceOfNodeApp(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	var testCases = []struct {
+		path  string
+		valid bool
+	}{
+		{filepath.Join("testdata", "deploy", "tree"), false},
+		{filepath.Join("testdata", "deploy", "valid-nodejs-app"), true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.path, func(t *testing.T) {
+			// Invoke
+			errs := IsValidNodeApp(tc.path)
+
+			// Test
+			assert.Equal(len(errs) == 0, tc.valid)
+			t.Logf("err: %v", errs)
+		})
+	}
+}
+
 func TestCommandsDeployUploadsTarball(t *testing.T) {
 	assert := assert.New(t)
 
@@ -126,7 +150,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	password := "s3cr3t"
 	auth.WriteCredential(endpoint, username, password)
 
-	dir := filepath.Join("testdata", "deploy", "tree")
+	dir := filepath.Join("testdata", "deploy", "valid-nodejs-app")
 
 	// Invoke
 	c := DeployCmd{
