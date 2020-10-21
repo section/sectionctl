@@ -32,7 +32,7 @@ type DeployCmd struct {
 	ServerURL        *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload"`
 	ApertureURL      string        `default:"https://aperture.section.io/api/v1"`
 	EnvUpdatePathFmt string        `default:"/account/%d/application/%d/environment/%s/update"`
-	Timeout          time.Duration `default:"60s"`
+	Timeout          time.Duration `default:"300s"`
 }
 
 // UploadResponse represents the response from a request to the upload service.
