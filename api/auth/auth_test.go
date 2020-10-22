@@ -3,12 +3,10 @@ package auth
 import (
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/creack/pty"
 	"github.com/stretchr/testify/assert"
 )
 
