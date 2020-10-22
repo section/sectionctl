@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -95,7 +96,7 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("unable to seek to beginning of tarball: %s", err)
 	}
 
-	fmt.Printf("Pushing %dMB...\n", stat.Size()/1024)
+	fmt.Printf("Pushing %dMB...\n", stat.Size()/1024/1024)
 
 	req, err := newFileUploadRequest(c, tempFile)
 	if err != nil {
@@ -298,9 +299,18 @@ func triggerUpdate(c *DeployCmd, payloadID, serviceURL string, client *http.Clie
 	if err != nil {
 		return fmt.Errorf("failed to execute trigger request: %v", err)
 	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("could not read response body: %s", err)
+	}
+
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
-		return fmt.Errorf("trigger update failed with status: %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
+		var objmap map[string]interface{}
+		if err := json.Unmarshal(body, &objmap); err != nil {
+			log.Fatal(err)
+		}
+		return fmt.Errorf("trigger update failed with status: %s and transaction ID %s\n. Error received: \n%s", resp.Status, resp.Header["Aperture-Tx-Id"][0], objmap["message"])
 	}
 	return nil
 }
