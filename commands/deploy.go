@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -18,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/section/sectionctl/api/auth"
 )
 
@@ -43,6 +43,8 @@ type UploadResponse struct {
 
 // Run deploys an app to Section's edge
 func (c *DeployCmd) Run() (err error) {
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+
 	ignores := []string{".lint/", ".git/"}
 	files, err := BuildFilelist(c.Directory, ignores)
 	if c.Debug {
@@ -113,6 +115,8 @@ func (c *DeployCmd) Run() (err error) {
 		fmt.Println("[debug] Request URL:", req.URL)
 	}
 
+	s.Suffix = " Uploading app..."
+	s.Start()
 	client := &http.Client{
 		Timeout: c.Timeout,
 	}
@@ -121,6 +125,7 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("upload request failed: %v", err)
 	}
 	defer resp.Body.Close()
+	s.Stop()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
 		return fmt.Errorf("upload failed with status: %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
 	}
@@ -130,8 +135,11 @@ func (c *DeployCmd) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
+	s.Suffix = " Deploying app..."
+	s.Start()
 	serviceURL := c.ApertureURL + fmt.Sprintf(c.EnvUpdatePathFmt, c.AccountID, c.AppID, "production")
 	err = triggerUpdate(c, response.PayloadID, serviceURL, client)
+	s.Stop()
 	if err != nil {
 		if c.Debug {
 			fmt.Println("[debug] Request URL:", serviceURL)
@@ -299,18 +307,9 @@ func triggerUpdate(c *DeployCmd, payloadID, serviceURL string, client *http.Clie
 	if err != nil {
 		return fmt.Errorf("failed to execute trigger request: %v", err)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("could not read response body: %s", err)
-	}
-
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
-		var objmap map[string]interface{}
-		if err := json.Unmarshal(body, &objmap); err != nil {
-			log.Fatal(err)
-		}
-		return fmt.Errorf("trigger update failed with status: %s and transaction ID %s\n. Error received: \n%s", resp.Status, resp.Header["Aperture-Tx-Id"][0], objmap["message"])
+		return fmt.Errorf("trigger update failed with status: %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
 	}
 	return nil
 }
