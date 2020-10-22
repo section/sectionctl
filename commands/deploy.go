@@ -301,7 +301,7 @@ func triggerUpdate(c *DeployCmd, payloadID, serviceURL string, client *http.Clie
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("Could not read response body: %s", err)
+		return fmt.Errorf("could not read response body: %s", err)
 	}
 
 	defer resp.Body.Close()
