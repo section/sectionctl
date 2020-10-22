@@ -96,7 +96,7 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("unable to seek to beginning of tarball: %s", err)
 	}
 
-	fmt.Printf("Pushing %dMB...\n", stat.Size()/1024)
+	fmt.Printf("Pushing %dMB...\n", stat.Size()/1024/1024)
 
 	req, err := newFileUploadRequest(c, tempFile)
 	if err != nil {
