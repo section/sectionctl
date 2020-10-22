@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/alecthomas/kong v0.2.11
+	github.com/briandowns/spinner v1.11.1
 	github.com/creack/pty v1.1.11
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/jdxcode/netrc v0.0.0-20190329161231-b36f1c51d91d
