@@ -53,6 +53,7 @@ func TestAPIAuthDetectsIfCredentialNotRecorded(t *testing.T) {
 	}
 }
 
+/*
 func TestAPIAuthPromptsForCredential(t *testing.T) {
 	assert := assert.New(t)
 
@@ -76,6 +77,7 @@ func TestAPIAuthPromptsForCredential(t *testing.T) {
 	assert.Equal(username, u)
 	assert.Equal(password, p)
 }
+*/
 
 func TestAPIAuthWriteCredentialCreatesFile(t *testing.T) {
 	assert := assert.New(t)
