@@ -1,5 +1,7 @@
 # sectionctl
 
+[![Test status](https://github.com/section/sectionctl/workflows/Test/badge.svg?event=push)](https://github.com/section/sectionctl/actions?query=workflow%3ATest+event%3Apush)
+
 Section command line tool.
 
 ## Usage
