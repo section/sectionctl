@@ -206,8 +206,9 @@ func CreateTarball(w io.Writer, filePaths []string) error {
 	tarWriter := tar.NewWriter(gzipWriter)
 	defer tarWriter.Close()
 
+	prefix := filePaths[0]
 	for _, filePath := range filePaths {
-		err := addFileToTarWriter(filePath, tarWriter)
+		err := addFileToTarWriter(filePath, tarWriter, prefix)
 		if err != nil {
 			return fmt.Errorf(fmt.Sprintf("Could not add file '%s', to tarball, got error '%s'", filePath, err.Error()))
 		}
@@ -216,7 +217,7 @@ func CreateTarball(w io.Writer, filePaths []string) error {
 	return nil
 }
 
-func addFileToTarWriter(filePath string, tarWriter *tar.Writer) error {
+func addFileToTarWriter(filePath string, tarWriter *tar.Writer, prefix string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("Could not open file '%s', got error '%s'", filePath, err.Error()))
@@ -228,24 +229,25 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer) error {
 		return fmt.Errorf(fmt.Sprintf("Could not get stat for file '%s', got error '%s'", filePath, err.Error()))
 	}
 
-	header, err := tar.FileInfoHeader(stat, filePath)
+	baseFilePath := strings.TrimPrefix(filePath, prefix)
+	header, err := tar.FileInfoHeader(stat, baseFilePath)
 	if err != nil {
 		return err
 	}
 
 	// must provide real name
 	// (see https://golang.org/src/archive/tar/common.go?#L626)
-	header.Name = filepath.ToSlash(filePath)
+	header.Name = filepath.ToSlash(baseFilePath)
 
 	err = tarWriter.WriteHeader(header)
 	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Could not write header for file '%s', got error '%s'", filePath, err.Error()))
+		return fmt.Errorf(fmt.Sprintf("Could not write header for file '%s', got error '%s'", baseFilePath, err.Error()))
 	}
 
 	if !stat.IsDir() {
 		_, err = io.Copy(tarWriter, file)
 		if err != nil {
-			return fmt.Errorf(fmt.Sprintf("Could not copy the file '%s' data to the tarball, got error '%s'", filePath, err.Error()))
+			return fmt.Errorf(fmt.Sprintf("Could not copy the file '%s' data to the tarball, got error '%s'", baseFilePath, err.Error()))
 		}
 	}
 
