@@ -89,8 +89,6 @@ func TestCommandsDeployCreateTarballAlwaysPutsAppAtRoot(t *testing.T) {
 
 			err = os.Chdir(tc.cwd)
 			assert.NoError(err)
-			dir, err := os.Getwd()
-			assert.NoError(err)
 
 			// Build the file list
 			paths, err := BuildFilelist(tc.target, ignores)
