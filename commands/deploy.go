@@ -183,9 +183,6 @@ func BuildFilelist(dir string, ignores []string) (files []string, err error) {
 	}
 
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
-		}
 		for _, i := range ignores {
 			if strings.Contains(path, i) {
 				return nil
@@ -231,21 +228,25 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer) error {
 		return fmt.Errorf(fmt.Sprintf("Could not get stat for file '%s', got error '%s'", filePath, err.Error()))
 	}
 
-	header := &tar.Header{
-		Name:    filePath,
-		Size:    stat.Size(),
-		Mode:    int64(stat.Mode()),
-		ModTime: stat.ModTime(),
+	header, err := tar.FileInfoHeader(stat, filePath)
+	if err != nil {
+		return err
 	}
+
+	// must provide real name
+	// (see https://golang.org/src/archive/tar/common.go?#L626)
+	header.Name = filepath.ToSlash(filePath)
 
 	err = tarWriter.WriteHeader(header)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("Could not write header for file '%s', got error '%s'", filePath, err.Error()))
 	}
 
-	_, err = io.Copy(tarWriter, file)
-	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Could not copy the file '%s' data to the tarball, got error '%s'", filePath, err.Error()))
+	if !stat.IsDir() {
+		_, err = io.Copy(tarWriter, file)
+		if err != nil {
+			return fmt.Errorf(fmt.Sprintf("Could not copy the file '%s' data to the tarball, got error '%s'", filePath, err.Error()))
+		}
 	}
 
 	return nil
