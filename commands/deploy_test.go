@@ -73,17 +73,27 @@ func TestCommandsDeployCreateTarballAlwaysPutsAppAtRoot(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	testCases := []string{
-		filepath.Join("testdata", "deploy", "valid-nodejs-app"),
+	var testCases = []struct {
+		cwd    string // change into this directory
+		target string // bundle up files from this directory
+	}{
+		{".", filepath.Join("testdata", "deploy", "valid-nodejs-app")},
+		{filepath.Join("testdata", "deploy", "valid-nodejs-app"), "."},
 	}
 	var ignores []string
 
 	for _, tc := range testCases {
-		t.Run(tc, func(t *testing.T) {
+		t.Run(tc.target, func(t *testing.T) {
 			tempFile, err := ioutil.TempFile("", "sectionctl-deploy")
 			assert.NoError(err)
 
-			paths, err := BuildFilelist(tc, ignores)
+			err = os.Chdir(tc.cwd)
+			assert.NoError(err)
+			dir, err := os.Getwd()
+			assert.NoError(err)
+
+			// Build the file list
+			paths, err := BuildFilelist(tc.target, ignores)
 
 			// Create the tarball
 			err = CreateTarball(tempFile, paths)
@@ -99,9 +109,6 @@ func TestCommandsDeployCreateTarballAlwaysPutsAppAtRoot(t *testing.T) {
 
 			// Test
 			assert.NoError(err)
-			// TODO: test files are in the expecetd place on disk
-			t.Logf("tempdir: %s", tempDir)
-
 			path := filepath.Join(tempDir, "package.json")
 			_, err = os.Stat(path)
 			assert.NoError(err)
