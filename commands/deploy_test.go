@@ -96,6 +96,7 @@ func TestCommandsDeployCreateTarballAlwaysPutsAppAtRoot(t *testing.T) {
 
 			// Build the file list
 			paths, err := BuildFilelist(tc.target, ignores)
+			assert.NoError(err)
 
 			// Create the tarball
 			err = CreateTarball(tempFile, paths)
