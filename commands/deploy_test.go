@@ -1,11 +1,15 @@
 package commands
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -63,6 +67,98 @@ func TestCommandsDeployBuildFilelistErrorsOnNonExistentDirectory(t *testing.T) {
 			assert.Zero(len(paths))
 		})
 	}
+}
+
+func TestCommandsDeployCreateTarballAlwaysPutsAppAtRoot(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	testCases := []string{
+		filepath.Join("testdata", "deploy", "valid-nodejs-app"),
+	}
+	var ignores []string
+
+	for _, tc := range testCases {
+		t.Run(tc, func(t *testing.T) {
+			tempFile, err := ioutil.TempFile("", "sectionctl-deploy")
+			assert.NoError(err)
+
+			paths, err := BuildFilelist(tc, ignores)
+
+			// Create the tarball
+			err = CreateTarball(tempFile, paths)
+			assert.NoError(err)
+
+			_, err = tempFile.Seek(0, 0)
+			assert.NoError(err)
+
+			// Extract the tarball
+			tempDir, err := ioutil.TempDir("", "sectionctl-deploy")
+			assert.NoError(err)
+			err = untar(tempFile, tempDir)
+
+			// Test
+			assert.NoError(err)
+			// TODO: test files are in the expecetd place on disk
+			t.Logf("tempdir: %s", tempDir)
+
+			path := filepath.Join(tempDir, "package.json")
+			_, err = os.Stat(path)
+			assert.NoError(err)
+		})
+	}
+}
+
+func untar(src io.Reader, dst string) (err error) {
+	// ungzip
+	zr, err := gzip.NewReader(src)
+	if err != nil {
+		return err
+	}
+	// untar
+	tr := tar.NewReader(zr)
+
+	// uncompress each element
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break // End of archive
+		}
+		if err != nil {
+			return err
+		}
+
+		// add dst + re-format slashes according to system
+		target := filepath.Join(dst, header.Name)
+		// if no join is needed, replace with ToSlash:
+		// target = filepath.ToSlash(header.Name)
+
+		// check the type
+		switch header.Typeflag {
+
+		// if its a dir and it doesn't exist create it (with 0755 permission)
+		case tar.TypeDir:
+			if _, err := os.Stat(target); err != nil {
+				if err := os.MkdirAll(target, 0755); err != nil {
+					return err
+				}
+			}
+		// if it's a file create it (with same permission)
+		case tar.TypeReg:
+			fileToWrite, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			if err != nil {
+				return err
+			}
+			// copy over contents
+			if _, err := io.Copy(fileToWrite, tr); err != nil {
+				return err
+			}
+			// manually close here after each file operation; defering would cause each file close
+			// to wait until all operations have completed.
+			fileToWrite.Close()
+		}
+	}
+	return nil
 }
 
 func TestCommandsDeployValidatesPresenceOfNodeApp(t *testing.T) {
