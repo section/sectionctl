@@ -87,6 +87,10 @@ func TestCommandsDeployCreateTarballAlwaysPutsAppAtRoot(t *testing.T) {
 			tempFile, err := ioutil.TempFile("", "sectionctl-deploy")
 			assert.NoError(err)
 
+			// Record where we were at the beginning of the test
+			owd, err := os.Getwd()
+			assert.NoError(err)
+
 			err = os.Chdir(tc.cwd)
 			assert.NoError(err)
 
@@ -109,6 +113,10 @@ func TestCommandsDeployCreateTarballAlwaysPutsAppAtRoot(t *testing.T) {
 			assert.NoError(err)
 			path := filepath.Join(tempDir, "package.json")
 			_, err = os.Stat(path)
+			assert.NoError(err)
+
+			// Change back to where we were at the beginning of the test
+			err = os.Chdir(owd)
 			assert.NoError(err)
 		})
 	}
