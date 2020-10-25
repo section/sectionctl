@@ -45,15 +45,6 @@ type UploadResponse struct {
 func (c *DeployCmd) Run() (err error) {
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 
-	ignores := []string{".lint/", ".git/"}
-	files, err := BuildFilelist(c.Directory, ignores)
-	if c.Debug {
-		fmt.Println("[debug] Archiving files:")
-		for _, file := range files {
-			fmt.Println("[debug]", file)
-		}
-	}
-
 	dir := c.Directory
 	if dir == "." {
 		abs, err := filepath.Abs(dir)
@@ -61,7 +52,6 @@ func (c *DeployCmd) Run() (err error) {
 			dir = abs
 		}
 	}
-	fmt.Printf("Packaging app in: %s\n", dir)
 
 	errs := IsValidNodeApp(dir)
 	if len(errs) > 0 {
@@ -73,21 +63,43 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("not a valid Node.js app: \n\n%s", errstr)
 	}
 
+	s.Suffix = fmt.Sprintf(" Packaging app in: %s", dir)
+	s.Start()
+
+	ignores := []string{".lint/", ".git/"}
+	files, err := BuildFilelist(dir, ignores)
+	if err != nil {
+		s.Stop()
+		return fmt.Errorf("unable to build file list: %s", err)
+	}
+	if c.Debug {
+		fmt.Println()
+		fmt.Println("[debug] Archiving files:")
+		for _, file := range files {
+			fmt.Println("[debug]", file)
+		}
+	}
+
 	tempFile, err := ioutil.TempFile("", "sectionctl-deploy")
 	if err != nil {
+		s.Stop()
 		return fmt.Errorf("couldn't create a temp file: %v", err)
 	}
 	defer os.Remove(tempFile.Name())
+
 	err = CreateTarball(tempFile, files)
 	if err != nil {
+		s.Stop()
 		return fmt.Errorf("failed to pack files: %v", err)
 	}
+	s.Stop()
+
 	if c.Debug {
 		fmt.Println("[debug] Temporary tarball path:", tempFile.Name())
 	}
 	stat, err := tempFile.Stat()
 	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Could not get stat for file '%s', got error '%s'", tempFile.Name(), err.Error()))
+		return fmt.Errorf("%s: could not stat, got error: %s", tempFile.Name(), err)
 	}
 	if stat.Size() > MaxFileSize {
 		return fmt.Errorf("failed to upload tarball: file size (%d) is greater than (%d)", stat.Size(), MaxFileSize)
@@ -97,8 +109,6 @@ func (c *DeployCmd) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("unable to seek to beginning of tarball: %s", err)
 	}
-
-	fmt.Printf("Pushing %dMB...\n", stat.Size()/1024/1024)
 
 	req, err := newFileUploadRequest(c, tempFile)
 	if err != nil {
@@ -115,7 +125,7 @@ func (c *DeployCmd) Run() (err error) {
 		fmt.Println("[debug] Request URL:", req.URL)
 	}
 
-	s.Suffix = " Uploading app..."
+	s.Suffix = fmt.Sprintf(" Uploading app (%dMB)...", stat.Size()/1024/1024)
 	s.Start()
 	client := &http.Client{
 		Timeout: c.Timeout,
@@ -147,7 +157,7 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("failed to trigger app update: %v", err)
 	}
 
-	fmt.Println("Done.")
+	fmt.Println("Done!")
 
 	return nil
 }
