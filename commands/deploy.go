@@ -125,7 +125,11 @@ func (c *DeployCmd) Run() (err error) {
 		fmt.Println("[debug] Request URL:", req.URL)
 	}
 
-	s.Suffix = fmt.Sprintf(" Uploading app (%dMB)...", stat.Size()/1024/1024)
+	artifactSizeMB := stat.Size() / 1024 / 1024
+	if c.Debug {
+		fmt.Printf("[debug] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size())
+	}
+	s.Suffix = fmt.Sprintf(" Uploading app (%dMB)...", artifactSizeMB)
 	s.Start()
 	client := &http.Client{
 		Timeout: c.Timeout,
