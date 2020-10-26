@@ -127,7 +127,7 @@ func (c *DeployCmd) Run() (err error) {
 
 	artifactSizeMB := stat.Size() / 1024 / 1024
 	if c.Debug {
-		fmt.Println("[debug] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size())
+		fmt.Printf("[debug] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size())
 	}
 	s.Suffix = fmt.Sprintf(" Uploading app (%dMB)...", artifactSizeMB)
 	s.Start()
