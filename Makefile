@@ -30,7 +30,7 @@ build: clean
 	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)'" -o bin/sectionctl sectionctl.go
 	mkdir -p dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
 	cp README.md LICENSE bin/sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
-	tar --create --gzip --verbose --strip-components 2 --file dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)
+	tar --create --gzip --verbose --file dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz --directory dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH) .
 
 clean:
 	rm -rf build
