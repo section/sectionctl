@@ -238,7 +238,7 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer, prefix string) e
 	}
 	defer file.Close()
 
-	stat, err := file.Stat()
+	stat, err := os.Lstat(filePath)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("Could not get stat for file '%s', got error '%s'", filePath, err.Error()))
 	}
@@ -247,6 +247,13 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer, prefix string) e
 	header, err := tar.FileInfoHeader(stat, baseFilePath)
 	if err != nil {
 		return err
+	}
+	if stat.Mode()&os.ModeSymlink == os.ModeSymlink {
+		link, err := os.Readlink(filePath)
+		if err != nil {
+			return err
+		}
+		header.Linkname = link
 	}
 
 	// must provide real name
@@ -258,7 +265,7 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer, prefix string) e
 		return fmt.Errorf(fmt.Sprintf("Could not write header for file '%s', got error '%s'", baseFilePath, err.Error()))
 	}
 
-	if !stat.IsDir() {
+	if !stat.IsDir() && stat.Mode()&os.ModeSymlink != os.ModeSymlink {
 		_, err = io.Copy(tarWriter, file)
 		if err != nil {
 			return fmt.Errorf(fmt.Sprintf("Could not copy the file '%s' data to the tarball, got error '%s'", baseFilePath, err.Error()))
