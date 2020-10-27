@@ -244,7 +244,7 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer, prefix string) e
 	if err != nil {
 		return err
 	}
-	if stat.Mode()&os.ModeSymlink != 0 {
+	if stat.Mode()&os.ModeSymlink == os.ModeSymlink {
 		link, err := os.Readlink(filePath)
 		if err != nil {
 			return err
