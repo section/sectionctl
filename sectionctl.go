@@ -16,6 +16,7 @@ var CLI struct {
 	Login            commands.LoginCmd    `cmd help:"Authenticate to Section's API."`
 	Accounts         commands.AccountsCmd `cmd help:"Manage accounts on Section"`
 	Apps             commands.AppsCmd     `cmd help:"Manage apps on Section"`
+	Certs            commands.CertsCmd    `cmd help:"Manage certificates on Section"`
 	Deploy           commands.DeployCmd   `cmd help:"Deploy an app to Section"`
 	Version          commands.VersionCmd  `cmd help:"Print sectionctl version"`
 	SectionAPIPrefix *url.URL             `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
