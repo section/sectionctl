@@ -42,5 +42,5 @@ release:
 	@if [ "$(shell echo $(VERSION) | cut -c 1)" != "v" ]; then echo "VERSION must be in the format v0.0.5"; exit 1 ; fi
 	@if [ "$(shell grep -c $(shell echo $(VERSION) | cut -c 2-) version/version.go)" != "1" ]; then echo "Error: version mismatch with version/version.go"; exit 1 ; fi
 	git tag -f -a $(VERSION) -m ''
-	git push --all
-	git push --tags
+	git push origin master
+	git push origin refs/tags/$(VERSION)
