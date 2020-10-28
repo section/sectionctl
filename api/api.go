@@ -37,6 +37,8 @@ func request(method string, u url.URL, body io.Reader) (resp *http.Response, err
 
 	ua := fmt.Sprintf("sectionctl (%s; %s-%s)", version.Version, runtime.GOARCH, runtime.GOOS)
 	req.Header.Set("User-Agent", ua)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
 
 	username, password, err := auth.GetCredential(u.Host)
 	if err != nil {
