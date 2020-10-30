@@ -26,8 +26,8 @@ const MaxFileSize = 1073741824 // 1GB
 
 // DeployCmd handles deploying an app to Section.
 type DeployCmd struct {
-	AccountID        int `default:"4322"`  // harc-coded until authentication is implemented
-	AppID            int `default:"65443"` // hard-coded for now until authentication is implmented
+	AccountID        int `required`
+	AppID            int `required`
 	Debug            bool
 	Directory        string        `default:"."`
 	ServerURL        *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload"`
