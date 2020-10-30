@@ -2,5 +2,5 @@ package version
 
 var (
 	// Version is the version number of sectionctl
-	Version = "1.1.0"
+	Version = "1.2.0"
 )
