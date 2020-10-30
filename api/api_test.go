@@ -54,3 +54,29 @@ func TestAPIClientSetsUserAgent(t *testing.T) {
 	// Test
 	assert.Regexp("^sectionctl (.+)$", userAgent)
 }
+
+func TestPrettyTxIDErrorPrintsApertureTxID(t *testing.T) {
+	assert := assert.New(t)
+
+	// Invoke
+	resp := http.Response{Status: "500 Internal Server Error", Header: map[string][]string{"Aperture-Tx-Id": []string{"12345"}}}
+	err := prettyTxIDError(&resp)
+
+	// Test
+	assert.Error(err)
+	assert.Regexp("transaction ID", err)
+	assert.Regexp(resp.Header["Aperture-Tx-Id"][0], err)
+}
+
+func TestPrettyTxIDErrorHandlesNoApertureTxIDHeader(t *testing.T) {
+	assert := assert.New(t)
+
+	// Invoke
+	resp := http.Response{Status: "500 Internal Server Error"}
+	assert.NotPanics(func() { prettyTxIDError(&resp) })
+	err := prettyTxIDError(&resp)
+
+	// Test
+	assert.Error(err)
+	assert.NotRegexp("transaction ID", err)
+}
