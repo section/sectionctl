@@ -183,6 +183,11 @@ func IsValidNodeApp(dir string) (errs []error) {
 		}
 	}
 
+	serverConfPath := filepath.Join(dir, "server.conf")
+	if _, err := os.Stat(serverConfPath); os.IsNotExist(err) {
+		errs = append(errs, fmt.Errorf("%s is not a file (see https://github.com/section/nodejs-example/blob/master/server.conf)", serverConfPath))
+	}
+
 	return errs
 }
 
