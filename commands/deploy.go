@@ -80,7 +80,7 @@ func (c *DeployCmd) Run() (err error) {
 		}
 	}
 
-	tempFile, err := ioutil.TempFile("", "sectionctl-deploy")
+	tempFile, err := ioutil.TempFile("", "sectionctl-deploy.*.tar.gz")
 	if err != nil {
 		s.Stop()
 		return fmt.Errorf("couldn't create a temp file: %v", err)
