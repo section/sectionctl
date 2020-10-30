@@ -35,11 +35,14 @@ build: clean
 clean:
 	rm -rf build
 
-release:
-	@git update-index --refresh
-	@git diff-index --quiet HEAD --
+check_version:
 	@if [ -z "$(VERSION)" ]; then echo "Missing VERSION"; exit 1 ; fi
 	@if [ "$(shell echo $(VERSION) | cut -c 1)" != "v" ]; then echo "VERSION must be in the format v0.0.5"; exit 1 ; fi
+
+release: check_version
+	@if [ "$(shell git branch --show-current)" != "master" ]; then echo "Must be on the 'master' branch"; exit 1 ; fi
+	@git update-index --refresh
+	@git diff-index --quiet HEAD --
 	@if [ "$(shell grep -c $(shell echo $(VERSION) | cut -c 2-) version/version.go)" != "1" ]; then echo "Error: version mismatch with version/version.go"; exit 1 ; fi
 	git tag -f -a $(VERSION) -m ''
 	git push origin master
