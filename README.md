@@ -18,6 +18,12 @@ To set up credentials so the CLI tool works, run:
 sectionctl login
 ```
 
+Install bash shell completions with:
+
+```
+sectionctl install-completions
+```
+
 ## Installing
 
 The easiest way to install `sectionctl` is by downloading [the latest release](https://github.com/section/sectionctl/releases/latest) and putting it on your `PATH`.
