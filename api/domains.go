@@ -37,7 +37,7 @@ func DomainsRenewCert(accountID int, hostname string) (r RenewCertResponse, err 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return r, fmt.Errorf("request failed with status %s", resp.Status)
+		return r, fmt.Errorf("request failed with status %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
