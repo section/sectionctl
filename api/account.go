@@ -30,7 +30,7 @@ func Accounts() (as []Account, err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return as, fmt.Errorf("request failed with status %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
+		return as, prettyTxIDError(resp)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
