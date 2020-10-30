@@ -34,6 +34,7 @@ type DeployCmd struct {
 	ApertureURL      string        `default:"https://aperture.section.io/api/v1"`
 	EnvUpdatePathFmt string        `default:"/account/%d/application/%d/environment/%s/update"`
 	Timeout          time.Duration `default:"300s"`
+	SkipDelete       bool          `help:"Skip delete of temporary tarball created to upload app"`
 }
 
 // UploadResponse represents the response from a request to the upload service.
@@ -80,12 +81,18 @@ func (c *DeployCmd) Run() (err error) {
 		}
 	}
 
-	tempFile, err := ioutil.TempFile("", "sectionctl-deploy")
+	tempFile, err := ioutil.TempFile("", "sectionctl-deploy.*.tar.gz")
 	if err != nil {
 		s.Stop()
 		return fmt.Errorf("couldn't create a temp file: %v", err)
 	}
-	defer os.Remove(tempFile.Name())
+	if c.SkipDelete {
+		s.Stop()
+		fmt.Println("[INFO] Temporary upload tarball location:", tempFile.Name())
+		s.Start()
+	} else {
+		defer os.Remove(tempFile.Name())
+	}
 
 	err = CreateTarball(tempFile, files)
 	if err != nil {
