@@ -51,7 +51,7 @@ func Application(accountID int, applicationID int) (a App, err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return a, fmt.Errorf("request failed with status %s", resp.Status)
+		return a, prettyTxIDError(resp)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -93,7 +93,7 @@ func ApplicationEnvironments(accountID int, applicationID int) (es []Environment
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return es, fmt.Errorf("request failed with status %s", resp.Status)
+		return es, prettyTxIDError(resp)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -120,7 +120,7 @@ func ApplicationEnvironmentStack(accountID int, applicationID int, environmentNa
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return s, fmt.Errorf("request failed with status %s", resp.Status)
+		return s, prettyTxIDError(resp)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)

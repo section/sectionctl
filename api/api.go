@@ -52,3 +52,11 @@ func request(method string, u url.URL, body io.Reader) (resp *http.Response, err
 	}
 	return resp, err
 }
+
+// prettyTxIDError creates a support friendly error message with an transaction ID
+func prettyTxIDError(resp *http.Response) error {
+	if len(resp.Header["Aperture-Tx-Id"]) > 0 {
+		return fmt.Errorf("request failed with status %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
+	}
+	return fmt.Errorf("request failed with status %s", resp.Status)
+}
