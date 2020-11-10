@@ -3,6 +3,7 @@ package commands
 import (
 	"archive/tar"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,6 +15,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
 )
@@ -210,6 +212,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 		body      []byte
 		accountID int
 		file      []byte
+		headers   map[string]string
 	}
 	var uploadReq req
 	var triggerUpdateReq req
@@ -244,6 +247,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 			b, err := ioutil.ReadAll(r.Body)
 			assert.NoError(err)
 			triggerUpdateReq.body = b
+			triggerUpdateReq.headers = map[string]string{"filepath": r.Header.Get("filepath")}
 			w.WriteHeader(http.StatusOK)
 		default:
 			assert.FailNow("unhandled URL %s", r.URL.Path)
@@ -261,6 +265,8 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	auth.WriteCredential(endpoint, username, password)
 
 	dir := filepath.Join("testdata", "deploy", "valid-nodejs-app")
+
+	api.PrefixURI = url
 
 	// Invoke
 	c := DeployCmd{
@@ -289,5 +295,14 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	assert.Equal(username, triggerUpdateReq.username)
 	assert.Equal(password, triggerUpdateReq.password)
 	assert.NotZero(len(triggerUpdateReq.body))
-	//t.Logf("%s\n", triggerUpdateReq.body)
+	if assert.NotEmpty(triggerUpdateReq.headers["filepath"]) {
+		assert.Equal(triggerUpdateReq.headers["filepath"], "nodejs/.section-external-source.json")
+	}
+	var up api.EnvironmentUpdateCommand
+	err = json.Unmarshal(triggerUpdateReq.body, &up)
+	assert.NoError(err)
+	assert.Equal(up.Op, "replace")
+	assert.NotEmpty(up.Value)
+	assert.NotEmpty(up.Value.(map[string]interface{})["section_payload_id"])
+	assert.Equal(up.Value.(map[string]interface{})["section_payload_id"].(string), "1234")
 }
