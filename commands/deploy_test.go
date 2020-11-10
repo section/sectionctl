@@ -270,12 +270,10 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 
 	// Invoke
 	c := DeployCmd{
-		Directory:        dir,
-		ServerURL:        url,
-		ApertureURL:      url.String() + "/api/v1",
-		AccountID:        100,
-		AppID:            200,
-		EnvUpdatePathFmt: "/account/%d/application/%d/environment/%s/update",
+		Directory: dir,
+		ServerURL: url,
+		AccountID: 100,
+		AppID:     200,
 	}
 	err = c.Run()
 

@@ -27,15 +27,13 @@ const MaxFileSize = 1073741824 // 1GB
 
 // DeployCmd handles deploying an app to Section.
 type DeployCmd struct {
-	AccountID        int `required`
-	AppID            int `required`
-	Debug            bool
-	Directory        string        `default:"."`
-	ServerURL        *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload"`
-	ApertureURL      string        `default:"https://aperture.section.io/api/v1"`
-	EnvUpdatePathFmt string        `default:"/account/%d/application/%d/environment/%s/update"`
-	Timeout          time.Duration `default:"300s"`
-	SkipDelete       bool          `help:"Skip delete of temporary tarball created to upload app"`
+	AccountID  int `required`
+	AppID      int `required`
+	Debug      bool
+	Directory  string        `default:"."`
+	ServerURL  *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload"`
+	Timeout    time.Duration `default:"300s"`
+	SkipDelete bool          `help:"Skip delete of temporary tarball created to upload app"`
 }
 
 // UploadResponse represents the response from a request to the upload service.
