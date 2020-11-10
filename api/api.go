@@ -16,6 +16,10 @@ var (
 	// PrefixURI is the root of the Section API
 	PrefixURI = &url.URL{Scheme: "https", Host: "aperture.section.io"}
 	timeout   = 20 * time.Second
+	// Username is the username for authenticating to the Section API
+	Username string
+	// Token is the token for authenticating to the Section API
+	Token string
 )
 
 // BaseURL returns a URL for building requests on
@@ -40,11 +44,13 @@ func request(method string, u url.URL, body io.Reader) (resp *http.Response, err
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/json")
 
-	username, password, err := auth.GetCredential(u.Host)
-	if err != nil {
-		return resp, err
+	if Username == "" || Token == "" {
+		Username, Token, err = auth.GetCredential(u.Host)
+		if err != nil {
+			return resp, err
+		}
 	}
-	req.SetBasicAuth(username, password)
+	req.SetBasicAuth(Username, Token)
 
 	resp, err = client.Do(req)
 	if err != nil {

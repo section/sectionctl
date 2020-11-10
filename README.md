@@ -24,6 +24,14 @@ Install bash shell completions with:
 sectionctl install-completions
 ```
 
+### Using `sectionctl` in CI/CD
+
+You can set credentials via the `SECTION_USERNAME` and `SECTION_PASSWORD` environment variables:
+
+```
+SECTION_USERNAME=me@domain.example SECTION_PASSWORD=s3cr3t sectionctl accounts list
+```
+
 ## Installing
 
 The easiest way to install `sectionctl` is by downloading [the latest release](https://github.com/section/sectionctl/releases/latest) and putting it on your `PATH`.
