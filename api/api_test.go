@@ -80,3 +80,39 @@ func TestPrettyTxIDErrorHandlesNoApertureTxIDHeader(t *testing.T) {
 	assert.Error(err)
 	assert.NotRegexp("transaction ID", err)
 }
+
+func TestAPIClientUsesCredentialsIfSpecified(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	var (
+		username string
+		password string
+	)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, p, ok := r.BasicAuth()
+		username = u
+		password = p
+		assert.True(ok)
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	Username = "alice"
+	Token = "s3cr3t"
+
+	u, err := url.Parse(ts.URL)
+	assert.NoError(err)
+
+	// Invoke
+	resp, err := request(http.MethodGet, *u, nil)
+	assert.NoError(err)
+
+	// Test
+	assert.Equal(resp.StatusCode, http.StatusOK)
+	assert.Equal(Username, username)
+	assert.Equal(Token, password)
+
+	// Teardown
+	Username = ""
+	Token = ""
+}
