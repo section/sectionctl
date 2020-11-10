@@ -179,6 +179,9 @@ func ApplicationEnvironmentModuleUpdate(accountID int, applicationID int, env st
 	if err != nil {
 		return fmt.Errorf("failed to encode json payload: %v", err)
 	}
+	if Debug {
+		fmt.Printf("[DEBUG] JSON payload: %s\n", b)
+	}
 	headers := map[string][]string{"filepath": []string{filePath}}
 	resp, err := request(http.MethodPatch, u, bytes.NewBuffer(b), headers)
 	if err != nil {

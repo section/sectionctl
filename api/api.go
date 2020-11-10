@@ -20,6 +20,8 @@ var (
 	Username string
 	// Token is the token for authenticating to the Section API
 	Token string
+	// Debug toggles whether extra information is emitted from requests/responses
+	Debug bool
 )
 
 // BaseURL returns a URL for building requests on
@@ -57,6 +59,14 @@ func request(method string, u url.URL, body io.Reader, headers ...map[string][]s
 	}
 	req.SetBasicAuth(Username, Token)
 
+	if Debug {
+		fmt.Println("[DEBUG] Request URL:", req.URL)
+		for k, vs := range req.Header {
+			for _, v := range vs {
+				fmt.Printf("[DEBUG] Header: %s: %v\n", k, v)
+			}
+		}
+	}
 	resp, err = client.Do(req)
 	if err != nil {
 		return resp, err
