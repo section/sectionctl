@@ -26,10 +26,10 @@ sectionctl install-completions
 
 ### Using `sectionctl` in CI/CD
 
-You can set credentials via the `SECTION_USERNAME` and `SECTION_PASSWORD` environment variables:
+You can set credentials via the `SECTION_USERNAME` and `SECTION_TOKEN` environment variables:
 
-```
-SECTION_USERNAME=me@domain.example SECTION_PASSWORD=s3cr3t sectionctl accounts list
+``` bash
+SECTION_USERNAME=me@domain.example SECTION_TOKEN=s3cr3t sectionctl accounts list
 ```
 
 ## Installing
