@@ -29,7 +29,7 @@ func BaseURL() (u url.URL) {
 	return u
 }
 
-func request(method string, u url.URL, body io.Reader) (resp *http.Response, err error) {
+func request(method string, u url.URL, body io.Reader, headers ...map[string][]string) (resp *http.Response, err error) {
 	client := &http.Client{
 		Timeout: timeout,
 	}
@@ -43,6 +43,11 @@ func request(method string, u url.URL, body io.Reader) (resp *http.Response, err
 	req.Header.Set("User-Agent", ua)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/json")
+	if len(headers) == 1 {
+		for h, v := range headers[0] {
+			req.Header[h] = v
+		}
+	}
 
 	if Username == "" || Token == "" {
 		Username, Token, err = auth.GetCredential(u.Host)
