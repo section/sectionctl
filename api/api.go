@@ -51,13 +51,15 @@ func request(method string, u url.URL, body io.Reader, headers ...map[string][]s
 		}
 	}
 
-	if Username == "" || Token == "" {
-		Username, Token, err = auth.GetCredential(u.Host)
+	user := Username
+	token := Token
+	if user == "" || token == "" {
+		user, token, err = auth.GetCredential(u.Host)
 		if err != nil {
 			return resp, err
 		}
 	}
-	req.SetBasicAuth(Username, Token)
+	req.SetBasicAuth(user, token)
 
 	if Debug {
 		fmt.Println("[DEBUG] Request URL:", req.URL)
