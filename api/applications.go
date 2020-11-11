@@ -196,7 +196,8 @@ func ApplicationEnvironmentModuleUpdate(accountID int, applicationID int, env st
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
 		var objmap map[string]interface{}
 		if err := json.Unmarshal(body, &objmap); err != nil {
-			return fmt.Errorf("unable to decode error message: %s", err)
+			nerr := fmt.Errorf("unable to decode error message: %s", err)
+			return fmt.Errorf("trigger update failed with status: %s and transaction ID %s\n. Error received: \n%s", resp.Status, resp.Header["Aperture-Tx-Id"][0], nerr)
 		}
 		return fmt.Errorf("trigger update failed with status: %s and transaction ID %s\n. Error received: \n%s", resp.Status, resp.Header["Aperture-Tx-Id"][0], objmap["message"])
 	}
