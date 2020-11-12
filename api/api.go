@@ -31,7 +31,7 @@ func BaseURL() (u url.URL) {
 	return u
 }
 
-func request(method string, u url.URL, body io.Reader, headers ...map[string][]string) (resp *http.Response, err error) {
+func request(method string, u url.URL, body io.Reader, headers ...http.Header) (resp *http.Response, err error) {
 	client := &http.Client{
 		Timeout: timeout,
 	}

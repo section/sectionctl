@@ -212,7 +212,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 		body      []byte
 		accountID int
 		file      []byte
-		headers   map[string]string
+		header    http.Header
 	}
 	var uploadReq req
 	var triggerUpdateReq req
@@ -247,7 +247,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 			b, err := ioutil.ReadAll(r.Body)
 			assert.NoError(err)
 			triggerUpdateReq.body = b
-			triggerUpdateReq.headers = map[string]string{"filepath": r.Header.Get("filepath")}
+			triggerUpdateReq.header = r.Header
 			w.WriteHeader(http.StatusOK)
 		default:
 			assert.FailNow("unhandled URL %s", r.URL.Path)
@@ -293,9 +293,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	assert.Equal(username, triggerUpdateReq.username)
 	assert.Equal(password, triggerUpdateReq.password)
 	assert.NotZero(len(triggerUpdateReq.body))
-	if assert.NotEmpty(triggerUpdateReq.headers["filepath"]) {
-		assert.Equal(triggerUpdateReq.headers["filepath"], "nodejs/.section-external-source.json")
-	}
+	assert.Equal(triggerUpdateReq.header.Get("filepath"), "nodejs/.section-external-source.json")
 	var up api.EnvironmentUpdateCommand
 	err = json.Unmarshal(triggerUpdateReq.body, &up)
 	assert.NoError(err)
