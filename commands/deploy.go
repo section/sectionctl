@@ -90,7 +90,7 @@ func (c *DeployCmd) Run() (err error) {
 	}
 	if c.SkipDelete {
 		s.Stop()
-		fmt.Println("[INFO] Temporary upload tarball location:", tempFile.Name())
+		log.Println("[INFO] Temporary upload tarball location:", tempFile.Name())
 		s.Start()
 	} else {
 		defer os.Remove(tempFile.Name())
