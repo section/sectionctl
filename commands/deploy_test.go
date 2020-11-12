@@ -240,7 +240,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprint(w, string(helperLoadBytes(t, "deploy/upload.response.with_success.json")))
-		case "/api/v1/account/100/application/200/environment/production/update":
+		case "/api/v1/account/100/application/200/environment/dev/update":
 			triggerUpdateReq.called = true
 			triggerUpdateReq.username = u
 			triggerUpdateReq.password = p
@@ -250,7 +250,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 			triggerUpdateReq.header = r.Header
 			w.WriteHeader(http.StatusOK)
 		default:
-			assert.FailNow("unhandled URL %s", r.URL.Path)
+			assert.FailNowf("unhandled URL", "URL: %s", r.URL.Path)
 		}
 
 	}))
@@ -270,10 +270,11 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 
 	// Invoke
 	c := DeployCmd{
-		Directory: dir,
-		ServerURL: url,
-		AccountID: 100,
-		AppID:     200,
+		Directory:   dir,
+		ServerURL:   url,
+		AccountID:   100,
+		AppID:       200,
+		Environment: "dev",
 	}
 	err = c.Run()
 
