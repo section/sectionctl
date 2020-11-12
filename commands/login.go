@@ -32,7 +32,7 @@ func (c *LoginCmd) Run() (err error) {
 		if strings.Contains(err.Error(), "401") {
 			return fmt.Errorf("invalid credentials. Please try again")
 		}
-		return fmt.Errorf("\ncould not fetch current user: %s", err)
+		return fmt.Errorf("could not fetch current user: %s", err)
 	}
 	fmt.Println("success!")
 

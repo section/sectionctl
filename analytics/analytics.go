@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/user"
@@ -76,7 +77,7 @@ func LogInvoke(ctx *kong.Context) {
 	}
 	err := Submit(e)
 	if err != nil {
-		fmt.Println("Warning: Unable to submit analytics – continuing anyway.")
+		log.Println("[WARN] Unable to submit analytics – continuing anyway.")
 	}
 }
 

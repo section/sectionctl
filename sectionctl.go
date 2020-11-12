@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/url"
 	"os"
 
 	"github.com/alecthomas/kong"
+	"github.com/hashicorp/logutils"
 	"github.com/posener/complete"
 	"github.com/section/sectionctl/analytics"
 	"github.com/section/sectionctl/api"
@@ -33,6 +34,16 @@ func bootstrap(c CLI) {
 	api.PrefixURI = c.SectionAPIPrefix
 	api.Username = c.SectionUsername
 	api.Token = c.SectionToken
+
+	filter := &logutils.LevelFilter{
+		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
+		MinLevel: logutils.LogLevel("INFO"),
+		Writer:   os.Stderr,
+	}
+	if c.Debug {
+		filter.MinLevel = logutils.LogLevel("DEBUG")
+	}
+	log.SetOutput(filter)
 }
 
 func main() {
@@ -52,7 +63,7 @@ func main() {
 	analytics.LogInvoke(ctx)
 	err := ctx.Run()
 	if err != nil {
-		fmt.Printf("\nError: %s\n", err)
+		log.Printf("[ERROR] %s\n", err)
 		os.Exit(2)
 	}
 }
