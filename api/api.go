@@ -31,6 +31,9 @@ func BaseURL() (u url.URL) {
 	return u
 }
 
+// request does the heavy lifting of making requests to the Section API.
+//
+// You can pass 0 or more headers, and keys in the later headers will override earlier passed headers.
 func request(method string, u url.URL, body io.Reader, headers ...http.Header) (resp *http.Response, err error) {
 	client := &http.Client{
 		Timeout: timeout,
@@ -45,8 +48,8 @@ func request(method string, u url.URL, body io.Reader, headers ...http.Header) (
 	req.Header.Set("User-Agent", ua)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/json")
-	if len(headers) == 1 {
-		for h, v := range headers[0] {
+	for i := range headers {
+		for h, v := range headers[i] {
 			req.Header[h] = v
 		}
 	}
