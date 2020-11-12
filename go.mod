@@ -7,6 +7,7 @@ require (
 	github.com/briandowns/spinner v1.11.1
 	github.com/creack/pty v1.1.11
 	github.com/denisbrodbeck/machineid v1.0.1
+	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/jdxcode/netrc v0.0.0-20190329161231-b36f1c51d91d
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.4
