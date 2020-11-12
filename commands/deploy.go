@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -77,12 +78,9 @@ func (c *DeployCmd) Run() (err error) {
 		s.Stop()
 		return fmt.Errorf("unable to build file list: %s", err)
 	}
-	if c.Debug {
-		fmt.Println()
-		fmt.Println("[debug] Archiving files:")
-		for _, file := range files {
-			fmt.Println("[debug]", file)
-		}
+	log.Println("[DEBUG] Archiving files:")
+	for _, file := range files {
+		log.Println("[DEBUG]", file)
 	}
 
 	tempFile, err := ioutil.TempFile("", "sectionctl-deploy.*.tar.gz")
@@ -105,9 +103,7 @@ func (c *DeployCmd) Run() (err error) {
 	}
 	s.Stop()
 
-	if c.Debug {
-		fmt.Println("[debug] Temporary tarball path:", tempFile.Name())
-	}
+	log.Println("[DEBUG] Temporary tarball path:", tempFile.Name())
 	stat, err := tempFile.Stat()
 	if err != nil {
 		return fmt.Errorf("%s: could not stat, got error: %s", tempFile.Name(), err)
@@ -132,14 +128,10 @@ func (c *DeployCmd) Run() (err error) {
 	}
 	req.SetBasicAuth(username, password)
 
-	if c.Debug {
-		fmt.Println("[debug] Request URL:", req.URL)
-	}
+	log.Println("[DEBUG] Request URL:", req.URL)
 
 	artifactSizeMB := stat.Size() / 1024 / 1024
-	if c.Debug {
-		fmt.Printf("[debug] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size())
-	}
+	log.Printf("[DEBUG] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size())
 	s.Suffix = fmt.Sprintf(" Uploading app (%dMB)...", artifactSizeMB)
 	s.Start()
 	client := &http.Client{
