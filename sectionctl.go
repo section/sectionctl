@@ -27,7 +27,6 @@ type CLI struct {
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
 	InstallCompletions kongplete.InstallCompletions `cmd:"" help:"install shell completions"`
-	logFilter          *logutils.LevelFilter
 }
 
 func bootstrap(c CLI) {
