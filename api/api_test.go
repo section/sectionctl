@@ -116,3 +116,35 @@ func TestAPIClientUsesCredentialsIfSpecified(t *testing.T) {
 	Username = ""
 	Token = ""
 }
+
+func TestAPIrequestSendsHeaderArguments(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	headers := []http.Header{
+		http.Header{"filepath": []string{"/etc/passwd"}},
+		http.Header{"Hello": []string{"world"}},
+		http.Header{"foo": []string{"bar"}},
+	}
+	// Test
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _, ok := r.BasicAuth()
+		assert.True(ok)
+		for _, hs := range headers {
+			for k, v := range hs {
+				assert.Contains(r.Header.Get(k), v[0])
+			}
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	u, err := url.Parse(ts.URL)
+	assert.NoError(err)
+
+	auth.CredentialPath = newCredentialTempfile(t)
+	auth.WriteCredential(u.Host, "foo", "bar")
+
+	// Invoke
+	_, err = request(http.MethodGet, *u, nil, headers...)
+	assert.NoError(err)
+}

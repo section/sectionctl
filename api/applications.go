@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -160,4 +161,45 @@ func Applications(accountID int) (as []App, err error) {
 		return as, err
 	}
 	return as, err
+}
+
+// EnvironmentUpdateCommand is a blah
+type EnvironmentUpdateCommand struct {
+	Op    string      `json:"op"`
+	Path  string      `json:"path"`
+	Value interface{} `json:"value"`
+}
+
+// ApplicationEnvironmentModuleUpdate updates a module's configuration
+func ApplicationEnvironmentModuleUpdate(accountID int, applicationID int, env string, filePath string, up EnvironmentUpdateCommand) (err error) {
+	u := BaseURL()
+	u.Path += fmt.Sprintf("/account/%d/application/%d/environment/%s/update", accountID, applicationID, "production")
+
+	b, err := json.Marshal(up)
+	if err != nil {
+		return fmt.Errorf("failed to encode json payload: %v", err)
+	}
+	if Debug {
+		fmt.Printf("[DEBUG] JSON payload: %s\n", b)
+	}
+	headers := map[string][]string{"filepath": []string{filePath}}
+	resp, err := request(http.MethodPatch, u, bytes.NewBuffer(b), headers)
+	if err != nil {
+		return fmt.Errorf("failed to execute trigger request: %v", err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("could not read response body: %s", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 && resp.StatusCode != 204 {
+		var objmap map[string]interface{}
+		if err := json.Unmarshal(body, &objmap); err != nil {
+			nerr := fmt.Errorf("unable to decode error message: %s", err)
+			return fmt.Errorf("trigger update failed with status: %s and transaction ID %s\n. Error received: \n%s", resp.Status, resp.Header["Aperture-Tx-Id"][0], nerr)
+		}
+		return fmt.Errorf("trigger update failed with status: %s and transaction ID %s\n. Error received: \n%s", resp.Status, resp.Header["Aperture-Tx-Id"][0], objmap["message"])
+	}
+	return nil
 }

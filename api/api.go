@@ -20,6 +20,8 @@ var (
 	Username string
 	// Token is the token for authenticating to the Section API
 	Token string
+	// Debug toggles whether extra information is emitted from requests/responses
+	Debug bool
 )
 
 // BaseURL returns a URL for building requests on
@@ -29,7 +31,10 @@ func BaseURL() (u url.URL) {
 	return u
 }
 
-func request(method string, u url.URL, body io.Reader) (resp *http.Response, err error) {
+// request does the heavy lifting of making requests to the Section API.
+//
+// You can pass 0 or more headers, and keys in the later headers will override earlier passed headers.
+func request(method string, u url.URL, body io.Reader, headers ...http.Header) (resp *http.Response, err error) {
 	client := &http.Client{
 		Timeout: timeout,
 	}
@@ -43,15 +48,30 @@ func request(method string, u url.URL, body io.Reader) (resp *http.Response, err
 	req.Header.Set("User-Agent", ua)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/json")
+	for i := range headers {
+		for h, v := range headers[i] {
+			req.Header[h] = v
+		}
+	}
 
-	if Username == "" || Token == "" {
-		Username, Token, err = auth.GetCredential(u.Host)
+	user := Username
+	token := Token
+	if user == "" || token == "" {
+		user, token, err = auth.GetCredential(u.Host)
 		if err != nil {
 			return resp, err
 		}
 	}
-	req.SetBasicAuth(Username, Token)
+	req.SetBasicAuth(user, token)
 
+	if Debug {
+		fmt.Println("[DEBUG] Request URL:", req.URL)
+		for k, vs := range req.Header {
+			for _, v := range vs {
+				fmt.Printf("[DEBUG] Header: %s: %v\n", k, v)
+			}
+		}
+	}
 	resp, err = client.Do(req)
 	if err != nil {
 		return resp, err

@@ -21,6 +21,7 @@ type CLI struct {
 	Certs              commands.CertsCmd            `cmd help:"Manage certificates on Section"`
 	Deploy             commands.DeployCmd           `cmd help:"Deploy an app to Section"`
 	Version            commands.VersionCmd          `cmd help:"Print sectionctl version"`
+	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
 	SectionUsername    string                       `env:"SECTION_USERNAME" help:"Username for API auth"`
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
@@ -28,6 +29,7 @@ type CLI struct {
 }
 
 func bootstrap(c CLI) {
+	api.Debug = c.Debug
 	api.PrefixURI = c.SectionAPIPrefix
 	api.Username = c.SectionUsername
 	api.Token = c.SectionToken
