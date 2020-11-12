@@ -38,8 +38,8 @@ func bootstrap(c CLI) {
 	api.Token = c.SectionToken
 
 	filter := &logutils.LevelFilter{
-		Levels:   []logutils.LogLevel{"DEBUG", "WARN", "ERROR"},
-		MinLevel: logutils.LogLevel("WARN"),
+		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
+		MinLevel: logutils.LogLevel("INFO"),
 		Writer:   os.Stderr,
 	}
 	if c.Debug {
