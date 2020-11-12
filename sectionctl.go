@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 
 	"github.com/alecthomas/kong"
+	"github.com/hashicorp/logutils"
 	"github.com/posener/complete"
 	"github.com/section/sectionctl/analytics"
 	"github.com/section/sectionctl/api"
@@ -26,6 +28,7 @@ type CLI struct {
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
 	InstallCompletions kongplete.InstallCompletions `cmd:"" help:"install shell completions"`
+	logFilter          *logutils.LevelFilter
 }
 
 func bootstrap(c CLI) {
@@ -33,6 +36,16 @@ func bootstrap(c CLI) {
 	api.PrefixURI = c.SectionAPIPrefix
 	api.Username = c.SectionUsername
 	api.Token = c.SectionToken
+
+	filter := &logutils.LevelFilter{
+		Levels:   []logutils.LogLevel{"DEBUG", "WARN", "ERROR"},
+		MinLevel: logutils.LogLevel("WARN"),
+		Writer:   os.Stderr,
+	}
+	if c.Debug {
+		filter.MinLevel = logutils.LogLevel("DEBUG")
+	}
+	log.SetOutput(filter)
 }
 
 func main() {
