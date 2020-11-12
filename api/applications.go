@@ -173,7 +173,7 @@ type EnvironmentUpdateCommand struct {
 // ApplicationEnvironmentModuleUpdate updates a module's configuration
 func ApplicationEnvironmentModuleUpdate(accountID int, applicationID int, env string, filePath string, up EnvironmentUpdateCommand) (err error) {
 	u := BaseURL()
-	u.Path += fmt.Sprintf("/account/%d/application/%d/environment/%s/update", accountID, applicationID, "production")
+	u.Path += fmt.Sprintf("/account/%d/application/%d/environment/%s/update", accountID, applicationID, env)
 
 	b, err := json.Marshal(up)
 	if err != nil {
