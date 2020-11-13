@@ -75,7 +75,7 @@ func (c *AppsInfoCmd) Run() (err error) {
 
 	for i, env := range app.Environments {
 		fmt.Printf("\n-----------------\n\n")
-		fmt.Printf("Environment #%d: %s\n\n", i+1, env.EnvironmentName)
+		fmt.Printf("Environment #%d: %s (ID:%d)\n\n", i+1, env.EnvironmentName, env.ID)
 		fmt.Printf("💬 Domains (%d total)\n", len(env.Domains))
 
 		for _, dom := range env.Domains {
