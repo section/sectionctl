@@ -63,7 +63,7 @@ type AppsInfoCmd struct {
 
 // Run executes the command
 func (c *AppsInfoCmd) Run() (err error) {
-	app, err := api.Application(c.AccountID, c.ApplicationID)
+	app, err := api.Application(c.AccountID, c.AppID)
 	if err != nil {
 		return err
 	}
