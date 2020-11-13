@@ -155,13 +155,15 @@ func (c *DeployCmd) Run() (err error) {
 	}
 	s.Suffix = " Deploying app..."
 	s.Start()
-	up := api.EnvironmentUpdateCommand{
-		Op: "replace",
-		Value: PayloadValue{
-			ID: response.PayloadID,
+	var ups = []api.EnvironmentUpdateCommand{
+		api.EnvironmentUpdateCommand{
+			Op: "replace",
+			Value: PayloadValue{
+				ID: response.PayloadID,
+			},
 		},
 	}
-	err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, c.Environment, "nodejs/.section-external-source.json", up)
+	err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, c.Environment, "nodejs/.section-external-source.json", ups)
 	s.Stop()
 	if err != nil {
 		return fmt.Errorf("failed to trigger app update: %v", err)

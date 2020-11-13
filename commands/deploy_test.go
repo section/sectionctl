@@ -295,9 +295,11 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	assert.Equal(password, triggerUpdateReq.password)
 	assert.NotZero(len(triggerUpdateReq.body))
 	assert.Equal(triggerUpdateReq.header.Get("filepath"), "nodejs/.section-external-source.json")
-	var up api.EnvironmentUpdateCommand
-	err = json.Unmarshal(triggerUpdateReq.body, &up)
+	var ups []api.EnvironmentUpdateCommand
+	err = json.Unmarshal(triggerUpdateReq.body, &ups)
 	assert.NoError(err)
+	assert.Equal(len(ups), 1)
+	up := ups[0]
 	assert.Equal(up.Op, "replace")
 	assert.NotEmpty(up.Value)
 	assert.NotEmpty(up.Value.(map[string]interface{})["section_payload_id"])
