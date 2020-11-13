@@ -57,8 +57,8 @@ func (c *AppsListCmd) Run() (err error) {
 
 // AppsInfoCmd shows detailed information on an app running on Section
 type AppsInfoCmd struct {
-	AccountID     int `required short:"a"`
-	ApplicationID int `required short:"i"`
+	AccountID int `required short:"a"`
+	AppID     int `required short:"i"`
 }
 
 // Run executes the command
