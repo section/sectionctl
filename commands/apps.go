@@ -57,13 +57,13 @@ func (c *AppsListCmd) Run() (err error) {
 
 // AppsInfoCmd shows detailed information on an app running on Section
 type AppsInfoCmd struct {
-	AccountID     int `required short:"a"`
-	ApplicationID int `required short:"i"`
+	AccountID int `required short:"a"`
+	AppID     int `required short:"i"`
 }
 
 // Run executes the command
 func (c *AppsInfoCmd) Run() (err error) {
-	app, err := api.Application(c.AccountID, c.ApplicationID)
+	app, err := api.Application(c.AccountID, c.AppID)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (c *AppsInfoCmd) Run() (err error) {
 
 	for i, env := range app.Environments {
 		fmt.Printf("\n-----------------\n\n")
-		fmt.Printf("Environment #%d: %s\n\n", i+1, env.EnvironmentName)
+		fmt.Printf("Environment #%d: %s (ID:%d)\n\n", i+1, env.EnvironmentName, env.ID)
 		fmt.Printf("💬 Domains (%d total)\n", len(env.Domains))
 
 		for _, dom := range env.Domains {

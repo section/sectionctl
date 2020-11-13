@@ -28,13 +28,14 @@ const MaxFileSize = 1073741824 // 1GB
 
 // DeployCmd handles deploying an app to Section.
 type DeployCmd struct {
-	AccountID  int `required`
-	AppID      int `required`
-	Debug      bool
-	Directory  string        `default:"."`
-	ServerURL  *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload"`
-	Timeout    time.Duration `default:"300s"`
-	SkipDelete bool          `help:"Skip delete of temporary tarball created to upload app"`
+	AccountID   int           `required short:"a" help:"AccountID to deploy application to."`
+	AppID       int           `required short:"i" help:"AppID to deploy application to."`
+	Environment string        `short:"e" default:"production" help:"Environment to deploy application to."`
+	Debug       bool          `help:"Display extra debugging information about what is happening inside sectionctl."`
+	Directory   string        `default:"." help:"Directory which contains the application to deploy."`
+	ServerURL   *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload" help:"URL to upload application to"`
+	Timeout     time.Duration `default:"300s" help:"Timeout of individual HTTP requests."`
+	SkipDelete  bool          `help:"Skip delete of temporary tarball created to upload app."`
 }
 
 // UploadResponse represents the response from a request to the upload service.
@@ -154,13 +155,15 @@ func (c *DeployCmd) Run() (err error) {
 	}
 	s.Suffix = " Deploying app..."
 	s.Start()
-	up := api.EnvironmentUpdateCommand{
-		Op: "replace",
-		Value: PayloadValue{
-			ID: response.PayloadID,
+	var ups = []api.EnvironmentUpdateCommand{
+		api.EnvironmentUpdateCommand{
+			Op: "replace",
+			Value: PayloadValue{
+				ID: response.PayloadID,
+			},
 		},
 	}
-	err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, "production", "nodejs/.section-external-source.json", up)
+	err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, c.Environment, "nodejs/.section-external-source.json", ups)
 	s.Stop()
 	if err != nil {
 		return fmt.Errorf("failed to trigger app update: %v", err)

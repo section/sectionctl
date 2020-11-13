@@ -65,7 +65,7 @@ func request(method string, u url.URL, body io.Reader, headers ...http.Header) (
 	}
 	req.SetBasicAuth(user, token)
 
-	log.Println("[DEBUG] Request URL:", req.URL)
+	log.Println("[DEBUG] Request URL:", method, req.URL)
 	for k, vs := range req.Header {
 		for _, v := range vs {
 			log.Printf("[DEBUG] Header: %s: %v\n", k, v)
