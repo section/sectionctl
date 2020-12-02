@@ -55,15 +55,14 @@ func request(method string, u url.URL, body io.Reader, headers ...http.Header) (
 		}
 	}
 
-	user := Username
 	token := Token
-	if user == "" || token == "" {
-		user, token, err = auth.GetCredential(u.Host)
+	if token == "" {
+		_, token, err = auth.GetCredential(u.Host)
 		if err != nil {
 			return resp, err
 		}
 	}
-	req.SetBasicAuth(user, token)
+	req.Header.Add("section-token", token)
 
 	log.Println("[DEBUG] Request URL:", method, req.URL)
 	for k, vs := range req.Header {

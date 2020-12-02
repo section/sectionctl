@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/section/sectionctl/api"
+	"github.com/section/sectionctl/api/auth"
 )
 
 // WhoAmICmd returns information about the currently authenticated user
@@ -21,6 +22,10 @@ func PrettyBool(b bool) (s string) {
 
 // Run executes the command
 func (c *WhoAmICmd) Run() (err error) {
+	err = auth.Setup(api.PrefixURI.Host)
+	if err != nil {
+		return err
+	}
 	u, err := api.CurrentUser()
 	if err != nil {
 		return err

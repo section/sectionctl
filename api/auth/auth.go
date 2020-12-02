@@ -3,10 +3,11 @@ package auth
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"github.com/jdxcode/netrc"
+	"github.com/mitchellh/go-homedir"
+	"github.com/zalando/go-keyring"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -22,11 +23,11 @@ func init() {
 	TTY = os.Stdin
 
 	// Set CredentialPath for normal interactive use
-	usr, err := user.Current()
+	dir, err := homedir.Dir()
 	if err != nil {
 		return
 	}
-	CredentialPath = filepath.Join(usr.HomeDir, ".config", "section", "netrc")
+	CredentialPath = filepath.Join(dir, ".config", "section", "netrc")
 }
 
 // Setup ensures authentication is set up
@@ -52,97 +53,32 @@ func Setup(endpoint string) (err error) {
 
 // IsCredentialRecorded returns if API credentials have been recorded
 func IsCredentialRecorded() bool {
-	n, err := netrc.Parse(CredentialPath)
+	service := "sectionctl"
+	user := "local"
+	token, err := keyring.Get(service, user)
 	if err != nil {
 		return false
 	}
-	if n.Machine("aperture.section.io") == nil {
-		return false
-	}
-
-	u := n.Machine("aperture.section.io").Get("login")
-	p := n.Machine("aperture.section.io").Get("password")
-	return (len(u) > 0 && len(p) > 0)
+	return (len(token) > 0)
 }
 
 // PromptForCredential interactively prompts the user for a credential to authenticate to the Section API
-func PromptForCredential(m string) (u, p string, err error) {
-	restoreTerminal := func() {}
-	if TTY == os.Stdin {
-		oldState, err := terminal.MakeRaw(int(TTY.Fd()))
-		if err != nil {
-			return u, p, fmt.Errorf("unable to set up terminal: %s", err)
-		}
-		restoreTerminal = func() {
-			err = terminal.Restore(int(TTY.Fd()), oldState)
-			if err != nil {
-				fmt.Printf("unable to restore terminal: %s\n", err)
-				os.Exit(1)
-			}
-			fmt.Println()
-		}
-	}
-
-	t := terminal.NewTerminal(TTY, "")
-
-	Printf(TTY, "Username: ")
-	u, err = t.ReadLine()
-	if err != nil {
-		restoreTerminal()
-		return u, p, fmt.Errorf("unable to read username: %s", err)
-	}
-
-	Printf(TTY, "Password: ")
-	p, err = t.ReadPassword("")
-	if err != nil {
-		restoreTerminal()
-		return u, p, fmt.Errorf("unable to read password: %s", err)
-	}
-
-	restoreTerminal()
+func PromptForCredential() (u, p string, err error) {
 	return u, p, err
 }
 
 // WriteCredential saves Section API credentials to disk
 func WriteCredential(endpoint, username, password string) (err error) {
-	basedir := filepath.Dir(CredentialPath)
-	err = os.MkdirAll(basedir, os.ModeDir+0700)
-	if err != nil {
-		return err
-	}
-
-	_, err = os.Stat(CredentialPath)
-	if os.IsNotExist(err) {
-		file, err := os.Create(CredentialPath)
-		if err != nil {
-			return err
-		}
-		file.Close()
-	}
-	if err := os.Chmod(CredentialPath, 0600); err != nil {
-		return err
-	}
-
-	n, err := netrc.Parse(CredentialPath)
-	if err != nil {
-		return err
-	}
-	n.AddMachine(endpoint, username, password)
-	err = n.Save()
+	service := "sectionctl"
+	err = keyring.Set(service, endpoint, password)
 	return err
 }
 
 // GetCredential returns Basic Auth credentials for authenticating to the Section API
 func GetCredential(endpoint string) (u, p string, err error) {
-	n, err := netrc.Parse(CredentialPath)
-	if err != nil {
-		return u, p, err
-	}
-	if n.Machine(endpoint) == nil {
-		return u, p, fmt.Errorf("invalid credentials file at %s", CredentialPath)
-	}
-	u = n.Machine(endpoint).Get("login")
-	p = n.Machine(endpoint).Get("password")
+	service := "sectionctl"
+	u = "local"
+	p, err = keyring.Get(service, u)
 	return u, p, err
 }
 
