@@ -22,8 +22,11 @@ gostaticcheck:
 goerrcheck:
 	errcheck -exclude .lint/errcheck-excludes -blank -ignoretests ./...
 
-export GOARCH := amd64
 build: clean
+	go build -ldflags "-X 'github.com/section/sectionctl/version.Version=dev'" -o sectionctl sectionctl.go
+
+export GOARCH := amd64
+build-release: clean
 	@if [ -z "$(VERSION)" ]; then echo "Missing VERSION"; exit 1 ; fi
 	@if [ -z "$(GOOS)" ]; then echo "Missing GOOS"; exit 1 ; fi
 	@if [ -z "$(GOARCH)" ]; then echo "Missing GOARCH"; exit 1 ; fi
