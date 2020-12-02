@@ -36,7 +36,7 @@ build-release: clean
 	tar --create --gzip --verbose --file dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz --directory dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH) .
 
 clean:
-	rm -rf build
+	rm -rf dist
 
 check_version:
 	@if [ -z "$(VERSION)" ]; then echo "Missing VERSION"; exit 1 ; fi
