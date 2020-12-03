@@ -41,6 +41,15 @@ type Module struct {
 	Href  string `json:"href"`
 }
 
+// AppStatus represents the status of an application deployed on Section
+type AppStatus struct {
+	InService    bool   `json:"inService"`
+	State        string `json:"state"`
+	InstanceName string `json:"instanceName"`
+	PayloadID    string `json:"commitID"`
+	IsLatest     bool   `json:"isLatest"`
+}
+
 // Application returns detailed information about a given application.
 func Application(accountID int, applicationID int) (a App, err error) {
 	u := BaseURL()
@@ -201,4 +210,76 @@ func ApplicationEnvironmentModuleUpdate(accountID int, applicationID int, env st
 		return fmt.Errorf("trigger update failed with status: %s and transaction ID %s\n. Error received: \n%s", resp.Status, resp.Header["Aperture-Tx-Id"][0], objmap["message"])
 	}
 	return nil
+}
+
+// getEnvironmentID returns the environment ID for a given account, application and environment name
+func getEnvironmentID(accountID int, applicationID int, environmentName string) (int, error) {
+	envs, err := ApplicationEnvironments(accountID, applicationID)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, e := range envs {
+		if e.EnvironmentName == environmentName {
+			return e.ID, nil
+		}
+	}
+	return 0, fmt.Errorf("could not find %s environment", environmentName)
+}
+
+// ApplicationStatus returns a module's current status on Section's delivery platform
+func ApplicationStatus(accountID int, applicationID int) (as []AppStatus, err error) {
+	u := BaseURL()
+	u.Path = "/new/authorized/graphql_api/query"
+
+	// Hard coding to Production environment for now.
+	// Can be changed later for multiple environment support on the same application.
+	environmentID, err := getEnvironmentID(accountID, applicationID, "Production")
+	if err != nil {
+		return as, err
+	}
+
+	var requestData struct {
+		OperationName string                 `json:"operationName"`
+		Variables     map[string]interface{} `json:"variables"`
+		Query         string                 `json:"query"`
+	}
+
+	requestData.Variables = map[string]interface{}{
+		"moduleName":    "nodejs",
+		"environmentID": environmentID,
+	}
+	requestData.Query = "query DeploymentStatus($moduleName: String!, $environmentID: Int!){deploymentStatus(moduleName:$moduleName, environmentID:$environmentID){inService state instanceName commitID isLatest}}"
+
+	data, err := json.Marshal(requestData)
+	resp, err := request(http.MethodPost, u, bytes.NewBuffer(data))
+	if err != nil {
+		return as, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return as, prettyTxIDError(resp)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return as, fmt.Errorf("could not read response body: %s", err)
+	}
+
+	log.Printf("[DEBUG] RESPONSE: %s\n", string(body))
+
+	var responseBody struct {
+		Data struct {
+			DeploymentStatus []AppStatus `json:"deploymentStatus"`
+		} `json:"data"`
+	}
+
+	err = json.Unmarshal(body, &responseBody)
+	if err != nil {
+		return as, err
+	}
+
+	as = responseBody.Data.DeploymentStatus
+	return as, nil
 }

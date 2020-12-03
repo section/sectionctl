@@ -23,6 +23,7 @@ type CLI struct {
 	Deploy             commands.DeployCmd           `cmd help:"Deploy an app to Section"`
 	Version            commands.VersionCmd          `cmd help:"Print sectionctl version"`
 	WhoAmI             commands.WhoAmICmd           `cmd name:"whoami" help:"Show information about the currently authenticated user"`
+	Ps                 commands.PsCmd               `cmd help:"Show status of running applications"`
 	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
 	SectionUsername    string                       `env:"SECTION_USERNAME" help:"Username for API auth"`
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
