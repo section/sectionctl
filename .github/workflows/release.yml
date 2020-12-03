@@ -60,7 +60,7 @@ jobs:
       run: echo ::set-env name=VERSION::${GITHUB_REF/refs\/tags\//}
 
     - name: Build
-      run: make build
+      run: make build-release
 
     - uses: actions/upload-artifact@v2
       with:
