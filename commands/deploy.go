@@ -123,11 +123,11 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("unable to build file upload: %s", err)
 	}
 
-	username, password, err := auth.GetCredential(c.ServerURL.Host)
+	token, err := auth.GetCredential(c.ServerURL.Host)
 	if err != nil {
-		return fmt.Errorf("unable to read credentials: %s", err)
+		return fmt.Errorf("unable to read credentials: %w", err)
 	}
-	req.SetBasicAuth(username, password)
+	req.Header.Add("section-token", token)
 
 	log.Println("[DEBUG] Request URL:", req.URL)
 

@@ -24,7 +24,6 @@ type CLI struct {
 	Version            commands.VersionCmd          `cmd help:"Print sectionctl version"`
 	WhoAmI             commands.WhoAmICmd           `cmd name:"whoami" help:"Show information about the currently authenticated user"`
 	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
-	SectionUsername    string                       `env:"SECTION_USERNAME" help:"Username for API auth"`
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
 	InstallCompletions kongplete.InstallCompletions `cmd:"" help:"install shell completions"`
@@ -33,7 +32,6 @@ type CLI struct {
 func bootstrap(c CLI) {
 	api.Debug = c.Debug
 	api.PrefixURI = c.SectionAPIPrefix
-	api.Username = c.SectionUsername
 	api.Token = c.SectionToken
 
 	filter := &logutils.LevelFilter{

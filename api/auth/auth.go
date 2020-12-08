@@ -1,94 +1,76 @@
 package auth
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"os"
-	"path/filepath"
+	"strings"
 
-	"github.com/jdxcode/netrc"
-	"github.com/mitchellh/go-homedir"
 	"github.com/zalando/go-keyring"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 var (
-	// CredentialPath is the path on disk to where credential is recorded
-	CredentialPath string
-	// TTY is the terminal for reading credentials from users
-	TTY *os.File
+	// KeyringService is the service the credential belongs to
+	KeyringService = "sectionctl"
+	// KeyringUser is the user of the credential
+	KeyringUser = "aperture.section.io"
 )
-
-func init() {
-	// Set tty for normal interactive use
-	TTY = os.Stdin
-
-	// Set CredentialPath for normal interactive use
-	dir, err := homedir.Dir()
-	if err != nil {
-		return
-	}
-	CredentialPath = filepath.Join(dir, ".config", "section", "netrc")
-}
 
 // Setup ensures authentication is set up
 func Setup(endpoint string) (err error) {
-	if !IsCredentialRecorded() {
-		Printf(TTY, "No API credentials recorded.\n\n")
-		Printf(TTY, "Let's get you authenticated to the Section API!\n\n")
+	if !IsCredentialRecorded(KeyringService, KeyringUser) {
+		fmt.Printf("No API credentials recorded.\n\n")
+		fmt.Printf("Let's get you authenticated to the Section API!\n\n")
 
-		u, p, err := PromptForCredential(endpoint)
+		t, err := PromptForCredential(os.Stdin, os.Stdout)
 		if err != nil {
-			return fmt.Errorf("error when prompting for credential: %s", err)
+			return fmt.Errorf("error when prompting for credential: %w", err)
 		}
 
-		err = WriteCredential(endpoint, u, p)
+		err = WriteCredential(endpoint, t)
 		if err != nil {
 			return fmt.Errorf("unable to save credential: %s", err)
 		}
-		return err
+
 	}
 
 	return err
 }
 
 // IsCredentialRecorded returns if API credentials have been recorded
-func IsCredentialRecorded() bool {
-	service := "sectionctl"
-	user := "local"
-	token, err := keyring.Get(service, user)
+func IsCredentialRecorded(s, u string) bool {
+	token, err := keyring.Get(s, u)
 	if err != nil {
 		return false
 	}
-	return (len(token) > 0)
+	return len(token) > 0
 }
 
 // PromptForCredential interactively prompts the user for a credential to authenticate to the Section API
-func PromptForCredential() (u, p string, err error) {
-	return u, p, err
+func PromptForCredential(in io.Reader, out io.Writer) (token string, err error) {
+	fmt.Fprintf(out, "Token: ")
+
+	reader := bufio.NewReader(in)
+	token, err = reader.ReadString('\n')
+
+	if err != nil {
+		return token, fmt.Errorf("unable to read your response: %w", err)
+	}
+	token = strings.Replace(token, "\n", "", -1)
+	token = strings.Replace(token, "\r", "", -1) // convert CRLF to LF
+
+	return token, err
 }
 
-// WriteCredential saves Section API credentials to disk
-func WriteCredential(endpoint, username, password string) (err error) {
-	service := "sectionctl"
-	err = keyring.Set(service, endpoint, password)
+// WriteCredential saves Section API credentials to a persistent store
+func WriteCredential(endpoint, token string) (err error) {
+	err = keyring.Set(KeyringService, endpoint, token)
 	return err
 }
 
-// GetCredential returns Basic Auth credentials for authenticating to the Section API
-func GetCredential(endpoint string) (u, p string, err error) {
-	service := "sectionctl"
-	u = "local"
-	p, err = keyring.Get(service, u)
-	return u, p, err
-}
-
-// Printf formats according to a format specifier and writes to an output.
-// Output can be overridden for testing purposes by setting: auth.TTY
-func Printf(out *os.File, str string, a ...interface{}) {
-	s := fmt.Sprintf(str, a...)
-	if out == os.Stdin {
-		out.Write([]byte(s))
-	} else {
-		fmt.Printf("%s", s)
-	}
+// GetCredential returns a token for authenticating to the Section API
+func GetCredential(endpoint string) (token string, err error) {
+	token, err = keyring.Get(KeyringService, endpoint)
+	return token, err
 }

@@ -207,8 +207,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	// Setup
 	type req struct {
 		called    bool
-		username  string
-		password  string
+		token     string
 		body      []byte
 		accountID int
 		file      []byte
@@ -217,14 +216,13 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	var uploadReq req
 	var triggerUpdateReq req
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, p, ok := r.BasicAuth()
-		assert.True(ok)
+		to := r.Header.Get("section-token")
+		assert.NotEmpty(to)
 
 		switch r.URL.Path {
 		case "/":
 			uploadReq.called = true
-			uploadReq.username = u
-			uploadReq.password = p
+			uploadReq.token = to
 
 			r.ParseMultipartForm(MaxFileSize)
 
@@ -242,8 +240,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 			fmt.Fprint(w, string(helperLoadBytes(t, "deploy/upload.response.with_success.json")))
 		case "/api/v1/account/100/application/200/environment/dev/update":
 			triggerUpdateReq.called = true
-			triggerUpdateReq.username = u
-			triggerUpdateReq.password = p
+			triggerUpdateReq.token = to
 			b, err := ioutil.ReadAll(r.Body)
 			assert.NoError(err)
 			triggerUpdateReq.body = b
@@ -258,11 +255,9 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	url, err := url.Parse(ts.URL)
 	assert.NoError(err)
 
-	auth.CredentialPath = newCredentialTempfile(t)
 	endpoint := url.Host
-	username := "hello"
-	password := "s3cr3t"
-	auth.WriteCredential(endpoint, username, password)
+	token := "s3cr3t"
+	auth.WriteCredential(endpoint, token)
 
 	dir := filepath.Join("testdata", "deploy", "valid-nodejs-app")
 
@@ -283,16 +278,14 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 
 	// upload request
 	assert.True(uploadReq.called)
-	assert.Equal(username, uploadReq.username)
-	assert.Equal(password, uploadReq.password)
+	assert.Equal(token, uploadReq.token)
 	assert.NotZero(len(uploadReq.file))
 	assert.Equal([]byte{0x1f, 0x8b}, uploadReq.file[0:2]) // gzip header
 	assert.Equal(c.AccountID, uploadReq.accountID)
 
 	// trigger update request
 	assert.True(triggerUpdateReq.called)
-	assert.Equal(username, triggerUpdateReq.username)
-	assert.Equal(password, triggerUpdateReq.password)
+	assert.Equal(token, triggerUpdateReq.token)
 	assert.NotZero(len(triggerUpdateReq.body))
 	assert.Equal(triggerUpdateReq.header.Get("filepath"), "nodejs/.section-external-source.json")
 	var ups []api.EnvironmentUpdateCommand
