@@ -10,6 +10,7 @@ import (
 
 	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
+	"github.com/zalando/go-keyring"
 )
 
 func helperLoadBytes(t *testing.T, name string) []byte {
@@ -25,6 +26,8 @@ func TestAPIClientSetsUserAgent(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
+	keyring.MockInit()
+
 	var userAgent string
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userAgent = r.Header["User-Agent"][0]

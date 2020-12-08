@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/zalando/go-keyring"
 )
 
 func TestAPIAuthDetectsIfCredentialNotRecorded(t *testing.T) {
@@ -45,6 +46,7 @@ func TestAPIAuthCanReadWrittenCredentials(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
+	keyring.MockInit()
 	endpoint := "127.0.0.1:8080"
 	token := "s3cr3t"
 

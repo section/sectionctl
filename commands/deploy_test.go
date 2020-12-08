@@ -18,6 +18,7 @@ import (
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
+	"github.com/zalando/go-keyring"
 )
 
 func helperLoadBytes(t *testing.T, name string) []byte {
@@ -255,6 +256,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	url, err := url.Parse(ts.URL)
 	assert.NoError(err)
 
+	keyring.MockInit()
 	endpoint := url.Host
 	token := "s3cr3t"
 	auth.WriteCredential(endpoint, token)
