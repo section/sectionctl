@@ -31,6 +31,8 @@ jobs:
         fi
 
     - name: Test
+      env:
+        SECTION_TOKEN: c1s3cr3t
       run: |
         make cidep
         make test
