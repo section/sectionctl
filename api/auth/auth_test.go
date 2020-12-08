@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,31 +14,21 @@ func TestAPIAuthDetectsIfCredentialNotRecorded(t *testing.T) {
 	assert.False(IsCredentialRecorded(KeyringService, t.Name()))
 }
 
-/*
 func TestAPIAuthPromptsForCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	machine := "aperture.section.io"
-	username := "ada@section.example"
-	password := "s3cr3t"
-	input := username + "\n" + password + "\n"
-
-	c := exec.Command("echo", input)
-	tty, err := pty.Start(c)
-	TTY = tty
-	assert.NoError(err)
-	defer func() { TTY = os.Stdin }()
+	token := "s3cr3t"
+	in := strings.NewReader(token + "\n")
+	var out bytes.Buffer
 
 	// Invoke
-	u, p, err := PromptForCredential(machine)
+	to, err := PromptForCredential(in, &out)
 
 	// Test
 	assert.NoError(err)
-	assert.Equal(username, u)
-	assert.Equal(password, p)
+	assert.Equal(token, to)
 }
-*/
 
 func TestAPIAuthGetCredentialReturnsErrorIfNone(t *testing.T) {
 	assert := assert.New(t)
