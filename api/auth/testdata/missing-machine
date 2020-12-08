@@ -1,3 +1,0 @@
-machine hello.example
-  login hello
-  password world
