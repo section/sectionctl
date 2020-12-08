@@ -48,7 +48,17 @@ cd sectionctl
 make test
 ```
 
-To build a binary in `bin/`
+To run a development version of `sectionctl`:
+
+```
+go run sectionctl.go
+```
+
+Add whatever flags and arguments you need at the end of above command.
+
+### Building
+
+To build a binary at `./sectionctl`:
 
 ```
 make build
