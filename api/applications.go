@@ -46,7 +46,7 @@ type AppStatus struct {
 	InService    bool   `json:"inService"`
 	State        string `json:"state"`
 	InstanceName string `json:"instanceName"`
-	PayloadID    string `json:"commitID"`
+	PayloadID    string `json:"payloadID"`
 	IsLatest     bool   `json:"isLatest"`
 }
 
@@ -249,7 +249,7 @@ func ApplicationStatus(accountID int, applicationID int) (as []AppStatus, err er
 		"moduleName":    "nodejs",
 		"environmentID": environmentID,
 	}
-	requestData.Query = "query DeploymentStatus($moduleName: String!, $environmentID: Int!){deploymentStatus(moduleName:$moduleName, environmentID:$environmentID){inService state instanceName commitID isLatest}}"
+	requestData.Query = "query DeploymentStatus($moduleName: String!, $environmentID: Int!){deploymentStatus(moduleName:$moduleName, environmentID:$environmentID){inService state instanceName payloadID}}"
 
 	data, err := json.Marshal(requestData)
 	resp, err := request(http.MethodPost, u, bytes.NewBuffer(data))

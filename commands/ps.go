@@ -34,10 +34,10 @@ func (c *PsCmd) Run() (err error) {
 	}
 
 	table := NewTable(os.Stdout)
-	table.SetHeader([]string{"App Status", "App Payload ID"})
+	table.SetHeader([]string{"App instance name", "App Status", "App Payload ID"})
 
 	for _, a := range appStatus {
-		r := []string{getStatus(a), a.PayloadID}
+		r := []string{a.InstanceName, getStatus(a), a.PayloadID}
 		table.Append(r)
 	}
 	table.Render()
