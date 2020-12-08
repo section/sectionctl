@@ -1,45 +1,22 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
-	"github.com/creack/pty"
 	"github.com/section/sectionctl/api"
-	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
 )
-
-func newCredentialTempfile(t *testing.T) string {
-	pattern := "sectionctl-api-auth-credential-" + strings.ReplaceAll(t.Name(), "/", "_")
-	file, err := ioutil.TempFile("", pattern)
-	if err != nil {
-		t.FailNow()
-	}
-	return file.Name()
-}
 
 func TestCommandsLoginValidatesGoodCredentials(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	username := "grace@hopper.example"
-	password := "supers3cr3t"
-	input := username + "\n" + password + "\n"
-	c := exec.Command("echo", input)
-	tty, err := pty.Start(c)
-	auth.TTY = tty
-	assert.NoError(err)
-	defer func() { auth.TTY = os.Stdin }()
-	auth.CredentialPath = newCredentialTempfile(t)
-
 	var called bool
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
@@ -51,8 +28,14 @@ func TestCommandsLoginValidatesGoodCredentials(t *testing.T) {
 	assert.NoError(err)
 	api.PrefixURI = ur
 
+	in := strings.NewReader("s3cr3t\n")
+	var out bytes.Buffer
+	cmd := LoginCmd{
+		in:  in,
+		out: &out,
+	}
+
 	// Invoke
-	cmd := LoginCmd{}
 	err = cmd.Run()
 
 	// Test
@@ -64,16 +47,6 @@ func TestCommandsLoginValidatesBadCredentials(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	username := "grace@hopper.example"
-	password := "b4ds3cr3t"
-	input := username + "\n" + password + "\n"
-	c := exec.Command("echo", input)
-	tty, err := pty.Start(c)
-	auth.TTY = tty
-	assert.NoError(err)
-	defer func() { auth.TTY = os.Stdin }()
-	auth.CredentialPath = newCredentialTempfile(t)
-
 	var called bool
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
@@ -84,8 +57,14 @@ func TestCommandsLoginValidatesBadCredentials(t *testing.T) {
 	assert.NoError(err)
 	api.PrefixURI = ur
 
+	in := strings.NewReader("s3cr3t\n")
+	var out bytes.Buffer
+	cmd := LoginCmd{
+		in:  in,
+		out: &out,
+	}
+
 	// Invoke
-	cmd := LoginCmd{}
 	err = cmd.Run()
 
 	// Test

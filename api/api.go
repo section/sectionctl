@@ -17,8 +17,6 @@ var (
 	// PrefixURI is the root of the Section API
 	PrefixURI = &url.URL{Scheme: "https", Host: "aperture.section.io"}
 	timeout   = 20 * time.Second
-	// Username is the username for authenticating to the Section API
-	Username string
 	// Token is the token for authenticating to the Section API
 	Token string
 	// Debug toggles whether extra information is emitted from requests/responses
@@ -55,15 +53,14 @@ func request(method string, u url.URL, body io.Reader, headers ...http.Header) (
 		}
 	}
 
-	user := Username
 	token := Token
-	if user == "" || token == "" {
-		user, token, err = auth.GetCredential(u.Host)
+	if token == "" {
+		token, err = auth.GetCredential(u.Host)
 		if err != nil {
 			return resp, err
 		}
 	}
-	req.SetBasicAuth(user, token)
+	req.Header.Add("section-token", token)
 
 	log.Println("[DEBUG] Request URL:", method, req.URL)
 	for k, vs := range req.Header {

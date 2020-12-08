@@ -6,21 +6,12 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
+	"github.com/zalando/go-keyring"
 )
-
-func newCredentialTempfile(t *testing.T) string {
-	pattern := "sectionctl-api-auth-credential-" + strings.ReplaceAll(t.Name(), "/", "_")
-	file, err := ioutil.TempFile("", pattern)
-	if err != nil {
-		t.FailNow()
-	}
-	return file.Name()
-}
 
 func helperLoadBytes(t *testing.T, name string) []byte {
 	path := filepath.Join("testdata", name) // relative path
@@ -35,6 +26,8 @@ func TestAPIClientSetsUserAgent(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
+	keyring.MockInit()
+
 	var userAgent string
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userAgent = r.Header["User-Agent"][0]
@@ -44,8 +37,7 @@ func TestAPIClientSetsUserAgent(t *testing.T) {
 	u, err := url.Parse(ts.URL)
 	assert.NoError(err)
 
-	auth.CredentialPath = newCredentialTempfile(t)
-	auth.WriteCredential(u.Host, "foo", "bar")
+	auth.WriteCredential(u.Host, "s3cr3t")
 
 	// Invoke
 	_, err = request(http.MethodGet, *u, nil)
@@ -85,19 +77,16 @@ func TestAPIClientUsesCredentialsIfSpecified(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	var (
-		username string
-		password string
-	)
+	var token string
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, p, ok := r.BasicAuth()
-		username = u
-		password = p
-		assert.True(ok)
-		w.WriteHeader(http.StatusOK)
+		token = r.Header.Get("section-token")
+		if assert.NotEmpty(token) {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 	}))
 
-	Username = "alice"
 	Token = "s3cr3t"
 
 	u, err := url.Parse(ts.URL)
@@ -109,11 +98,9 @@ func TestAPIClientUsesCredentialsIfSpecified(t *testing.T) {
 
 	// Test
 	assert.Equal(resp.StatusCode, http.StatusOK)
-	assert.Equal(Username, username)
-	assert.Equal(Token, password)
+	assert.Equal(Token, token)
 
 	// Teardown
-	Username = ""
 	Token = ""
 }
 
@@ -128,8 +115,6 @@ func TestAPIrequestSendsHeaderArguments(t *testing.T) {
 	}
 	// Test
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _, ok := r.BasicAuth()
-		assert.True(ok)
 		for _, hs := range headers {
 			for k, v := range hs {
 				assert.Contains(r.Header.Get(k), v[0])
@@ -141,8 +126,7 @@ func TestAPIrequestSendsHeaderArguments(t *testing.T) {
 	u, err := url.Parse(ts.URL)
 	assert.NoError(err)
 
-	auth.CredentialPath = newCredentialTempfile(t)
-	auth.WriteCredential(u.Host, "foo", "bar")
+	auth.WriteCredential(u.Host, "s3cr3t")
 
 	// Invoke
 	_, err = request(http.MethodGet, *u, nil, headers...)

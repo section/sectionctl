@@ -16,18 +16,16 @@ func TestAPIAuthCanWriteReadAndUseCredential(t *testing.T) {
 
 	// Setup
 	var (
-		username string
-		password string
 		endpoint string
+		token    string
 	)
 
 	// Run a mock server we'll use later
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, pass, ok := r.BasicAuth()
+		to := r.Header.Get("section-token")
+		assert.NotEmpty(to)
 
-		assert.True(ok)
-
-		if user == username && pass == password {
+		if to == token {
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprint(w, string(helperLoadBytes(t, "user.with_success.json")))
 		} else {
@@ -39,20 +37,16 @@ func TestAPIAuthCanWriteReadAndUseCredential(t *testing.T) {
 	assert.NoError(err)
 	PrefixURI = ur
 	endpoint = ur.Host
-	username = "grace@hopper.example"
-	password = "s3cr3t"
-
-	auth.CredentialPath = newCredentialTempfile(t)
+	token = "s3cr3t"
 
 	// Write credential
-	err = auth.WriteCredential(endpoint, username, password)
+	err = auth.WriteCredential(endpoint, token)
 	assert.NoError(err)
 
 	// Read Credential
-	u, p, err := auth.GetCredential(endpoint)
+	to, err := auth.GetCredential(endpoint)
 	assert.NoError(err)
-	assert.Equal(username, u)
-	assert.Equal(password, p)
+	assert.Equal(token, to)
 
 	// Use credential
 	usr, err := CurrentUser()

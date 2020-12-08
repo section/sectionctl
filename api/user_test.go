@@ -24,8 +24,7 @@ func TestAPIUserReturnsRecord(t *testing.T) {
 	assert.NoError(err)
 	PrefixURI = ur
 
-	auth.CredentialPath = newCredentialTempfile(t)
-	auth.WriteCredential(ur.Host, "foo", "bar")
+	auth.WriteCredential(ur.Host, "s3cr3t")
 
 	// Invoke
 	u, err := CurrentUser()
@@ -53,8 +52,7 @@ func TestAPIUserHandlesErrors(t *testing.T) {
 	assert.NoError(err)
 	PrefixURI = ur
 
-	auth.CredentialPath = newCredentialTempfile(t)
-	auth.WriteCredential(ur.Host, "foo", "bar")
+	auth.WriteCredential(ur.Host, "s3cr3t")
 
 	// Invoke
 	u, err := CurrentUser()

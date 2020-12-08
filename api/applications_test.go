@@ -17,8 +17,8 @@ func TestApplicationEnvironmentModuleUpdateSendsUpdateInArray(t *testing.T) {
 
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _, ok := r.BasicAuth()
-		assert.True(ok)
+		to := r.Header.Get("section-token")
+		assert.NotEmpty(to)
 		w.Header().Add("Aperture-Tx-Id", "400400400400.400400")
 
 		b, err := ioutil.ReadAll(r.Body)
@@ -36,11 +36,9 @@ func TestApplicationEnvironmentModuleUpdateSendsUpdateInArray(t *testing.T) {
 	assert.NoError(err)
 	PrefixURI = url
 
-	auth.CredentialPath = newCredentialTempfile(t)
 	endpoint := url.Host
-	username := "hello"
-	password := "s3cr3t"
-	auth.WriteCredential(endpoint, username, password)
+	token := "s3cr3t"
+	auth.WriteCredential(endpoint, token)
 
 	// Invoke
 	var ups = []EnvironmentUpdateCommand{
@@ -57,8 +55,8 @@ func TestApplicationEnvironmentModuleUpdateErrorsIfRequestFails(t *testing.T) {
 
 	// Setup
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _, ok := r.BasicAuth()
-		assert.True(ok)
+		to := r.Header.Get("section-token")
+		assert.NotEmpty(to)
 		w.Header().Add("Aperture-Tx-Id", "400400400400.400400")
 		w.WriteHeader(http.StatusBadRequest)
 	}))
@@ -66,11 +64,9 @@ func TestApplicationEnvironmentModuleUpdateErrorsIfRequestFails(t *testing.T) {
 	assert.NoError(err)
 	PrefixURI = url
 
-	auth.CredentialPath = newCredentialTempfile(t)
 	endpoint := url.Host
-	username := "hello"
-	password := "s3cr3t"
-	auth.WriteCredential(endpoint, username, password)
+	token := "s3cr3t"
+	auth.WriteCredential(endpoint, token)
 
 	// Invoke
 	var ups = []EnvironmentUpdateCommand{
