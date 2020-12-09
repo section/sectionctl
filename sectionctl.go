@@ -24,6 +24,7 @@ type CLI struct {
 	Version            commands.VersionCmd          `cmd help:"Print sectionctl version"`
 	WhoAmI             commands.WhoAmICmd           `cmd name:"whoami" help:"Show information about the currently authenticated user"`
 	Ps                 commands.PsCmd               `cmd help:"Show status of running applications"`
+	Analytics          commands.AnalyticsCmd        `cmd hidden`
 	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
