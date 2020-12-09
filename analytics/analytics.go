@@ -77,7 +77,7 @@ func AsyncLogInvoke(ctx *kong.Context) {
 
 	exe, err := os.Executable()
 	if err != nil {
-		log.Printf("[WARN] Unable to submit analytics: %s", err)
+		log.Printf("[WARN] Unable to get executable to submit analytics: %s", err)
 		return
 	}
 
@@ -95,6 +95,10 @@ func AsyncLogInvoke(ctx *kong.Context) {
 	}
 
 	j, err := json.Marshal(e)
+	if err != nil {
+		log.Printf("[WARN] Unable to build JSON to submit analytics: %s", err)
+		return
+	}
 
 	cmd := exec.Command(exe, "analytics", "--event", string(j))
 	err = cmd.Start()
@@ -116,7 +120,7 @@ func AsyncLogError(ctx *kong.Context, uerr error) {
 
 	exe, err := os.Executable()
 	if err != nil {
-		log.Printf("[WARN] Unable to submit analytics: %s", err)
+		log.Printf("[WARN] Unable to get executable to submit analytics: %s", err)
 		return
 	}
 
@@ -131,6 +135,10 @@ func AsyncLogError(ctx *kong.Context, uerr error) {
 	}
 
 	j, err := json.Marshal(e)
+	if err != nil {
+		log.Printf("[WARN] Unable to build JSON to submit analytics: %s", err)
+		return
+	}
 
 	cmd := exec.Command(exe, "analytics", "--event", string(j))
 	err = cmd.Start()
