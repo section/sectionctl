@@ -21,9 +21,8 @@ func TestAnalyticsSubmitPostsToHeap(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
 
-		body, err := ioutil.ReadAll(r.Body)
+		_, err := ioutil.ReadAll(r.Body)
 		assert.NoError(err)
-		t.Logf("%s", body)
 	}))
 	HeapBaseURI = ts.URL
 
