@@ -65,6 +65,7 @@ func main() {
 	err := ctx.Run()
 	if err != nil {
 		log.Printf("[ERROR] %s\n", err)
+		analytics.AsyncLogError(ctx, err)
 		os.Exit(2)
 	}
 }

@@ -103,6 +103,42 @@ func AsyncLogInvoke(ctx *kong.Context) {
 	}
 }
 
+// AsyncLogError logs an invocation of the cli
+func AsyncLogError(ctx *kong.Context, uerr error) {
+	if ctx.Command() == "analytics" {
+		return
+	}
+
+	ConsentGiven, err := ReadConsent(os.Stdin, os.Stdout)
+	if err != nil || !ConsentGiven {
+		return
+	}
+
+	exe, err := os.Executable()
+	if err != nil {
+		log.Printf("[WARN] Unable to submit analytics: %s", err)
+		return
+	}
+
+	e := Event{
+		Name: "sectionctl error",
+		Properties: map[string]string{
+			"Subcommand": ctx.Command(),
+			"Args":       strings.Join(ctx.Args, " "),
+			"Version":    version.Version,
+			"Error":      fmt.Sprintf("%s", uerr),
+		},
+	}
+
+	j, err := json.Marshal(e)
+
+	cmd := exec.Command(exe, "analytics", "--event", string(j))
+	err = cmd.Start()
+	if err != nil {
+		log.Printf("[WARN] Unable to submit analytics: %s", err)
+	}
+}
+
 type cliTrackingConsent struct {
 	ConsentGiven bool `json:"consent_given"`
 }
