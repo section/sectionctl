@@ -8,8 +8,8 @@ import (
 
 // PsCmd checks an application's status on Section's delivery platform
 type PsCmd struct {
-	AccountID int `required short:"a"`
-	AppID     int `required short:"i"`
+	AccountID int `required short:"a" help:"ID of account to query"`
+	AppID     int `required short:"i" help:"ID of app to query"`
 }
 
 func getStatus(as api.AppStatus) string {
