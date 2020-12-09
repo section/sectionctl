@@ -64,8 +64,8 @@ func identity() (id string) {
 	return "unknown"
 }
 
-// LogInvoke logs an invocation of the cli
-func LogInvoke(ctx *kong.Context) {
+// AsyncLogInvoke logs an invocation of the cli
+func AsyncLogInvoke(ctx *kong.Context) {
 	if ctx.Command() == "analytics" {
 		return
 	}

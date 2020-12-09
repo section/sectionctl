@@ -61,7 +61,7 @@ func main() {
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
 	bootstrap(cli)
-	analytics.LogInvoke(ctx)
+	analytics.AsyncLogInvoke(ctx)
 	err := ctx.Run()
 	if err != nil {
 		log.Printf("[ERROR] %s\n", err)
