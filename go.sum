@@ -1,6 +1,8 @@
 github.com/alecthomas/kong v0.2.2/go.mod h1:kQOmtJgV+Lb4aj+I2LEn40cbtawdWJ9Y8QLq+lElKxE=
 github.com/alecthomas/kong v0.2.12 h1:X3kkCOXGUNzLmiu+nQtoxWqj4U2a39MpSJR3QdQXOwI=
 github.com/alecthomas/kong v0.2.12/go.mod h1:kQOmtJgV+Lb4aj+I2LEn40cbtawdWJ9Y8QLq+lElKxE=
+github.com/auxesis/kongplete v0.1.1-0.20201210052604-333732bbc149 h1:lKoNKmlcttwd30UjFzGlaI0CL/CL5qpaP35omkDpf7c=
+github.com/auxesis/kongplete v0.1.1-0.20201210052604-333732bbc149/go.mod h1:kFVw+PkQsqkV7O4tfIBo6iJ9qY94PJC8sPfMgFG5AdM=
 github.com/briandowns/spinner v1.12.0 h1:72O0PzqGJb6G3KgrcIOtL/JAGGZ5ptOMCn9cUHmqsmw=
 github.com/briandowns/spinner v1.12.0/go.mod h1:QOuQk7x+EaDASo80FEXwlwiA+j/PPIcX3FScO+3/ZPQ=
 github.com/danieljoos/wincred v1.0.2 h1:zf4bhty2iLuwgjgpraD2E9UbvO+fe54XXGJbOwe23fU=
