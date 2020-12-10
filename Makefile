@@ -29,7 +29,7 @@ export GOARCH := amd64
 build-release: clean check_version
 	@if [ -z "$(GOOS)" ]; then echo "Missing GOOS"; exit 1 ; fi
 	@if [ -z "$(GOARCH)" ]; then echo "Missing GOARCH"; exit 1 ; fi
-	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)'" -o bin/sectionctl sectionctl.go
+	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)' -X 'github.com/section/sectionctl/version.Version=$(shell echo $(VERSION) | cut -c 2-)'" -o bin/sectionctl sectionctl.go
 	mkdir -p dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
 	cp README.md LICENSE bin/sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
 	tar --create --gzip --verbose --file dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz --directory dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH) .
