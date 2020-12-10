@@ -2,9 +2,7 @@ package commands
 
 import (
 	"os"
-	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/api/auth"
 )
@@ -27,7 +25,7 @@ func getStatus(as api.AppStatus) string {
 
 // Run executes the command
 func (c *PsCmd) Run() (err error) {
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s := NewSpinner()
 
 	err = auth.Setup(api.PrefixURI.Host)
 	if err != nil {
