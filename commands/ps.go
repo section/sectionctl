@@ -1,9 +1,12 @@
 package commands
 
 import (
+	"os"
+	"time"
+
+	"github.com/briandowns/spinner"
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/api/auth"
-	"os"
 )
 
 // PsCmd checks an application's status on Section's delivery platform
@@ -24,11 +27,18 @@ func getStatus(as api.AppStatus) string {
 
 // Run executes the command
 func (c *PsCmd) Run() (err error) {
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+
 	err = auth.Setup(api.PrefixURI.Host)
 	if err != nil {
 		return err
 	}
+
+	s.Suffix = " Getting status of app..."
+	s.Start()
+
 	appStatus, err := api.ApplicationStatus(c.AccountID, c.AppID)
+	s.Stop()
 	if err != nil {
 		return err
 	}
