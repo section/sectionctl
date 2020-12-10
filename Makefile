@@ -23,7 +23,7 @@ goerrcheck:
 	errcheck -exclude .lint/errcheck-excludes -blank -ignoretests ./...
 
 build: clean
-	go build -ldflags "-X 'github.com/section/sectionctl/version.Version=dev'" -o sectionctl sectionctl.go
+	go build sectionctl.go
 
 export GOARCH := amd64
 build-release: clean
