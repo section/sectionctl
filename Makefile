@@ -45,7 +45,6 @@ release: check_version
 	@if [ "$(shell git branch --show-current)" != "master" ]; then echo "Must be on the 'master' branch"; exit 1 ; fi
 	@git update-index --refresh
 	@git diff-index --quiet HEAD --
-	@if [ "$(shell grep -c $(shell echo $(VERSION) | cut -c 2-) version/version.go)" != "1" ]; then echo "Error: version mismatch with version/version.go"; exit 1 ; fi
 	git tag -f -a $(VERSION) -m ''
 	git push origin master
 	git push origin refs/tags/$(VERSION)
