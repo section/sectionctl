@@ -3,6 +3,7 @@ package commands
 import (
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/api/auth"
@@ -27,13 +28,13 @@ func (c *AccountsListCmd) Run() (err error) {
 
 	s.Suffix = " Looking up accounts..."
 	s.Start()
+	time.Sleep(1 * time.Second)
 
 	accounts, err := api.Accounts()
+	s.Stop()
 	if err != nil {
-		s.Stop()
 		return err
 	}
-	s.Stop()
 
 	table := NewTable(os.Stdout)
 	table.SetHeader([]string{"Account ID", "Account Name"})

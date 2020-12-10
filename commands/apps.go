@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/section/sectionctl/api"
@@ -45,11 +46,10 @@ func (c *AppsListCmd) Run() (err error) {
 	s.Start()
 
 	apps, err := api.Applications(c.AccountID)
+	s.Stop()
 	if err != nil {
-		s.Stop()
 		return err
 	}
-	s.Stop()
 
 	table := NewTable(os.Stdout)
 	table.SetHeader([]string{"App ID", "App Name"})
@@ -78,8 +78,9 @@ func (c *AppsInfoCmd) Run() (err error) {
 		return err
 	}
 
-	s.Suffix = " Looking up info about app..."
+	s.Suffix = " Looking up app info..."
 	s.Start()
+	time.Sleep(1 * time.Second)
 
 	app, err := api.Application(c.AccountID, c.AppID)
 	if err != nil {

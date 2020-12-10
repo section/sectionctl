@@ -2,6 +2,7 @@ package commands
 
 import (
 	"os"
+	"time"
 
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/api/auth"
@@ -34,6 +35,7 @@ func (c *PsCmd) Run() (err error) {
 
 	s.Suffix = " Getting status of app..."
 	s.Start()
+	time.Sleep(1 * time.Second)
 
 	appStatus, err := api.ApplicationStatus(c.AccountID, c.AppID)
 	s.Stop()

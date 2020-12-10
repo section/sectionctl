@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/api/auth"
@@ -31,6 +32,7 @@ func (c *WhoAmICmd) Run() (err error) {
 
 	s.Suffix = " Looking up current user..."
 	s.Start()
+	time.Sleep(1 * time.Second)
 
 	u, err := api.CurrentUser()
 	s.Stop()
