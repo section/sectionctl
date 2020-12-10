@@ -66,7 +66,6 @@ make build
 
 ## Releasing
 
-1. Increment the version number in `version/version.go` and commit.
-1. Run `make release` and specify VERSION string prefaced with a `v`, like `v1.0.1`.
+Run `make release` and specify VERSION string prefaced with a `v`, like `v1.0.1`.
 
 This triggers [a GitHub Actions workflow](https://github.com/section/sectionctl/actions?query=workflow%3A%22Build+and+release+sectionctl+binaries%22) that does cross platform builds, and publishes [a draft release](https://github.com/section/sectionctl/releases).
