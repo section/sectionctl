@@ -26,8 +26,7 @@ build: clean
 	go build sectionctl.go
 
 export GOARCH := amd64
-build-release: clean
-	@if [ -z "$(VERSION)" ]; then echo "Missing VERSION"; exit 1 ; fi
+build-release: clean check_version
 	@if [ -z "$(GOOS)" ]; then echo "Missing GOOS"; exit 1 ; fi
 	@if [ -z "$(GOARCH)" ]; then echo "Missing GOARCH"; exit 1 ; fi
 	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)'" -o bin/sectionctl sectionctl.go
