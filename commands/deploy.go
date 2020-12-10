@@ -18,7 +18,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/api/auth"
 )
@@ -50,7 +49,7 @@ type PayloadValue struct {
 
 // Run deploys an app to Section's edge
 func (c *DeployCmd) Run() (err error) {
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s := NewSpinner()
 
 	dir := c.Directory
 	if dir == "." {
