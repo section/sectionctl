@@ -22,11 +22,18 @@ func PrettyBool(b bool) (s string) {
 
 // Run executes the command
 func (c *WhoAmICmd) Run() (err error) {
+	s := NewSpinner()
+
 	err = auth.Setup(api.PrefixURI.Host)
 	if err != nil {
 		return err
 	}
+
+	s.Suffix = " Looking up current user..."
+	s.Start()
+
 	u, err := api.CurrentUser()
+	s.Stop()
 	if err != nil {
 		return err
 	}
