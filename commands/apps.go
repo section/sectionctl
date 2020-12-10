@@ -34,14 +34,22 @@ func NewTable(out io.Writer) (t *tablewriter.Table) {
 
 // Run executes the command
 func (c *AppsListCmd) Run() (err error) {
+	s := NewSpinner()
+
 	err = auth.Setup(api.PrefixURI.Host)
 	if err != nil {
 		return err
 	}
+
+	s.Suffix = " Looking up apps..."
+	s.Start()
+
 	apps, err := api.Applications(c.AccountID)
 	if err != nil {
+		s.Stop()
 		return err
 	}
+	s.Stop()
 
 	table := NewTable(os.Stdout)
 	table.SetHeader([]string{"App ID", "App Name"})
@@ -63,10 +71,22 @@ type AppsInfoCmd struct {
 
 // Run executes the command
 func (c *AppsInfoCmd) Run() (err error) {
-	app, err := api.Application(c.AccountID, c.AppID)
+	s := NewSpinner()
+
+	err = auth.Setup(api.PrefixURI.Host)
 	if err != nil {
 		return err
 	}
+
+	s.Suffix = " Looking up info about app..."
+	s.Start()
+
+	app, err := api.Application(c.AccountID, c.AppID)
+	if err != nil {
+		s.Stop()
+		return err
+	}
+	s.Stop()
 
 	fmt.Printf("🌎🌏🌍\n")
 	fmt.Printf("App Name: %s\n", app.ApplicationName)
