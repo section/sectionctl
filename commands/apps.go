@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/section/sectionctl/api"
@@ -35,14 +34,12 @@ func NewTable(out io.Writer) (t *tablewriter.Table) {
 
 // Run executes the command
 func (c *AppsListCmd) Run() (err error) {
-	s := NewSpinner()
-
 	err = auth.Setup(api.PrefixURI.Host)
 	if err != nil {
 		return err
 	}
 
-	s.Suffix = " Looking up apps..."
+	s := NewSpinner("Looking up apps")
 	s.Start()
 
 	apps, err := api.Applications(c.AccountID)
@@ -71,23 +68,19 @@ type AppsInfoCmd struct {
 
 // Run executes the command
 func (c *AppsInfoCmd) Run() (err error) {
-	s := NewSpinner()
-
 	err = auth.Setup(api.PrefixURI.Host)
 	if err != nil {
 		return err
 	}
 
-	s.Suffix = " Looking up app info..."
+	s := NewSpinner("Looking up app info")
 	s.Start()
-	time.Sleep(1 * time.Second)
 
 	app, err := api.Application(c.AccountID, c.AppID)
+	s.Stop()
 	if err != nil {
-		s.Stop()
 		return err
 	}
-	s.Stop()
 
 	fmt.Printf("🌎🌏🌍\n")
 	fmt.Printf("App Name: %s\n", app.ApplicationName)

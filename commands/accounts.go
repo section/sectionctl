@@ -3,7 +3,6 @@ package commands
 import (
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/api/auth"
@@ -19,16 +18,13 @@ type AccountsListCmd struct{}
 
 // Run executes the command
 func (c *AccountsListCmd) Run() (err error) {
-	s := NewSpinner()
-
 	err = auth.Setup(api.PrefixURI.Host)
 	if err != nil {
 		return err
 	}
 
-	s.Suffix = " Looking up accounts..."
+	s := NewSpinner("Looking up accounts")
 	s.Start()
-	time.Sleep(1 * time.Second)
 
 	accounts, err := api.Accounts()
 	s.Stop()

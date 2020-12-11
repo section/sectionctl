@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/api/auth"
@@ -21,16 +20,13 @@ type CertsRenewCmd struct {
 
 // Run executes the command
 func (c *CertsRenewCmd) Run() (err error) {
-	s := NewSpinner()
-
 	err = auth.Setup(api.PrefixURI.Host)
 	if err != nil {
 		return err
 	}
 
-	s.Suffix = fmt.Sprintf(" Renewing cert for %s", c.Hostname)
+	s := NewSpinner(fmt.Sprintf("Renewing cert for %s", c.Hostname))
 	s.Start()
-	time.Sleep(2 * time.Second)
 
 	resp, err := api.DomainsRenewCert(c.AccountID, c.Hostname)
 	s.Stop()
