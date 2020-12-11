@@ -18,7 +18,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/api/auth"
 )
@@ -50,8 +49,6 @@ type PayloadValue struct {
 
 // Run deploys an app to Section's edge
 func (c *DeployCmd) Run() (err error) {
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
-
 	dir := c.Directory
 	if dir == "." {
 		abs, err := filepath.Abs(dir)
@@ -70,7 +67,7 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("not a valid Node.js app: \n\n%s", errstr)
 	}
 
-	s.Suffix = fmt.Sprintf(" Packaging app in: %s", dir)
+	s := NewSpinner(fmt.Sprintf("Packaging app in: %s", dir))
 	s.Start()
 
 	ignores := []string{".lint/", ".git/"}
@@ -133,7 +130,7 @@ func (c *DeployCmd) Run() (err error) {
 
 	artifactSizeMB := stat.Size() / 1024 / 1024
 	log.Printf("[DEBUG] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size())
-	s.Suffix = fmt.Sprintf(" Uploading app (%dMB)...", artifactSizeMB)
+	s = NewSpinner(fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB))
 	s.Start()
 	client := &http.Client{
 		Timeout: c.Timeout,
@@ -153,7 +150,7 @@ func (c *DeployCmd) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
-	s.Suffix = " Deploying app..."
+	s = NewSpinner("Deploying app...")
 	s.Start()
 	var ups = []api.EnvironmentUpdateCommand{
 		api.EnvironmentUpdateCommand{

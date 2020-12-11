@@ -26,7 +26,12 @@ func (c *WhoAmICmd) Run() (err error) {
 	if err != nil {
 		return err
 	}
+
+	s := NewSpinner("Looking up current user")
+	s.Start()
+
 	u, err := api.CurrentUser()
+	s.Stop()
 	if err != nil {
 		return err
 	}

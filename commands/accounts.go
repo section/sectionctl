@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/section/sectionctl/api"
+	"github.com/section/sectionctl/api/auth"
 )
 
 // AccountsCmd manages accounts on Section
@@ -17,7 +18,16 @@ type AccountsListCmd struct{}
 
 // Run executes the command
 func (c *AccountsListCmd) Run() (err error) {
+	err = auth.Setup(api.PrefixURI.Host)
+	if err != nil {
+		return err
+	}
+
+	s := NewSpinner("Looking up accounts")
+	s.Start()
+
 	accounts, err := api.Accounts()
+	s.Stop()
 	if err != nil {
 		return err
 	}

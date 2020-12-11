@@ -38,7 +38,12 @@ func (c *AppsListCmd) Run() (err error) {
 	if err != nil {
 		return err
 	}
+
+	s := NewSpinner("Looking up apps")
+	s.Start()
+
 	apps, err := api.Applications(c.AccountID)
+	s.Stop()
 	if err != nil {
 		return err
 	}
@@ -63,7 +68,16 @@ type AppsInfoCmd struct {
 
 // Run executes the command
 func (c *AppsInfoCmd) Run() (err error) {
+	err = auth.Setup(api.PrefixURI.Host)
+	if err != nil {
+		return err
+	}
+
+	s := NewSpinner("Looking up app info")
+	s.Start()
+
 	app, err := api.Application(c.AccountID, c.AppID)
+	s.Stop()
 	if err != nil {
 		return err
 	}
