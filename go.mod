@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/alecthomas/kong v0.2.12
-	github.com/briandowns/spinner v1.12.0
+	github.com/briandowns/spinner v1.11.1
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/hashicorp/logutils v1.0.0
 	github.com/kr/pretty v0.1.0 // indirect
