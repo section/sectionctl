@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strings"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/denisbrodbeck/machineid"
+	"github.com/section/sectionctl/version"
 )
 
 var (
@@ -62,11 +64,27 @@ func identity() (id string) {
 	return "unknown"
 }
 
-// LogInvoke logs an invocation of the cli
-func LogInvoke(ctx *kong.Context) {
+// AsyncLogInvoke logs an invocation of the cli
+func AsyncLogInvoke(ctx *kong.Context) {
+	if ctx.Command() == "analytics" {
+		return
+	}
+
+	ConsentGiven, err := ReadConsent(os.Stdin, os.Stdout)
+	if err != nil || !ConsentGiven {
+		return
+	}
+
+	exe, err := os.Executable()
+	if err != nil {
+		log.Printf("[WARN] Unable to get executable to submit analytics: %s", err)
+		return
+	}
+
 	props := map[string]string{
 		"Subcommand": ctx.Command(),
 		"Args":       strings.Join(ctx.Args, " "),
+		"Version":    version.Version,
 	}
 	if ctx.Error != nil {
 		props["Error"] = ctx.Error.Error()
@@ -75,9 +93,57 @@ func LogInvoke(ctx *kong.Context) {
 		Name:       "CLI invoked",
 		Properties: props,
 	}
-	err := Submit(e)
+
+	j, err := json.Marshal(e)
 	if err != nil {
-		log.Println("[WARN] Unable to submit analytics – continuing anyway.")
+		log.Printf("[WARN] Unable to build JSON to submit analytics: %s", err)
+		return
+	}
+
+	cmd := exec.Command(exe, "analytics", "--event", string(j))
+	err = cmd.Start()
+	if err != nil {
+		log.Printf("[WARN] Unable to submit analytics: %s", err)
+	}
+}
+
+// AsyncLogError logs an invocation of the cli
+func AsyncLogError(ctx *kong.Context, uerr error) {
+	if ctx.Command() == "analytics" {
+		return
+	}
+
+	ConsentGiven, err := ReadConsent(os.Stdin, os.Stdout)
+	if err != nil || !ConsentGiven {
+		return
+	}
+
+	exe, err := os.Executable()
+	if err != nil {
+		log.Printf("[WARN] Unable to get executable to submit analytics: %s", err)
+		return
+	}
+
+	e := Event{
+		Name: "sectionctl error",
+		Properties: map[string]string{
+			"Subcommand": ctx.Command(),
+			"Args":       strings.Join(ctx.Args, " "),
+			"Version":    version.Version,
+			"Error":      fmt.Sprintf("%s", uerr),
+		},
+	}
+
+	j, err := json.Marshal(e)
+	if err != nil {
+		log.Printf("[WARN] Unable to build JSON to submit analytics: %s", err)
+		return
+	}
+
+	cmd := exec.Command(exe, "analytics", "--event", string(j))
+	err = cmd.Start()
+	if err != nil {
+		log.Printf("[WARN] Unable to submit analytics: %s", err)
 	}
 }
 

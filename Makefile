@@ -23,20 +23,19 @@ goerrcheck:
 	errcheck -exclude .lint/errcheck-excludes -blank -ignoretests ./...
 
 build: clean
-	go build -ldflags "-X 'github.com/section/sectionctl/version.Version=dev'" -o sectionctl sectionctl.go
+	go build sectionctl.go
 
 export GOARCH := amd64
-build-release: clean
-	@if [ -z "$(VERSION)" ]; then echo "Missing VERSION"; exit 1 ; fi
+build-release: clean check_version
 	@if [ -z "$(GOOS)" ]; then echo "Missing GOOS"; exit 1 ; fi
 	@if [ -z "$(GOARCH)" ]; then echo "Missing GOARCH"; exit 1 ; fi
-	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)'" -o bin/sectionctl sectionctl.go
+	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)' -X 'github.com/section/sectionctl/version.Version=$(shell echo $(VERSION) | cut -c 2-)'" sectionctl.go
 	mkdir -p dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
-	cp README.md LICENSE bin/sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
+	cp README.md LICENSE sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
 	tar --create --gzip --verbose --file dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz --directory dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH) .
 
 clean:
-	rm -rf dist
+	rm -rf dist bin
 
 check_version:
 	@if [ -z "$(VERSION)" ]; then echo "Missing VERSION"; exit 1 ; fi
@@ -46,7 +45,6 @@ release: check_version
 	@if [ "$(shell git branch --show-current)" != "master" ]; then echo "Must be on the 'master' branch"; exit 1 ; fi
 	@git update-index --refresh
 	@git diff-index --quiet HEAD --
-	@if [ "$(shell grep -c $(shell echo $(VERSION) | cut -c 2-) version/version.go)" != "1" ]; then echo "Error: version mismatch with version/version.go"; exit 1 ; fi
 	git tag -f -a $(VERSION) -m ''
 	git push origin master
 	git push origin refs/tags/$(VERSION)

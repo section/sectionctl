@@ -2,6 +2,8 @@ module github.com/section/sectionctl
 
 go 1.13
 
+replace github.com/willabides/kongplete => github.com/auxesis/kongplete v0.1.1-0.20201210052604-333732bbc149
+
 require (
 	github.com/alecthomas/kong v0.2.12
 	github.com/briandowns/spinner v1.11.1
