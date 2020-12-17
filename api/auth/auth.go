@@ -32,7 +32,6 @@ func Setup(endpoint string) (err error) {
 		if err != nil {
 			return fmt.Errorf("unable to save credential: %s", err)
 		}
-
 	}
 
 	return err
@@ -73,4 +72,9 @@ func WriteCredential(endpoint, token string) (err error) {
 func GetCredential(endpoint string) (token string, err error) {
 	token, err = keyring.Get(KeyringService, endpoint)
 	return token, err
+}
+
+// DeleteCredential deletes a previously stored credential for the Section API
+func DeleteCredential(endpoint string) error {
+	return keyring.Delete(KeyringService, endpoint)
 }
