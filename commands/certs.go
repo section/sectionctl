@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/section/sectionctl/api"
-	"github.com/section/sectionctl/api/auth"
 )
 
 // CertsCmd manages certificates on Section
@@ -20,11 +19,6 @@ type CertsRenewCmd struct {
 
 // Run executes the command
 func (c *CertsRenewCmd) Run() (err error) {
-	err = auth.Setup(api.PrefixURI.Host)
-	if err != nil {
-		return err
-	}
-
 	s := NewSpinner(fmt.Sprintf("Renewing cert for %s", c.Hostname))
 	s.Start()
 

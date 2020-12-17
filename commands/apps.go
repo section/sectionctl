@@ -8,7 +8,6 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/section/sectionctl/api"
-	"github.com/section/sectionctl/api/auth"
 )
 
 // AppsCmd manages apps on Section
@@ -34,11 +33,6 @@ func NewTable(out io.Writer) (t *tablewriter.Table) {
 
 // Run executes the command
 func (c *AppsListCmd) Run() (err error) {
-	err = auth.Setup(api.PrefixURI.Host)
-	if err != nil {
-		return err
-	}
-
 	s := NewSpinner("Looking up apps")
 	s.Start()
 
@@ -68,11 +62,6 @@ type AppsInfoCmd struct {
 
 // Run executes the command
 func (c *AppsInfoCmd) Run() (err error) {
-	err = auth.Setup(api.PrefixURI.Host)
-	if err != nil {
-		return err
-	}
-
 	s := NewSpinner("Looking up app info")
 	s.Start()
 
