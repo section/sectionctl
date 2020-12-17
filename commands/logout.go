@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/section/sectionctl/api"
-	"github.com/section/sectionctl/api/auth"
+	"github.com/section/sectionctl/credentials"
 )
 
 // LogoutCmd handles revoking previously set up authentication
@@ -14,7 +14,7 @@ type LogoutCmd struct{}
 func (c *LogoutCmd) Run() (err error) {
 	s := NewSpinner(fmt.Sprintf("Revoking your authentication for %s", api.PrefixURI.Host))
 	s.Start()
-	err = auth.DeleteCredential(api.PrefixURI.Host)
+	err = credentials.Delete(api.PrefixURI.Host)
 	s.Stop()
 	return err
 }

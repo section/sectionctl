@@ -9,7 +9,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/section/sectionctl/api/auth"
 	"github.com/section/sectionctl/version"
 )
 
@@ -53,14 +52,7 @@ func request(method string, u url.URL, body io.Reader, headers ...http.Header) (
 		}
 	}
 
-	token := Token
-	if token == "" {
-		token, err = auth.GetCredential(u.Host)
-		if err != nil {
-			return resp, err
-		}
-	}
-	req.Header.Add("section-token", token)
+	req.Header.Add("section-token", Token)
 
 	log.Println("[DEBUG] Request URL:", method, req.URL)
 	for k, vs := range req.Header {

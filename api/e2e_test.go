@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/section/sectionctl/api/auth"
+	"github.com/section/sectionctl/credentials"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,11 +40,11 @@ func TestAPIAuthCanWriteReadAndUseCredential(t *testing.T) {
 	token = "s3cr3t"
 
 	// Write credential
-	err = auth.WriteCredential(endpoint, token)
+	err = credentials.Write(endpoint, token)
 	assert.NoError(err)
 
 	// Read Credential
-	to, err := auth.GetCredential(endpoint)
+	to, err := credentials.Read(endpoint)
 	assert.NoError(err)
 	assert.Equal(token, to)
 

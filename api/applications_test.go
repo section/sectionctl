@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/section/sectionctl/api/auth"
+	"github.com/section/sectionctl/credentials"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,10 +35,7 @@ func TestApplicationEnvironmentModuleUpdateSendsUpdateInArray(t *testing.T) {
 	url, err := url.Parse(ts.URL)
 	assert.NoError(err)
 	PrefixURI = url
-
-	endpoint := url.Host
-	token := "s3cr3t"
-	auth.WriteCredential(endpoint, token)
+	Token = "s3cr3t"
 
 	// Invoke
 	var ups = []EnvironmentUpdateCommand{
@@ -66,7 +63,7 @@ func TestApplicationEnvironmentModuleUpdateErrorsIfRequestFails(t *testing.T) {
 
 	endpoint := url.Host
 	token := "s3cr3t"
-	auth.WriteCredential(endpoint, token)
+	credentials.Write(endpoint, token)
 
 	// Invoke
 	var ups = []EnvironmentUpdateCommand{

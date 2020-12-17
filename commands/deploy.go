@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/section/sectionctl/api"
-	"github.com/section/sectionctl/api/auth"
 )
 
 // MaxFileSize is the tarball file size allowed to be uploaded in bytes.
@@ -120,11 +119,7 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("unable to build file upload: %s", err)
 	}
 
-	token, err := auth.GetCredential(c.ServerURL.Host)
-	if err != nil {
-		return fmt.Errorf("unable to read credentials: %w", err)
-	}
-	req.Header.Add("section-token", token)
+	req.Header.Add("section-token", api.Token)
 
 	log.Println("[DEBUG] Request URL:", req.URL)
 

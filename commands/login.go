@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/section/sectionctl/api"
-	"github.com/section/sectionctl/api/auth"
+	"github.com/section/sectionctl/credentials"
 )
 
 // LoginCmd handles authenticating the CLI against Section's API
@@ -20,12 +20,12 @@ type LoginCmd struct {
 func (c *LoginCmd) Run() (err error) {
 	fmt.Printf("Setting up your authentication for %s...\n\n", api.PrefixURI.Host)
 
-	t, err := auth.PromptForCredential(c.In(), c.Out())
+	t, err := credentials.Prompt(c.In(), c.Out())
 	if err != nil {
 		return fmt.Errorf("error when prompting for credential: %s", err)
 	}
 
-	err = auth.WriteCredential(api.PrefixURI.Host, t)
+	err = credentials.Write(api.PrefixURI.Host, t)
 	if err != nil {
 		return fmt.Errorf("unable to save credential: %s", err)
 	}

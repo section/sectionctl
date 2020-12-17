@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/section/sectionctl/api/auth"
+	"github.com/section/sectionctl/credentials"
 	"github.com/stretchr/testify/assert"
 	"github.com/zalando/go-keyring"
 )
@@ -37,7 +37,7 @@ func TestAPIClientSetsUserAgent(t *testing.T) {
 	u, err := url.Parse(ts.URL)
 	assert.NoError(err)
 
-	auth.WriteCredential(u.Host, "s3cr3t")
+	credentials.Write(u.Host, "s3cr3t")
 
 	// Invoke
 	_, err = request(http.MethodGet, *u, nil)
@@ -126,7 +126,7 @@ func TestAPIrequestSendsHeaderArguments(t *testing.T) {
 	u, err := url.Parse(ts.URL)
 	assert.NoError(err)
 
-	auth.WriteCredential(u.Host, "s3cr3t")
+	credentials.Write(u.Host, "s3cr3t")
 
 	// Invoke
 	_, err = request(http.MethodGet, *u, nil, headers...)

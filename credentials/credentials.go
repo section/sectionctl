@@ -1,4 +1,4 @@
-package auth
+package credentials
 
 import (
 	"bufio"
@@ -18,23 +18,23 @@ var (
 )
 
 // Setup ensures authentication is set up
-func Setup(endpoint string) (err error) {
+func Setup(endpoint string) (token string, err error) {
 	if !IsCredentialRecorded(KeyringService, KeyringUser) {
 		fmt.Printf("No API credentials recorded.\n\n")
 		fmt.Printf("Let's get you authenticated to the Section API!\n\n")
 
-		t, err := PromptForCredential(os.Stdin, os.Stdout)
+		t, err := Prompt(os.Stdin, os.Stdout)
 		if err != nil {
-			return fmt.Errorf("error when prompting for credential: %w", err)
+			return token, fmt.Errorf("error when prompting for credential: %w", err)
 		}
 
-		err = WriteCredential(endpoint, t)
+		err = Write(endpoint, t)
 		if err != nil {
-			return fmt.Errorf("unable to save credential: %s", err)
+			return token, fmt.Errorf("unable to save credential: %s", err)
 		}
 	}
 
-	return err
+	return Read(endpoint)
 }
 
 // IsCredentialRecorded returns if API credentials have been recorded
@@ -46,8 +46,8 @@ func IsCredentialRecorded(s, u string) bool {
 	return len(token) > 0
 }
 
-// PromptForCredential interactively prompts the user for a credential to authenticate to the Section API
-func PromptForCredential(in io.Reader, out io.Writer) (token string, err error) {
+// Prompt interactively prompts the user for a credential to authenticate to the Section API
+func Prompt(in io.Reader, out io.Writer) (token string, err error) {
 	fmt.Fprintf(out, "Token: ")
 
 	reader := bufio.NewReader(in)
@@ -62,19 +62,19 @@ func PromptForCredential(in io.Reader, out io.Writer) (token string, err error) 
 	return token, err
 }
 
-// WriteCredential saves Section API credentials to a persistent store
-func WriteCredential(endpoint, token string) (err error) {
+// Write saves Section API credentials to a persistent store
+func Write(endpoint, token string) (err error) {
 	err = keyring.Set(KeyringService, endpoint, token)
 	return err
 }
 
-// GetCredential returns a token for authenticating to the Section API
-func GetCredential(endpoint string) (token string, err error) {
+// Read returns a token for authenticating to the Section API
+func Read(endpoint string) (token string, err error) {
 	token, err = keyring.Get(KeyringService, endpoint)
 	return token, err
 }
 
-// DeleteCredential deletes a previously stored credential for the Section API
-func DeleteCredential(endpoint string) error {
+// Delete deletes a previously stored credential for the Section API
+func Delete(endpoint string) error {
 	return keyring.Delete(KeyringService, endpoint)
 }

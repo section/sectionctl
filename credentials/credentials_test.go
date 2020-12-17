@@ -1,4 +1,4 @@
-package auth
+package credentials
 
 import (
 	"bytes"
@@ -24,7 +24,7 @@ func TestAPIAuthPromptsForCredential(t *testing.T) {
 	var out bytes.Buffer
 
 	// Invoke
-	to, err := PromptForCredential(in, &out)
+	to, err := Prompt(in, &out)
 
 	// Test
 	assert.NoError(err)
@@ -35,7 +35,7 @@ func TestAPIAuthGetCredentialReturnsErrorIfNone(t *testing.T) {
 	assert := assert.New(t)
 
 	// Invoke
-	_, err := GetCredential(t.Name())
+	_, err := Read(t.Name())
 
 	// Test
 	assert.Error(err)
@@ -51,11 +51,11 @@ func TestAPIAuthCanReadWrittenCredentials(t *testing.T) {
 	token := "s3cr3t"
 
 	// Invoke
-	err := WriteCredential(endpoint, token)
+	err := Write(endpoint, token)
 	assert.NoError(err)
 
 	// Test
-	to, err := GetCredential(endpoint)
+	to, err := Read(endpoint)
 	assert.NoError(err)
 	assert.Equal(token, to)
 }
