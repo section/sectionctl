@@ -272,6 +272,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 		AccountID:   100,
 		AppID:       200,
 		Environment: "dev",
+		AppPath:     "nodejs",
 	}
 	err = c.Run()
 
