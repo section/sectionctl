@@ -35,6 +35,7 @@ type DeployCmd struct {
 	ServerURL   *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload" help:"URL to upload application to"`
 	Timeout     time.Duration `default:"300s" help:"Timeout of individual HTTP requests."`
 	SkipDelete  bool          `help:"Skip delete of temporary tarball created to upload app."`
+	AppPath     string        `default:"nodejs" help:"Path of NodeJS application in environment repository."`
 }
 
 // UploadResponse represents the response from a request to the upload service.
@@ -160,7 +161,7 @@ func (c *DeployCmd) Run() (err error) {
 			},
 		},
 	}
-	err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, c.Environment, "nodejs/.section-external-source.json", ups)
+	err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, c.Environment, c.AppPath + "/.section-external-source.json", ups)
 	s.Stop()
 	if err != nil {
 		return fmt.Errorf("failed to trigger app update: %v", err)

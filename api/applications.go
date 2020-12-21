@@ -228,7 +228,7 @@ func getEnvironmentID(accountID int, applicationID int, environmentName string) 
 }
 
 // ApplicationStatus returns a module's current status on Section's delivery platform
-func ApplicationStatus(accountID int, applicationID int) (as []AppStatus, err error) {
+func ApplicationStatus(accountID int, applicationID int, moduleName string) (as []AppStatus, err error) {
 	u := BaseURL()
 	u.Path = "/new/authorized/graphql_api/query"
 
@@ -246,7 +246,7 @@ func ApplicationStatus(accountID int, applicationID int) (as []AppStatus, err er
 	}
 
 	requestData.Variables = map[string]interface{}{
-		"moduleName":    "nodejs",
+		"moduleName":    moduleName,
 		"environmentID": environmentID,
 	}
 	requestData.Query = "query DeploymentStatus($moduleName: String!, $environmentID: Int!){deploymentStatus(moduleName:$moduleName, environmentID:$environmentID){inService state instanceName payloadID}}"
