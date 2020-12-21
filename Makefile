@@ -32,7 +32,7 @@ build-release: clean check_version
 	go build -o sectionctl -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)' -X 'github.com/section/sectionctl/version.Version=$(shell echo $(VERSION) | cut -c 2-)'" sectionctl.go
 	mkdir -p dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
 	cp README.md LICENSE sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
-	@if [ "$(GOOS)" == "windows" ]; then mv dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/sectionctl.exe  ; fi
+	@if [ "$(GOOS)" = "windows" ]; then mv dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/sectionctl.exe  ; fi
 	tar --create --gzip --verbose --file dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz --directory dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH) .
 
 clean:
