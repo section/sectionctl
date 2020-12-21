@@ -29,9 +29,10 @@ export GOARCH := amd64
 build-release: clean check_version
 	@if [ -z "$(GOOS)" ]; then echo "Missing GOOS"; exit 1 ; fi
 	@if [ -z "$(GOARCH)" ]; then echo "Missing GOARCH"; exit 1 ; fi
-	go build -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)' -X 'github.com/section/sectionctl/version.Version=$(shell echo $(VERSION) | cut -c 2-)'" sectionctl.go
+	go build -o sectionctl -ldflags "-X 'github.com/section/sectionctl/analytics.HeapAppID=$(HEAPAPPID)' -X 'github.com/section/sectionctl/version.Version=$(shell echo $(VERSION) | cut -c 2-)'" sectionctl.go
 	mkdir -p dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
 	cp README.md LICENSE sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
+	@if [ "$(GOOS)" == "windows" ]; then mv dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/sectionctl.exe  ; fi
 	tar --create --gzip --verbose --file dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz --directory dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH) .
 
 clean:
@@ -42,7 +43,7 @@ check_version:
 	@if [ "$(shell echo $(VERSION) | cut -c 1)" != "v" ]; then echo "VERSION must be in the format v0.0.5"; exit 1 ; fi
 
 release: check_version
-	@if [ "$(shell git branch --show-current)" != "master" ]; then echo "Must be on the 'master' branch"; exit 1 ; fi
+	@if [ "$(shell git rev-parse --abbrev-ref HEAD)" != "master" ]; then echo "Must be on the 'master' branch"; exit 1 ; fi	
 	@git update-index --refresh
 	@git diff-index --quiet HEAD --
 	git tag -f -a $(VERSION) -m ''
