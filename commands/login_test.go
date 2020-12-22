@@ -11,10 +11,12 @@ import (
 
 	"github.com/section/sectionctl/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/zalando/go-keyring"
 )
 
 func TestCommandsLoginValidatesGoodCredentials(t *testing.T) {
 	assert := assert.New(t)
+	keyring.MockInit()
 
 	// Setup
 	var called bool
@@ -45,6 +47,7 @@ func TestCommandsLoginValidatesGoodCredentials(t *testing.T) {
 
 func TestCommandsLoginValidatesBadCredentials(t *testing.T) {
 	assert := assert.New(t)
+	keyring.MockInit()
 
 	// Setup
 	var called bool
