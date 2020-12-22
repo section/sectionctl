@@ -9,13 +9,13 @@ import (
 	"github.com/zalando/go-keyring"
 )
 
-func TestAPIAuthDetectsIfCredentialNotRecorded(t *testing.T) {
+func TestCredentialsDetectsIfCredentialNotRecorded(t *testing.T) {
 	assert := assert.New(t)
 
 	assert.False(IsCredentialRecorded(KeyringService, t.Name()))
 }
 
-func TestAPIAuthPromptsForCredential(t *testing.T) {
+func TestCredentialsPromptsForCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
@@ -31,7 +31,7 @@ func TestAPIAuthPromptsForCredential(t *testing.T) {
 	assert.Equal(token, to)
 }
 
-func TestAPIAuthGetCredentialReturnsErrorIfNone(t *testing.T) {
+func TestCredentialsGetCredentialReturnsErrorIfNone(t *testing.T) {
 	assert := assert.New(t)
 
 	// Invoke
@@ -42,7 +42,7 @@ func TestAPIAuthGetCredentialReturnsErrorIfNone(t *testing.T) {
 	assert.False(IsCredentialRecorded(KeyringService, t.Name()))
 }
 
-func TestAPIAuthCanReadWrittenCredentials(t *testing.T) {
+func TestCredentialsCanReadWrittenCredentials(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
