@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/section/sectionctl/api"
-	"github.com/section/sectionctl/api/auth"
 )
 
 // PsCmd checks an application's status on Section's delivery platform
@@ -26,11 +25,6 @@ func getStatus(as api.AppStatus) string {
 
 // Run executes the command
 func (c *PsCmd) Run() (err error) {
-	err = auth.Setup(api.PrefixURI.Host)
-	if err != nil {
-		return err
-	}
-
 	s := NewSpinner("Getting status of app")
 	s.Start()
 

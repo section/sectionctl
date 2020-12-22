@@ -11,12 +11,14 @@ import (
 	"github.com/section/sectionctl/analytics"
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/commands"
+	"github.com/section/sectionctl/credentials"
 	"github.com/willabides/kongplete"
 )
 
 // CLI exposes all the subcommands available
 type CLI struct {
 	Login              commands.LoginCmd            `cmd help:"Authenticate to Section's API."`
+	Logout             commands.LogoutCmd           `cmd help:"Revoke authentication tokens to Section's API."`
 	Accounts           commands.AccountsCmd         `cmd help:"Manage accounts on Section"`
 	Apps               commands.AppsCmd             `cmd help:"Manage apps on Section"`
 	Certs              commands.CertsCmd            `cmd help:"Manage certificates on Section"`
@@ -31,10 +33,9 @@ type CLI struct {
 	InstallCompletions kongplete.InstallCompletions `cmd:"" help:"install shell completions"`
 }
 
-func bootstrap(c CLI) {
+func bootstrap(c CLI, ctx *kong.Context) {
 	api.Debug = c.Debug
 	api.PrefixURI = c.SectionAPIPrefix
-	api.Token = c.SectionToken
 
 	filter := &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
@@ -45,6 +46,19 @@ func bootstrap(c CLI) {
 		filter.MinLevel = logutils.LogLevel("DEBUG")
 	}
 	log.SetOutput(filter)
+
+	if ctx.Command() != "login" && ctx.Command() != "logout" {
+		t := c.SectionToken
+		if t == "" {
+			to, err := credentials.Setup(api.PrefixURI.Host)
+			if err != nil {
+				log.Fatalf("[ERROR] %s\n", err)
+			}
+			t = to
+
+		}
+		api.Token = t
+	}
 }
 
 func main() {
@@ -60,7 +74,7 @@ func main() {
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
-	bootstrap(cli)
+	bootstrap(cli, ctx)
 	analytics.AsyncLogInvoke(ctx)
 	err := ctx.Run()
 	if err != nil {

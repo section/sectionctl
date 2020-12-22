@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,8 +22,6 @@ func TestAPIUserReturnsRecord(t *testing.T) {
 	ur, err := url.Parse(ts.URL)
 	assert.NoError(err)
 	PrefixURI = ur
-
-	auth.WriteCredential(ur.Host, "s3cr3t")
 
 	// Invoke
 	u, err := CurrentUser()
@@ -51,8 +48,6 @@ func TestAPIUserHandlesErrors(t *testing.T) {
 	ur, err := url.Parse(ts.URL)
 	assert.NoError(err)
 	PrefixURI = ur
-
-	auth.WriteCredential(ur.Host, "s3cr3t")
 
 	// Invoke
 	u, err := CurrentUser()

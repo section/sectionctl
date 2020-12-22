@@ -16,9 +16,7 @@ import (
 	"testing"
 
 	"github.com/section/sectionctl/api"
-	"github.com/section/sectionctl/api/auth"
 	"github.com/stretchr/testify/assert"
-	"github.com/zalando/go-keyring"
 )
 
 func helperLoadBytes(t *testing.T, name string) []byte {
@@ -256,14 +254,9 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	url, err := url.Parse(ts.URL)
 	assert.NoError(err)
 
-	keyring.MockInit()
-	endpoint := url.Host
-	token := "s3cr3t"
-	auth.WriteCredential(endpoint, token)
-
 	dir := filepath.Join("testdata", "deploy", "valid-nodejs-app")
-
 	api.PrefixURI = url
+	api.Token = "s3cr3t"
 
 	// Invoke
 	c := DeployCmd{
@@ -281,14 +274,14 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 
 	// upload request
 	assert.True(uploadReq.called)
-	assert.Equal(token, uploadReq.token)
+	assert.Equal(api.Token, uploadReq.token)
 	assert.NotZero(len(uploadReq.file))
 	assert.Equal([]byte{0x1f, 0x8b}, uploadReq.file[0:2]) // gzip header
 	assert.Equal(c.AccountID, uploadReq.accountID)
 
 	// trigger update request
 	assert.True(triggerUpdateReq.called)
-	assert.Equal(token, triggerUpdateReq.token)
+	assert.Equal(api.Token, triggerUpdateReq.token)
 	assert.NotZero(len(triggerUpdateReq.body))
 	assert.Equal(triggerUpdateReq.header.Get("filepath"), "nodejs/.section-external-source.json")
 	var ups []api.EnvironmentUpdateCommand
