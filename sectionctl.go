@@ -49,10 +49,12 @@ func bootstrap(c CLI) {
 
 	t := c.SectionToken
 	if t == "" {
-		t, err := credentials.Setup(api.PrefixURI.Host)
+		to, err := credentials.Setup(api.PrefixURI.Host)
 		if err != nil {
-			log.Fatalf("[ERROR] %s\n", err, t)
+			log.Fatalf("[ERROR] %s\n", err)
 		}
+		t = to
+
 	}
 	api.Token = t
 }
