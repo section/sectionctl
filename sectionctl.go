@@ -47,15 +47,14 @@ func bootstrap(c CLI) {
 	}
 	log.SetOutput(filter)
 
-	if c.SectionToken == "" {
-		token, err := credentials.Setup(api.PrefixURI.Host)
+	t := c.SectionToken
+	if t == "" {
+		t, err := credentials.Setup(api.PrefixURI.Host)
 		if err != nil {
-			log.Fatalf("[ERROR] %s\n", err)
+			log.Fatalf("[ERROR] %s\n", err, t)
 		}
-		api.Token = token
-	} else {
-		api.Token = c.SectionToken
 	}
+	api.Token = t
 }
 
 func main() {
