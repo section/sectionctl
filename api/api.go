@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -18,6 +19,13 @@ var (
 	timeout   = 20 * time.Second
 	// Token is the token for authenticating to the Section API
 	Token string
+
+	// ErrAuthDenied represents all authentication and authorization errors
+	ErrAuthDenied = errors.New("denied")
+	// ErrStatusUnauthorized (401) indicates that the request has not been applied because it lacks valid authentication credentials for the target resource.
+	ErrStatusUnauthorized = fmt.Errorf("check your token? API request is unauthorized: %w", ErrAuthDenied)
+	// ErrStatusForbidden (403) indicates that the server understood the request but refuses to authorize it.
+	ErrStatusForbidden = fmt.Errorf("check your token? API request is forbidden: %w", ErrAuthDenied)
 )
 
 // BaseURL returns a URL for building requests on
