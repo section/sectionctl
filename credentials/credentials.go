@@ -23,18 +23,28 @@ func Setup(endpoint string) (token string, err error) {
 		fmt.Printf("No API credentials recorded.\n\n")
 		fmt.Printf("Let's get you authenticated to the Section API!\n\n")
 
-		t, err := Prompt(os.Stdin, os.Stdout)
+		_, err := PromptAndWrite(os.Stdin, os.Stdout, endpoint)
 		if err != nil {
-			return token, fmt.Errorf("error when prompting for credential: %w", err)
-		}
-
-		err = Write(endpoint, t)
-		if err != nil {
-			return token, fmt.Errorf("unable to save credential: %s", err)
+			return token, err
 		}
 	}
 
 	return Read(endpoint)
+}
+
+// PromptAndWrite prompts for a credential then writes it to a store
+func PromptAndWrite(in io.Reader, out io.Writer, endpoint string) (token string, err error) {
+	token, err = Prompt(in, out)
+	if err != nil {
+		return token, fmt.Errorf("unable to prompt for credential: %w", err)
+	}
+
+	err = Write(endpoint, token)
+	if err != nil {
+		return token, fmt.Errorf("unable to save credential: %s", err)
+	}
+
+	return token, err
 }
 
 // IsCredentialRecorded returns if API credentials have been recorded
