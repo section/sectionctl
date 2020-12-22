@@ -50,6 +50,14 @@ type AppStatus struct {
 	IsLatest     bool   `json:"isLatest"`
 }
 
+// AppLogs represents the logs from an application deployed on Section
+type AppLogs struct {
+	Timestamp string `json:"timestamp"`
+	Source    string `json:"source"`
+	Type      string `json:"type"`
+	Message   string `json:"message"`
+}
+
 // Application returns detailed information about a given application.
 func Application(accountID int, applicationID int) (a App, err error) {
 	u := BaseURL()
@@ -282,4 +290,70 @@ func ApplicationStatus(accountID int, applicationID int, moduleName string) (as 
 
 	as = responseBody.Data.DeploymentStatus
 	return as, nil
+}
+
+// ApplicationLogs returns a module's logs from Section's delivery platform
+func ApplicationLogs(accountID int, applicationID int, moduleName string, instanceName string, length int) (al []AppLogs, err error) {
+	u := BaseURL()
+	u.Path = "/new/authorized/graphql_api/query"
+
+	// Hard coding to Production environment for now.
+	// Can be changed later for multiple environment support on the same application.
+	environmentID, err := getEnvironmentID(accountID, applicationID, "Production")
+	if err != nil {
+		return al, err
+	}
+
+	var requestData struct {
+		OperationName string                 `json:"operationName"`
+		Variables     map[string]interface{} `json:"variables"`
+		Query         string                 `json:"query"`
+	}
+
+	requestData.Variables = map[string]interface{}{
+		"environmentId": environmentID,
+		"moduleName":    moduleName,
+		"instanceName":  instanceName,
+		"length":        length,
+		// "startTimestamp": startTimestamp,
+		// "endTimestamp": endTimestamp,
+	}
+
+	log.Printf("[DEBUG] requestData: %v\n", requestData.Variables)
+
+	requestData.Query = "query Logs($moduleName: String!, $environmentId: Int!){logs(moduleName:$moduleName, environmentId:$environmentId){timestamp source message}}"
+
+	data, err := json.Marshal(requestData)
+	resp, err := request(http.MethodPost, u, bytes.NewBuffer(data))
+	if err != nil {
+		return al, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return al, prettyTxIDError(resp)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return al, fmt.Errorf("could not read response body: %s", err)
+	}
+
+	log.Printf("[DEBUG] RESPONSE: %s\n", string(body))
+
+	var responseBody struct {
+		Data struct {
+			Logs []AppLogs `json:"logs"`
+		} `json:"data"`
+	}
+
+	// Stubbed response for testing, uncomment to use
+	// body = []byte(`{"data":{"logs":[{"timestamp":"2020-12-22T11:24:45.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"Redirecting access.log to STDOUT and error.log to STDERR."},{"timestamp":"2020-12-22T11:24:45.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"Listening on http://0.0.0.0:9000/metrics"},{"timestamp":"2020-12-22T11:24:45.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"[WARN] Updating environment"},{"timestamp":"2020-12-22T11:24:47.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"> learn-starter@0.1.0 start /opt/section/node"},{"timestamp":"2020-12-22T11:24:47.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"> next start /opt/section/node -p 8080"},{"timestamp":"2020-12-22T11:24:47.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"info  - Loaded env from /opt/section/node/.env.production"},{"timestamp":"2020-12-22T11:24:47.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"ready - started server on http://localhost:8080"},{"timestamp":"2020-12-22T11:24:49.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"[WARN] The node app is already being served."},{"timestamp":"2020-12-22T11:24:49.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"[WARN] Initialising Nginx"},{"timestamp":"2020-12-22T11:24:49.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"[WARN] Updating custom Nginx server.conf"},{"timestamp":"2020-12-22T11:24:15.335Z","source":"testjs-d97hd-4k4", "type":"app","message":" ERROR  Error: Request failed with status code 403"},{"timestamp":"2020-12-22T11:24:15.335Z","source":"testjs-d97hd-4k4", "type":"app", "message":"    at settle (/opt/section/node/node_modules/axios/lib/core/settle.js:17:12)"},{"timestamp":"2020-12-22T11:24:15.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"    at endReadableNT (_stream_readable.js:1092:12)"},{"timestamp":"2020-12-22T11:24:15.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"    at IncomingMessage.emit (events.js:187:15)"},{"timestamp":"2020-12-22T11:24:15.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"    at createError (/opt/section/node/node_modules/axios/lib/core/createError.js:16:15)"},{"timestamp":"2020-12-22T11:24:15.335Z","source":"testjs-d97hd-4k4", "type":"app","message":"    at IncomingMessage.handleStreamEnd (/opt/section/node/node_modules/axios/lib/adapters/http.js:236:11)"},{"timestamp":"2020-12-22T11:24:49.335Z","source":"testjs-d97hd-4k4", "type":"access","message":"method=GET path=/_next/static/chunks/main.js time_taken_ms=18 status=200 bytes_sent=7405 host=www.varnishdemo.com section_io_id=e47a44a74364e984eb4b75c3c0ec908"},{"timestamp":"2020-12-22T11:24:51.335Z","source":"testjs-d97hd-4k4", "type":"access","message":"method=GET path=/ time_taken_ms=1800 status=200 bytes_sent=1024 host=www.varnishdemo.com section_io_id=52ad30f0f33a6ed11b5693c63e5b3ea4"},{"timestamp":"2020-12-22T11:24:52.335Z","source":"testjs-d97hd-4k4", "type":"access","message":"method=GET path=/_next/static/chunks/framework.js time_taken_ms=11 status=200 bytes_sent=3405 host=www.varnishdemo.com section_io_id=981d39903a281a5f896517a364b82a80"}]}}`)
+	err = json.Unmarshal(body, &responseBody)
+	if err != nil {
+		return al, err
+	}
+
+	al = responseBody.Data.Logs
+	return al, nil
 }
