@@ -13,13 +13,11 @@ import (
 var (
 	// KeyringService is the service the credential belongs to
 	KeyringService = "sectionctl"
-	// KeyringUser is the user of the credential
-	KeyringUser = "aperture.section.io"
 )
 
 // Setup ensures authentication is set up
 func Setup(endpoint string) (token string, err error) {
-	if !IsCredentialRecorded(KeyringService, KeyringUser) {
+	if !IsCredentialRecorded(KeyringService, endpoint) {
 		fmt.Printf("No API credentials recorded.\n\n")
 		fmt.Printf("Let's get you authenticated to the Section API!\n\n")
 
