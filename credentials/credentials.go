@@ -73,15 +73,13 @@ func Prompt(in io.Reader, out io.Writer) (token string, err error) {
 }
 
 // Write saves Section API credentials to a persistent store
-func Write(endpoint, token string) (err error) {
-	err = keyring.Set(KeyringService, endpoint, token)
-	return err
+func Write(endpoint, token string) error {
+	return keyring.Set(KeyringService, endpoint, token)
 }
 
 // Read returns a token for authenticating to the Section API
-func Read(endpoint string) (token string, err error) {
-	token, err = keyring.Get(KeyringService, endpoint)
-	return token, err
+func Read(endpoint string) (string, error) {
+	return keyring.Get(KeyringService, endpoint)
 }
 
 // Delete deletes a previously stored credential for the Section API
