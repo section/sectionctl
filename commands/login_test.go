@@ -73,5 +73,5 @@ func TestCommandsLoginValidatesBadCredentials(t *testing.T) {
 	// Test
 	assert.Error(err)
 	assert.True(called)
-	assert.Contains(err.Error(), "invalid credentials")
+	assert.Contains(err.Error(), "unauthorized")
 }

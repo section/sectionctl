@@ -56,5 +56,5 @@ func TestAPIUserHandlesErrors(t *testing.T) {
 	assert.Error(err)
 	assert.Equal(u, User{})
 	assert.Contains(err.Error(), "418")
-	assert.Contains(err.Error(), "short and stout")
+	assert.Contains(err.Error(), "I'm a teapot")
 }
