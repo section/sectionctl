@@ -33,7 +33,7 @@ type CLI struct {
 	InstallCompletions kongplete.InstallCompletions `cmd:"" help:"install shell completions"`
 }
 
-func bootstrap(c CLI) {
+func bootstrap(c CLI, ctx *kong.Context) {
 	api.Debug = c.Debug
 	api.PrefixURI = c.SectionAPIPrefix
 
@@ -47,16 +47,18 @@ func bootstrap(c CLI) {
 	}
 	log.SetOutput(filter)
 
-	t := c.SectionToken
-	if t == "" {
-		to, err := credentials.Setup(api.PrefixURI.Host)
-		if err != nil {
-			log.Fatalf("[ERROR] %s\n", err)
-		}
-		t = to
+	if ctx.Command() != "login" && ctx.Command() != "logout" {
+		t := c.SectionToken
+		if t == "" {
+			to, err := credentials.Setup(api.PrefixURI.Host)
+			if err != nil {
+				log.Fatalf("[ERROR] %s\n", err)
+			}
+			t = to
 
+		}
+		api.Token = t
 	}
-	api.Token = t
 }
 
 func main() {
@@ -72,7 +74,7 @@ func main() {
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
-	bootstrap(cli)
+	bootstrap(cli, ctx)
 	analytics.AsyncLogInvoke(ctx)
 	err := ctx.Run()
 	if err != nil {
