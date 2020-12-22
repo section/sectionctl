@@ -11,7 +11,7 @@ import (
 
 func TestCredentialsDetectsIfCredentialNotRecorded(t *testing.T) {
 	assert := assert.New(t)
-
+	keyring.MockInit()
 	assert.False(IsCredentialRecorded(KeyringService, t.Name()))
 }
 
@@ -33,6 +33,7 @@ func TestCredentialsPromptsForCredential(t *testing.T) {
 
 func TestCredentialsGetCredentialReturnsErrorIfNone(t *testing.T) {
 	assert := assert.New(t)
+	keyring.MockInit()
 
 	// Invoke
 	_, err := Read(t.Name())
