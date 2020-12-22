@@ -60,3 +60,29 @@ func TestCredentialsCanReadWrittenCredentials(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(token, to)
 }
+
+func TestCredentialsDeleteRemovesCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	keyring.MockInit()
+	token := "unique-cred"
+
+	// Write
+	err := Write(t.Name(), token)
+	assert.NoError(err)
+
+	// Read
+	to, err := Read(t.Name())
+	assert.NoError(err)
+	assert.Equal(token, to)
+
+	// Delete
+	err = Delete(t.Name())
+	assert.NoError(err)
+
+	// Read
+	to, err = Read(t.Name())
+	assert.Error(err)
+	assert.Empty(to)
+}
