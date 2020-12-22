@@ -18,8 +18,6 @@ var (
 	timeout   = 20 * time.Second
 	// Token is the token for authenticating to the Section API
 	Token string
-	// Debug toggles whether extra information is emitted from requests/responses
-	Debug bool
 )
 
 // BaseURL returns a URL for building requests on
