@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -32,11 +31,14 @@ func CurrentUser() (u User, err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return u, err
+		switch resp.StatusCode {
+		case 401:
+			return u, ErrStatusUnauthorized
+		case 403:
+			return u, ErrStatusForbidden
+		default:
+			return u, prettyTxIDError(resp)
 		}
-		return u, fmt.Errorf("request failed with status \"%s\" and message \"%s\"", resp.Status, body)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)

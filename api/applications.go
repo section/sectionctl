@@ -62,7 +62,14 @@ func Application(accountID int, applicationID int) (a App, err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return a, prettyTxIDError(resp)
+		switch resp.StatusCode {
+		case 401:
+			return a, ErrStatusUnauthorized
+		case 403:
+			return a, ErrStatusForbidden
+		default:
+			return a, prettyTxIDError(resp)
+		}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -104,7 +111,14 @@ func ApplicationEnvironments(accountID int, applicationID int) (es []Environment
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return es, prettyTxIDError(resp)
+		switch resp.StatusCode {
+		case 401:
+			return es, ErrStatusUnauthorized
+		case 403:
+			return es, ErrStatusForbidden
+		default:
+			return es, prettyTxIDError(resp)
+		}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -131,7 +145,14 @@ func ApplicationEnvironmentStack(accountID int, applicationID int, environmentNa
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return s, prettyTxIDError(resp)
+		switch resp.StatusCode {
+		case 401:
+			return s, ErrStatusUnauthorized
+		case 403:
+			return s, ErrStatusForbidden
+		default:
+			return s, prettyTxIDError(resp)
+		}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -158,7 +179,14 @@ func Applications(accountID int) (as []App, err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return as, fmt.Errorf("request failed with status %s", resp.Status)
+		switch resp.StatusCode {
+		case 401:
+			return as, ErrStatusUnauthorized
+		case 403:
+			return as, ErrStatusForbidden
+		default:
+			return as, prettyTxIDError(resp)
+		}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -259,7 +287,14 @@ func ApplicationStatus(accountID int, applicationID int, moduleName string) (as 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return as, prettyTxIDError(resp)
+		switch resp.StatusCode {
+		case 401:
+			return as, ErrStatusUnauthorized
+		case 403:
+			return as, ErrStatusForbidden
+		default:
+			return as, prettyTxIDError(resp)
+		}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)

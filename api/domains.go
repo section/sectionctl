@@ -37,7 +37,14 @@ func DomainsRenewCert(accountID int, hostname string) (r RenewCertResponse, err 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return r, prettyTxIDError(resp)
+		switch resp.StatusCode {
+		case 401:
+			return r, ErrStatusUnauthorized
+		case 403:
+			return r, ErrStatusForbidden
+		default:
+			return r, prettyTxIDError(resp)
+		}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)

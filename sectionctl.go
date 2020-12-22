@@ -34,7 +34,6 @@ type CLI struct {
 }
 
 func bootstrap(c CLI, ctx *kong.Context) {
-	api.Debug = c.Debug
 	api.PrefixURI = c.SectionAPIPrefix
 
 	filter := &logutils.LevelFilter{

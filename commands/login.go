@@ -1,10 +1,10 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/credentials"
@@ -28,8 +28,8 @@ func (c *LoginCmd) Run() (err error) {
 	_, err = api.CurrentUser()
 	if err != nil {
 		fmt.Println("error!")
-		if strings.Contains(err.Error(), `with status "4`) {
-			return fmt.Errorf("invalid credentials. Please try again")
+		if errors.Is(err, api.ErrAuthDenied) {
+			return err
 		}
 		return fmt.Errorf("could not fetch current user: %w", err)
 	}

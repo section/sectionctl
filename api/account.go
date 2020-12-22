@@ -29,7 +29,14 @@ func Accounts() (as []Account, err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return as, prettyTxIDError(resp)
+		switch resp.StatusCode {
+		case 401:
+			return as, ErrStatusUnauthorized
+		case 403:
+			return as, ErrStatusForbidden
+		default:
+			return as, prettyTxIDError(resp)
+		}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
