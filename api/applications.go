@@ -52,10 +52,10 @@ type AppStatus struct {
 
 // AppLogs represents the logs from an application deployed on Section
 type AppLogs struct {
-	Timestamp string `json:"timestamp"`
-	Source    string `json:"source"`
-	Type      string `json:"type"`
-	Message   string `json:"message"`
+	Timestamp    string `json:"timestamp"`
+	InstanceName string `json:"instanceName"`
+	Type         string `json:"type"`
+	Message      string `json:"message"`
 }
 
 // Application returns detailed information about a given application.
@@ -321,7 +321,7 @@ func ApplicationLogs(accountID int, applicationID int, moduleName string, instan
 
 	log.Printf("[DEBUG] requestData: %v\n", requestData.Variables)
 
-	requestData.Query = "query Logs($moduleName: String!, $environmentId: Int!){logs(moduleName:$moduleName, environmentId:$environmentId){timestamp source message}}"
+	requestData.Query = "query Logs($moduleName: String!, $environmentId: Int!, $instanceName: String, $length: Int){logs(moduleName:$moduleName, environmentId:$environmentId, instanceName:$instanceName, length:$length){timestamp instanceName message type}}"
 
 	data, err := json.Marshal(requestData)
 	resp, err := request(http.MethodPost, u, bytes.NewBuffer(data))
