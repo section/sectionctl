@@ -50,6 +50,14 @@ type AppStatus struct {
 	IsLatest     bool   `json:"isLatest"`
 }
 
+// AppLogs represents the logs from an application deployed on Section
+type AppLogs struct {
+	Timestamp    string `json:"timestamp"`
+	InstanceName string `json:"instanceName"`
+	Type         string `json:"type"`
+	Message      string `json:"message"`
+}
+
 // Application returns detailed information about a given application.
 func Application(accountID int, applicationID int) (a App, err error) {
 	u := BaseURL()
@@ -317,4 +325,68 @@ func ApplicationStatus(accountID int, applicationID int, moduleName string) (as 
 
 	as = responseBody.Data.DeploymentStatus
 	return as, nil
+}
+
+// ApplicationLogs returns a module's logs from Section's delivery platform
+func ApplicationLogs(accountID int, applicationID int, moduleName string, instanceName string, length int) (al []AppLogs, err error) {
+	u := BaseURL()
+	u.Path = "/new/authorized/graphql_api/query"
+
+	// Hard coding to Production environment for now.
+	// Can be changed later for multiple environment support on the same application.
+	environmentID, err := getEnvironmentID(accountID, applicationID, "Production")
+	if err != nil {
+		return al, err
+	}
+
+	var requestData struct {
+		OperationName string                 `json:"operationName"`
+		Variables     map[string]interface{} `json:"variables"`
+		Query         string                 `json:"query"`
+	}
+
+	requestData.Variables = map[string]interface{}{
+		"environmentId": environmentID,
+		"moduleName":    moduleName,
+		"instanceName":  instanceName,
+		"length":        length,
+		// "startTimestamp": startTimestamp,
+		// "endTimestamp": endTimestamp,
+	}
+
+	log.Printf("[DEBUG] requestData: %v\n", requestData.Variables)
+
+	requestData.Query = "query Logs($moduleName: String!, $environmentId: Int!, $instanceName: String, $length: Int){logs(moduleName:$moduleName, environmentId:$environmentId, instanceName:$instanceName, length:$length){timestamp instanceName message type}}"
+
+	data, err := json.Marshal(requestData)
+	resp, err := request(http.MethodPost, u, bytes.NewBuffer(data))
+	if err != nil {
+		return al, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return al, prettyTxIDError(resp)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return al, fmt.Errorf("could not read response body: %s", err)
+	}
+
+	log.Printf("[DEBUG] RESPONSE: %s\n", string(body))
+
+	var responseBody struct {
+		Data struct {
+			Logs []AppLogs `json:"logs"`
+		} `json:"data"`
+	}
+
+	err = json.Unmarshal(body, &responseBody)
+	if err != nil {
+		return al, err
+	}
+
+	al = responseBody.Data.Logs
+	return al, nil
 }
