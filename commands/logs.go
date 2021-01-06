@@ -2,11 +2,11 @@ package commands
 
 import (
 	"fmt"
-	"io"
-	"os"
+	"log"
 	"strings"
 
-	"github.com/olekukonko/tablewriter"
+	"github.com/mattn/go-colorable" // colorable
+	"github.com/logrusorgru/aurora"
 	"github.com/section/sectionctl/api"
 )
 
@@ -24,19 +24,6 @@ type LogsCmd struct {
 	// EndTimestamp    int    `default:0 help:"End of log time stamp to fetch."`
 }
 
-// NewTable returns a table with sectionctl standard formatting
-func NewLogTable(out io.Writer) (t *tablewriter.Table) {
-	t = tablewriter.NewWriter(out)
-	t.SetBorders(tablewriter.Border{Left: false, Top: false, Right: false, Bottom: false})
-	t.SetColumnSeparator(" ")
-	t.SetAlignment(tablewriter.ALIGN_LEFT)
-	t.SetAutoWrapText(false)
-	t.SetHeader([]string{"App Instance", "Message"})
-	t.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-	t.SetHeaderLine(false)
-	return t
-}
-
 // Run executes the command
 func (c *LogsCmd) Run() (err error) {
 	s := NewSpinner("Getting logs from app")
@@ -52,18 +39,22 @@ func (c *LogsCmd) Run() (err error) {
 		return err
 	}
 
-	table := NewLogTable(os.Stdout)
+	// Fix colorization issues between aurora and Windows
+	// https://github.com/logrusorgru/aurora#windows
+	log.SetOutput(colorable.NewColorableStdout())
+	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime)) // Remove local time prefix on output
+	log.Printf("App InstanceName[Log Type]\t\tLog Message\n") 
 	for _, a := range appLogs {
 		a.Message = strings.TrimSpace(a.Message)
-		r := []string{a.InstanceName + "[" + a.Type + "]", a.Message}
+		
 		if a.Type == "app" {
-			table.Rich(r, []tablewriter.Colors{tablewriter.Colors{tablewriter.Normal, tablewriter.FgCyanColor}, tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor}})
+			log.Printf("%s%s\t%s\n", aurora.Cyan(a.InstanceName), aurora.Cyan("[" + a.Type + "]"), a.Message)
 		} else if a.Type == "access" {
-			table.Rich(r, []tablewriter.Colors{tablewriter.Colors{tablewriter.Normal, tablewriter.FgGreenColor}, tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor}})
+			log.Printf("%s%s\t%s\n", aurora.Green(a.InstanceName), aurora.Green("[" + a.Type + "]"), a.Message)
 		} else {
-			table.Append(r)
+			log.Printf("%s[%s]\t%s\n", a.InstanceName, a.Type, a.Message)
 		}
 	}
-	table.Render()
+	
 	return nil
 }
