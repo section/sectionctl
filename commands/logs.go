@@ -43,7 +43,7 @@ func (c *LogsCmd) Run() (err error) {
 	s.Start()
 
 	if c.Length > maxNumberLogs {
-		return fmt.Errorf("Number of logs queried cannot be over %d", maxNumberLogs)
+		return fmt.Errorf("number of logs queried cannot be over %d", maxNumberLogs)
 	}
 
 	appLogs, err := api.ApplicationLogs(c.AccountID, c.AppID, c.AppPath, c.InstanceName, c.Length)
