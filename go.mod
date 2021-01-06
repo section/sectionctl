@@ -10,6 +10,8 @@ require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/hashicorp/logutils v1.0.0
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/logrusorgru/aurora v2.0.3+incompatible
+	github.com/mattn/go-colorable v0.1.2
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/posener/complete v1.2.3
 	github.com/stretchr/testify v1.6.1
