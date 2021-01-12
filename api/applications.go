@@ -468,3 +468,58 @@ func disambiguateForbiddenApplicationCreate(hostname string, r ApplicationCreate
 		return ErrStatusForbidden
 	}
 }
+
+var (
+	// ErrStatusBadRequest indicates the request was malformed
+	ErrStatusBadRequest = errors.New("malformed request")
+	// ErrStatusNotFound indicates the requested resource was not found
+	ErrStatusNotFound = errors.New("application not found")
+	// ErrStatusInternalServerError indicates the server errored when handling your request
+	ErrStatusInternalServerError = errors.New("unexpected condition when handling request")
+)
+
+// ApplicationDeleteResponse respresents an API response for application delete requests
+type ApplicationDeleteResponse struct {
+	Message string `json:"message"` // for errors
+}
+
+// ApplicationDelete deletes an application on the Section platform.
+func ApplicationDelete(accountID, appID int) (r ApplicationDeleteResponse, err error) {
+	u := BaseURL()
+	u.Path += fmt.Sprintf("/account/%d/application/%d", accountID, appID)
+
+	resp, err := request(http.MethodDelete, u, nil)
+	if err != nil {
+		return r, fmt.Errorf("unable to perform request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return r, fmt.Errorf("unable to read response body: %w", err)
+		}
+
+		err = json.Unmarshal(body, &r)
+		if err != nil {
+			return r, fmt.Errorf("unable to unmarshal JSON: %w", err)
+		}
+
+		switch resp.StatusCode {
+		case 400:
+			return r, fmt.Errorf("%s: %w", r.Message, ErrStatusBadRequest)
+		case 401:
+			return r, ErrStatusUnauthorized
+		case 403:
+			return r, ErrStatusForbidden
+		case 404:
+			return r, ErrStatusNotFound
+		case 500:
+			return r, fmt.Errorf("Error occurred during deletion: %s: %w", r.Message, ErrStatusInternalServerError)
+		default:
+			return r, prettyTxIDError(resp)
+		}
+	}
+
+	return r, err
+}
