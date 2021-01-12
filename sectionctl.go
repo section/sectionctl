@@ -46,7 +46,10 @@ func bootstrap(c CLI, ctx *kong.Context) {
 	}
 	log.SetOutput(filter)
 
-	if ctx.Command() != "login" && ctx.Command() != "logout" {
+	switch {
+	case ctx.Command() == "login":
+		api.Token = c.SectionToken
+	case ctx.Command() != "login" && ctx.Command() != "logout":
 		t := c.SectionToken
 		if t == "" {
 			to, err := credentials.Setup(api.PrefixURI.Host)
