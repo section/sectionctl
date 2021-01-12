@@ -515,7 +515,7 @@ func ApplicationDelete(accountID, appID int) (r ApplicationDeleteResponse, err e
 		case 404:
 			return r, ErrStatusNotFound
 		case 500:
-			return r, fmt.Errorf("Error occurred during deletion: %s: %w", r.Message, ErrStatusInternalServerError)
+			return r, fmt.Errorf("error occurred during deletion: %s: %w", r.Message, ErrStatusInternalServerError)
 		default:
 			return r, prettyTxIDError(resp)
 		}
