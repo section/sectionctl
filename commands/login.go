@@ -18,11 +18,18 @@ type LoginCmd struct {
 
 // Run executes the command
 func (c *LoginCmd) Run() (err error) {
-	t, err := credentials.PromptAndWrite(c.In(), c.Out(), api.PrefixURI.Host)
-	if err != nil {
-		return fmt.Errorf("unable to prompt and write credentials: %w", err)
+	if api.Token != "" {
+		err = credentials.Write(api.PrefixURI.Host, api.Token)
+		if err != nil {
+			return fmt.Errorf("unable to write credential: %w", err)
+		}
+	} else {
+		t, err := credentials.PromptAndWrite(c.In(), c.Out(), api.PrefixURI.Host)
+		if err != nil {
+			return fmt.Errorf("unable to prompt and write credentials: %w", err)
+		}
+		api.Token = t
 	}
-	api.Token = t
 
 	fmt.Print("\nValidating credentials...")
 	_, err = api.CurrentUser()
