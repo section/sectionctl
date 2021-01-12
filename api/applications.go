@@ -506,15 +506,15 @@ func ApplicationDelete(accountID, appID int) (r ApplicationDeleteResponse, err e
 		}
 
 		switch resp.StatusCode {
-		case 400:
+		case http.StatusBadRequest:
 			return r, fmt.Errorf("%s: %w", r.Message, ErrStatusBadRequest)
-		case 401:
+		case http.StatusUnauthorized:
 			return r, ErrStatusUnauthorized
-		case 403:
+		case http.StatusForbidden:
 			return r, ErrStatusForbidden
-		case 404:
+		case http.StatusNotFound:
 			return r, ErrStatusNotFound
-		case 500:
+		case http.StatusInternalServerError:
 			return r, fmt.Errorf("error occurred during deletion: %s: %w", r.Message, ErrStatusInternalServerError)
 		default:
 			return r, prettyTxIDError(resp)
