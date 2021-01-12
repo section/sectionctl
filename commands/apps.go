@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/section/sectionctl/api"
@@ -121,4 +122,26 @@ func (c *AppsInfoCmd) Run() (err error) {
 }
 
 // AppsCreateCmd handles creating apps on Section
-type AppsCreateCmd struct{}
+type AppsCreateCmd struct {
+	AccountID int    `required short:"a" help:"ID of account to create the app under"`
+	Hostname  string `required short:"d" help:"FQDN the app can be accessed at"`
+	Origin    string `required short:"o" help:"URL to fetch the origin"`
+	StackName string `required short:"s" help:"Name of stack to deploy"`
+}
+
+// Run executes the command
+func (c *AppsCreateCmd) Run() (err error) {
+	s := NewSpinner(fmt.Sprintf("Creating new app %s", c.Hostname))
+	s.Start()
+
+	api.Timeout = 120 * time.Second // this specific request can take a long time
+	r, err := api.ApplicationCreate(c.AccountID, c.Hostname, c.Origin, c.StackName)
+	s.Stop()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("\nSuccess: created app '%s' with id '%d'\n", r.ApplicationName, r.ID)
+
+	return err
+}

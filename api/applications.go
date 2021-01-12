@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -389,4 +390,81 @@ func ApplicationLogs(accountID int, applicationID int, moduleName string, instan
 
 	al = responseBody.Data.Logs
 	return al, nil
+}
+
+// ApplicationCreateResponse represents an API response for application create requests
+type ApplicationCreateResponse struct {
+	ID              int      `json:"id"`
+	Href            string   `json:"href"`
+	ApplicationName string   `json:"application_name"`
+	PathPrefix      string   `json:"path_prefix"`
+	PathPrefixes    []string `json:"path_prefixes"`
+	Message         string   `json:"message"` // for errors
+}
+
+// ApplicationCreate creates an application on the Section platform.
+func ApplicationCreate(accountID int, hostname, origin, stackName string) (r ApplicationCreateResponse, err error) {
+	u := BaseURL()
+	u.Path += fmt.Sprintf("/account/%d/application/create", accountID)
+
+	appCreateReq := struct {
+		Hostname  string `json:"hostname"`
+		Origin    string `json:"origin"`
+		StackName string `json:"stackName"`
+	}{
+		hostname,
+		origin,
+		stackName,
+	}
+	data, err := json.Marshal(appCreateReq)
+	resp, err := request(http.MethodPost, u, bytes.NewBuffer(data))
+	if err != nil {
+		return r, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return r, err
+	}
+
+	err = json.Unmarshal(body, &r)
+	if err != nil {
+		return r, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		switch resp.StatusCode {
+		case 401:
+			return r, ErrStatusUnauthorized
+		case 403:
+			return r, disambiguateForbiddenApplicationCreate(hostname, r)
+		default:
+			return r, prettyTxIDError(resp)
+		}
+	}
+
+	return r, err
+}
+
+var (
+	// ErrApplicationAlreadyCreated indicates an app has already been created with that FQDN.
+	ErrApplicationAlreadyCreated = errors.New("an application has already been created with that domain name")
+	// ErrSystemLimitExceeded indicates you have hit a soft limit on your account. Contact Section support to increase the limit.
+	ErrSystemLimitExceeded = errors.New("system limit exceeded")
+)
+
+// The Section API returns multiple distinct errors with a HTTP 403 when
+// creating applications.
+//
+// This function attempts to disambiguate those responses and return usable errors.
+func disambiguateForbiddenApplicationCreate(hostname string, r ApplicationCreateResponse) (err error) {
+	switch r.Message {
+	case "An application has already been created with domain name " + hostname:
+		return fmt.Errorf("%s - %w", hostname, ErrApplicationAlreadyCreated)
+	case "System limit exceeded. Contact support to increase this limit.":
+		return fmt.Errorf("%w: contact support to increase this limit", ErrSystemLimitExceeded)
+	default:
+		return ErrStatusForbidden
+	}
 }
