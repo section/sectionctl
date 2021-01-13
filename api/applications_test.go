@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -69,4 +70,85 @@ func TestApplicationEnvironmentModuleUpdateErrorsIfRequestFails(t *testing.T) {
 
 	// Test
 	assert.Error(err)
+}
+
+func TestAPIApplicationCreateReturnsUniqueErrorsOnFailure(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	var testCases = []struct {
+		requestAppID     int
+		requestOrigin    string
+		requestHostname  string
+		requestStackName string
+		responseStatus   int
+		responseBody     string
+		responseError    error
+	}{
+		{123, "hello.example", "127.0.0.1", "nodejs", http.StatusUnauthorized, "", ErrStatusUnauthorized},
+		{123, "hello.example", "127.0.0.1", "nodejs", http.StatusForbidden, "An application has already been created with domain name hello.example", ErrApplicationAlreadyCreated},
+		{123, "hello.example", "127.0.0.1", "nodejs", http.StatusForbidden, "System limit exceeded. Contact support to increase this limit.", ErrSystemLimitExceeded},
+		{123, "hello.example", "127.0.0.1", "nodejs", http.StatusForbidden, "An unhandled error", ErrStatusForbidden},
+	}
+
+	for _, tc := range testCases {
+		n := fmt.Sprintf("%d-%s", tc.responseStatus, tc.responseBody)
+		t.Run(n, func(t *testing.T) {
+			// Setup
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tc.responseStatus)
+				fmt.Fprint(w, tc.responseBody)
+			}))
+			url, err := url.Parse(ts.URL)
+			assert.NoError(err)
+			PrefixURI = url
+			Token = "s3cr3t"
+
+			// Invoke
+			_, err = ApplicationCreate(tc.requestAppID, tc.requestHostname, tc.requestOrigin, tc.requestStackName)
+
+			// Test
+			assert.Error(err, tc.responseError)
+		})
+	}
+}
+
+func TestAPIApplicationDeleteReturnsUniqueErrorsOnFailure(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	var testCases = []struct {
+		requestAccountID int
+		requestAppID     int
+		responseStatus   int
+		responseBody     string
+		responseError    error
+	}{
+		{456, 123, http.StatusBadRequest, "", ErrStatusBadRequest},
+		{456, 123, http.StatusUnauthorized, "", ErrStatusUnauthorized},
+		{456, 123, http.StatusForbidden, "", ErrSystemLimitExceeded},
+		{456, 123, http.StatusNotFound, "", ErrStatusNotFound},
+		{456, 123, http.StatusInternalServerError, "", ErrStatusInternalServerError},
+	}
+
+	for _, tc := range testCases {
+		n := fmt.Sprintf("%d-%s", tc.responseStatus, tc.responseError)
+		t.Run(n, func(t *testing.T) {
+			// Setup
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tc.responseStatus)
+				fmt.Fprint(w, tc.responseBody)
+			}))
+			url, err := url.Parse(ts.URL)
+			assert.NoError(err)
+			PrefixURI = url
+			Token = "s3cr3t"
+
+			// Invoke
+			_, err = ApplicationDelete(tc.requestAccountID, tc.requestAppID)
+
+			// Test
+			assert.Error(err, tc.responseError)
+		})
+	}
 }

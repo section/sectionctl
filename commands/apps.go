@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/section/sectionctl/api"
@@ -15,6 +16,7 @@ type AppsCmd struct {
 	List   AppsListCmd   `cmd help:"List apps on Section." default:"1"`
 	Info   AppsInfoCmd   `cmd help:"Show detailed app information on Section."`
 	Create AppsCreateCmd `cmd help:"Create new app on Section."`
+	Delete AppsDeleteCmd `cmd help:"Delete an existing app on Section."`
 }
 
 // AppsListCmd handles listing apps running on Section
@@ -121,4 +123,49 @@ func (c *AppsInfoCmd) Run() (err error) {
 }
 
 // AppsCreateCmd handles creating apps on Section
-type AppsCreateCmd struct{}
+type AppsCreateCmd struct {
+	AccountID int    `required short:"a" help:"ID of account to create the app under"`
+	Hostname  string `required short:"d" help:"FQDN the app can be accessed at"`
+	Origin    string `required short:"o" help:"URL to fetch the origin"`
+	StackName string `required short:"s" help:"Name of stack to deploy"`
+}
+
+// Run executes the command
+func (c *AppsCreateCmd) Run() (err error) {
+	s := NewSpinner(fmt.Sprintf("Creating new app %s", c.Hostname))
+	s.Start()
+
+	api.Timeout = 120 * time.Second // this specific request can take a long time
+	r, err := api.ApplicationCreate(c.AccountID, c.Hostname, c.Origin, c.StackName)
+	s.Stop()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("\nSuccess: created app '%s' with id '%d'\n", r.ApplicationName, r.ID)
+
+	return err
+}
+
+// AppsDeleteCmd handles deleting apps on Section
+type AppsDeleteCmd struct {
+	AccountID int `required short:"a" help:"ID of account the app belongs to"`
+	AppID     int `required short:"i" help:"ID of the app to delete"`
+}
+
+// Run executes the command
+func (c *AppsDeleteCmd) Run() (err error) {
+	s := NewSpinner(fmt.Sprintf("Deleting app with id '%d'", c.AppID))
+	s.Start()
+
+	api.Timeout = 120 * time.Second // this specific request can take a long time
+	_, err = api.ApplicationDelete(c.AccountID, c.AppID)
+	s.Stop()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("\nSuccess: deleted app with id '%d'\n", c.AppID)
+
+	return err
+}

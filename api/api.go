@@ -16,7 +16,8 @@ import (
 var (
 	// PrefixURI is the root of the Section API
 	PrefixURI = &url.URL{Scheme: "https", Host: "aperture.section.io"}
-	timeout   = 20 * time.Second
+	// Timeout specifies a time limit for requests made by the API client
+	Timeout = 20 * time.Second
 	// Token is the token for authenticating to the Section API
 	Token string
 
@@ -40,7 +41,7 @@ func BaseURL() (u url.URL) {
 // You can pass 0 or more headers, and keys in the later headers will override earlier passed headers.
 func request(method string, u url.URL, body io.Reader, headers ...http.Header) (resp *http.Response, err error) {
 	client := &http.Client{
-		Timeout: timeout,
+		Timeout: Timeout,
 	}
 
 	req, err := http.NewRequest(method, u.String(), body)
