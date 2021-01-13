@@ -48,6 +48,8 @@ func bootstrap(c CLI, ctx *kong.Context) {
 	log.SetOutput(filter)
 
 	switch {
+	case ctx.Command() == "version":
+		// bypass auth check for version command
 	case ctx.Command() == "login":
 		api.Token = c.SectionToken
 	case ctx.Command() != "login" && ctx.Command() != "logout":
