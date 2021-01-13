@@ -48,6 +48,7 @@ func bootstrap(c CLI, ctx *kong.Context) {
 	log.SetOutput(filter)
 
 	switch {
+	case ctx.Command() == "version":
 	case ctx.Command() == "login":
 		api.Token = c.SectionToken
 	case ctx.Command() != "login" && ctx.Command() != "logout":
