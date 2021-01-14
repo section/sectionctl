@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/hashicorp/logutils"
@@ -31,11 +32,13 @@ type CLI struct {
 	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
+	SectionAPITimeout  time.Duration                `default:"30s" env:"SECTION_API_TIMEOUT" help:"Request timeout for the Section API"`
 	InstallCompletions kongplete.InstallCompletions `cmd:"" help:"install shell completions"`
 }
 
 func bootstrap(c CLI, ctx *kong.Context) {
 	api.PrefixURI = c.SectionAPIPrefix
+	api.Timeout = c.SectionAPITimeout
 
 	filter := &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
