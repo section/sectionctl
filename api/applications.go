@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 // App represents an application deployed on Section
@@ -228,6 +229,7 @@ func ApplicationEnvironmentModuleUpdate(accountID int, applicationID int, env st
 	}
 	log.Printf("[DEBUG] JSON payload: %s\n", b)
 	headers := map[string][]string{"filepath": []string{filePath}}
+	Timeout = 300 * time.Second // five minutes, because server-side validation can take a while
 	resp, err := request(http.MethodPatch, u, bytes.NewBuffer(b), headers)
 	if err != nil {
 		return fmt.Errorf("failed to execute trigger request: %v", err)
