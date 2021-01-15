@@ -159,7 +159,7 @@ func (c *DeployCmd) Run() (err error) {
 			},
 		},
 	}
-	err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, c.Environment, c.AppPath + "/.section-external-source.json", ups)
+	err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, c.Environment, c.AppPath+"/.section-external-source.json", ups)
 	s.Stop()
 	if err != nil {
 		return fmt.Errorf("failed to trigger app update: %v", err)
