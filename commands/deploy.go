@@ -26,15 +26,16 @@ const MaxFileSize = 1073741824 // 1GB
 
 // DeployCmd handles deploying an app to Section.
 type DeployCmd struct {
-	AccountID   int           `required short:"a" help:"AccountID to deploy application to."`
-	AppID       int           `required short:"i" help:"AppID to deploy application to."`
-	Environment string        `short:"e" default:"production" help:"Environment to deploy application to."`
-	Debug       bool          `help:"Display extra debugging information about what is happening inside sectionctl."`
-	Directory   string        `default:"." help:"Directory which contains the application to deploy."`
-	ServerURL   *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload" help:"URL to upload application to"`
-	Timeout     time.Duration `default:"300s" help:"Timeout of individual HTTP requests."`
-	SkipDelete  bool          `help:"Skip delete of temporary tarball created to upload app."`
-	AppPath     string        `default:"nodejs" help:"Path of NodeJS application in environment repository."`
+	AccountID      int           `required short:"a" help:"AccountID to deploy application to."`
+	AppID          int           `required short:"i" help:"AppID to deploy application to."`
+	Environment    string        `short:"e" default:"production" help:"Environment to deploy application to."`
+	Debug          bool          `help:"Display extra debugging information about what is happening inside sectionctl."`
+	Directory      string        `default:"." help:"Directory which contains the application to deploy."`
+	ServerURL      *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload" help:"URL to upload application to"`
+	Timeout        time.Duration `default:"300s" help:"Timeout of individual HTTP requests."`
+	SkipDelete     bool          `help:"Skip delete of temporary tarball created to upload app."`
+	SkipValidation bool          `help:"Skip validation of the workload before pushing into Section. Use with caution."`
+	AppPath        string        `default:"nodejs" help:"Path of NodeJS application in environment repository."`
 }
 
 // UploadResponse represents the response from a request to the upload service.
@@ -57,14 +58,16 @@ func (c *DeployCmd) Run() (err error) {
 		}
 	}
 
-	errs := IsValidNodeApp(dir)
-	if len(errs) > 0 {
-		var se []string
-		for _, err := range errs {
-			se = append(se, fmt.Sprintf("- %s", err))
+	if !c.SkipValidation {
+		errs := IsValidNodeApp(dir)
+		if len(errs) > 0 {
+			var se []string
+			for _, err := range errs {
+				se = append(se, fmt.Sprintf("- %s", err))
+			}
+			errstr := strings.Join(se, "\n")
+			return fmt.Errorf("not a valid Node.js app: \n\n%s", errstr)
 		}
-		errstr := strings.Join(se, "\n")
-		return fmt.Errorf("not a valid Node.js app: \n\n%s", errstr)
 	}
 
 	s := NewSpinner(fmt.Sprintf("Packaging app in: %s", dir))
