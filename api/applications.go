@@ -329,7 +329,7 @@ func ApplicationStatus(accountID int, applicationID int, moduleName string) (as 
 }
 
 // ApplicationLogs returns a module's logs from Section's delivery platform
-func ApplicationLogs(accountID int, applicationID int, moduleName string, instanceName string, length int) (al []AppLogs, err error) {
+func ApplicationLogs(accountID int, applicationID int, moduleName string, instanceName string, length int, startTimestampRfc3339 string) (al []AppLogs, err error) {
 	u := BaseURL()
 	u.Path = "/new/authorized/graphql_api/query"
 
@@ -359,6 +359,10 @@ func ApplicationLogs(accountID int, applicationID int, moduleName string, instan
 
 	requestData.Query = "query Logs($moduleName: String!, $environmentId: Int!, $instanceName: String, $length: Int){logs(moduleName:$moduleName, environmentId:$environmentId, instanceName:$instanceName, length:$length){timestamp instanceName message type}}"
 
+	if startTimestampRfc3339 != "" {
+		requestData.Variables["startTimestampRfc3339"] = startTimestampRfc3339
+		requestData.Query = "query Logs($moduleName: String!, $environmentId: Int!, $instanceName: String, $length: Int, $startTimestampRfc3339: String){logs(moduleName:$moduleName, environmentId:$environmentId, instanceName:$instanceName, length:$length, startTimestampRfc3339:$startTimestampRfc3339){timestamp instanceName message type}}"
+	}
 	data, err := json.Marshal(requestData)
 	resp, err := request(http.MethodPost, u, bytes.NewBuffer(data))
 	if err != nil {
