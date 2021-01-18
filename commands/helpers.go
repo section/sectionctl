@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/section/sectionctl/api"
 )
 
 /*
@@ -21,4 +22,13 @@ func NewSpinner(txt string) (s *spinner.Spinner) {
 	s.Prefix = fmt.Sprintf("%s... ", txt)
 	s.FinalMSG = fmt.Sprintf("%s... done\n", txt)
 	return s
+}
+
+func getLatestTimeStampFromLogs(appLogs []api.AppLogs) string {
+	for i := len(appLogs) - 1; i >= 0; i-- {
+		if appLogs[i].Timestamp != "" {
+			return appLogs[i].Timestamp
+		}
+	}
+	return ""
 }
