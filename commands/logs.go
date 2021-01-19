@@ -67,11 +67,13 @@ func (c *LogsCmd) Run() (err error) {
 			} else {
 				log.Printf("%s[%s]\t%s\n", a.InstanceName, a.Type, a.Message)
 			}
+			if a.Timestamp != "" {
+				latestTimestamp = a.Timestamp
+			}
 		}
 		if !c.Follow {
 			break
 		}
-		latestTimestamp := getLatestTimeStampFromLogs(appLogs)
 		if latestTimestamp == "" {
 			latestTimestamp = startTimestampRfc3339
 		}
