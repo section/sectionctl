@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
-	"strconv"
 	"time"
 
 	"github.com/section/sectionctl/version"
@@ -77,7 +76,7 @@ func request(method string, u url.URL, body io.Reader, headers ...http.Header) (
 
 // prettyTxIDError creates a support friendly error message with an transaction ID
 func prettyTxIDError(resp *http.Response) error {
-	if resp.Status == strconv.Itoa(http.StatusTooManyRequests) + " " + http.StatusText(http.StatusTooManyRequests)  {
+	if resp.StatusCode == http.StatusTooManyRequests {
 		return fmt.Errorf("status 429 - the number of requests have exceeded the maximum allowed for this time period. Please wait a few minutes and try again. Transaction ID: %s", resp.Header["Aperture-Tx-Id"][0])
 	}
 
