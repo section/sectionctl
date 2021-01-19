@@ -76,6 +76,10 @@ func request(method string, u url.URL, body io.Reader, headers ...http.Header) (
 
 // prettyTxIDError creates a support friendly error message with an transaction ID
 func prettyTxIDError(resp *http.Response) error {
+	if resp.Status == "429 Too Many Requests"  {
+		return fmt.Errorf("status 429 - the number of requests have exceeded the maximum allowed for this time period. Please wait a few minutes and try again. Transaction ID: %s", resp.Header["Aperture-Tx-Id"][0])
+	}
+
 	if len(resp.Header["Aperture-Tx-Id"]) > 0 {
 		return fmt.Errorf("request failed with status %s and transaction ID %s", resp.Status, resp.Header["Aperture-Tx-Id"][0])
 	}
