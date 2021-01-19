@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -39,12 +40,10 @@ func BaseURL() (u url.URL) {
 // request does the heavy lifting of making requests to the Section API.
 //
 // You can pass 0 or more headers, and keys in the later headers will override earlier passed headers.
-func request(method string, u url.URL, body io.Reader, headers ...http.Header) (resp *http.Response, err error) {
-	client := &http.Client{
-		Timeout: Timeout,
-	}
+func request(ctx context.Context, method string, u url.URL, body io.Reader, headers ...http.Header) (resp *http.Response, err error) {
+	client := http.Client{}
 
-	req, err := http.NewRequest(method, u.String(), body)
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
 		return resp, err
 	}

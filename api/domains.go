@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -30,7 +31,10 @@ func DomainsRenewCert(accountID int, hostname string) (r RenewCertResponse, err 
 	u := BaseURL()
 	u.Path += fmt.Sprintf("/account/%d/domain/%s/renewCertificate", accountID, hostname)
 
-	resp, err := request(http.MethodPost, u, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
+	resp, err := request(ctx, http.MethodPost, u, nil)
 	if err != nil {
 		return r, err
 	}

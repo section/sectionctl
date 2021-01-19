@@ -1,12 +1,14 @@
 package api
 
 import (
+	"context"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/zalando/go-keyring"
@@ -36,8 +38,11 @@ func TestAPIClientSetsUserAgent(t *testing.T) {
 	u, err := url.Parse(ts.URL)
 	assert.NoError(err)
 
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
 	// Invoke
-	_, err = request(http.MethodGet, *u, nil)
+	_, err = request(ctx, http.MethodGet, *u, nil)
 	assert.NoError(err)
 
 	// Test
@@ -109,8 +114,11 @@ func TestAPIClientUsesCredentialsIfSpecified(t *testing.T) {
 	u, err := url.Parse(ts.URL)
 	assert.NoError(err)
 
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
 	// Invoke
-	resp, err := request(http.MethodGet, *u, nil)
+	resp, err := request(ctx, http.MethodGet, *u, nil)
 	assert.NoError(err)
 
 	// Test
@@ -144,7 +152,10 @@ func TestAPIrequestSendsHeaderArguments(t *testing.T) {
 	assert.NoError(err)
 	Token = "s3cr3t"
 
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
 	// Invoke
-	_, err = request(http.MethodGet, *u, nil, headers...)
+	_, err = request(ctx, http.MethodGet, *u, nil, headers...)
 	assert.NoError(err)
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -22,7 +23,10 @@ func Accounts() (as []Account, err error) {
 	u := BaseURL()
 	u.Path += "/account"
 
-	resp, err := request(http.MethodGet, u, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
+	resp, err := request(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return as, err
 	}

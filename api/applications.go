@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -65,7 +66,10 @@ func Application(accountID int, applicationID int) (a App, err error) {
 	u := BaseURL()
 	u.Path += fmt.Sprintf("/account/%d/application/%d", accountID, applicationID)
 
-	resp, err := request(http.MethodGet, u, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
+	resp, err := request(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return a, err
 	}
@@ -114,7 +118,10 @@ func ApplicationEnvironments(accountID int, applicationID int) (es []Environment
 	u := BaseURL()
 	u.Path += fmt.Sprintf("/account/%d/application/%d/environment", accountID, applicationID)
 
-	resp, err := request(http.MethodGet, u, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
+	resp, err := request(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return es, err
 	}
@@ -148,7 +155,10 @@ func ApplicationEnvironmentStack(accountID int, applicationID int, environmentNa
 	u := BaseURL()
 	u.Path += fmt.Sprintf("/account/%d/application/%d/environment/%s/stack", accountID, applicationID, environmentName)
 
-	resp, err := request(http.MethodGet, u, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
+	resp, err := request(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return s, err
 	}
@@ -182,7 +192,10 @@ func Applications(accountID int) (as []App, err error) {
 	u := BaseURL()
 	u.Path += fmt.Sprintf("/account/%d/application", accountID)
 
-	resp, err := request(http.MethodGet, u, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
+	resp, err := request(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return as, err
 	}
@@ -228,9 +241,12 @@ func ApplicationEnvironmentModuleUpdate(accountID int, applicationID int, env st
 		return fmt.Errorf("failed to encode json payload: %v", err)
 	}
 	log.Printf("[DEBUG] JSON payload: %s\n", b)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
 	headers := map[string][]string{"filepath": []string{filePath}}
-	Timeout = 300 * time.Second // five minutes, because server-side validation can take a while
-	resp, err := request(http.MethodPatch, u, bytes.NewBuffer(b), headers)
+
+	resp, err := request(ctx, http.MethodPatch, u, bytes.NewBuffer(b), headers)
 	if err != nil {
 		return fmt.Errorf("failed to execute trigger request: %v", err)
 	}
@@ -290,8 +306,10 @@ func ApplicationStatus(accountID int, applicationID int, moduleName string) (as 
 	}
 	requestData.Query = "query DeploymentStatus($moduleName: String!, $environmentID: Int!){deploymentStatus(moduleName:$moduleName, environmentID:$environmentID){inService state instanceName payloadID}}"
 
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
 	data, err := json.Marshal(requestData)
-	resp, err := request(http.MethodPost, u, bytes.NewBuffer(data))
+	resp, err := request(ctx, http.MethodPost, u, bytes.NewBuffer(data))
 	if err != nil {
 		return as, err
 	}
@@ -365,8 +383,11 @@ func ApplicationLogs(accountID int, applicationID int, moduleName string, instan
 		requestData.Variables["startTimestampRfc3339"] = startTimestampRfc3339
 		requestData.Query = "query Logs($moduleName: String!, $environmentId: Int!, $instanceName: String, $length: Int, $startTimestampRfc3339: String){logs(moduleName:$moduleName, environmentId:$environmentId, instanceName:$instanceName, length:$length, startTimestampRfc3339:$startTimestampRfc3339){timestamp instanceName message type}}"
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
 	data, err := json.Marshal(requestData)
-	resp, err := request(http.MethodPost, u, bytes.NewBuffer(data))
+	resp, err := request(ctx, http.MethodPost, u, bytes.NewBuffer(data))
 	if err != nil {
 		return al, err
 	}
@@ -422,8 +443,12 @@ func ApplicationCreate(accountID int, hostname, origin, stackName string) (r App
 		origin,
 		stackName,
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
 	data, err := json.Marshal(appCreateReq)
-	resp, err := request(http.MethodPost, u, bytes.NewBuffer(data))
+	resp, err := request(ctx, http.MethodPost, u, bytes.NewBuffer(data))
 	if err != nil {
 		return r, err
 	}
@@ -494,7 +519,10 @@ func ApplicationDelete(accountID, appID int) (r ApplicationDeleteResponse, err e
 	u := BaseURL()
 	u.Path += fmt.Sprintf("/account/%d/application/%d", accountID, appID)
 
-	resp, err := request(http.MethodDelete, u, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
+	resp, err := request(ctx, http.MethodDelete, u, nil)
 	if err != nil {
 		return r, fmt.Errorf("unable to perform request: %w", err)
 	}

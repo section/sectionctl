@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -24,7 +25,10 @@ func CurrentUser() (u User, err error) {
 	ur := BaseURL()
 	ur.Path += "/user"
 
-	resp, err := request(http.MethodGet, ur, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
+	resp, err := request(ctx, http.MethodGet, ur, nil)
 	if err != nil {
 		return u, err
 	}
