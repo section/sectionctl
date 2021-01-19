@@ -329,7 +329,7 @@ func ApplicationStatus(accountID int, applicationID int, moduleName string) (as 
 }
 
 // ApplicationLogs returns a module's logs from Section's delivery platform
-func ApplicationLogs(accountID int, applicationID int, moduleName string, instanceName string, length int) (al []AppLogs, err error) {
+func ApplicationLogs(accountID int, applicationID int, moduleName string, instanceName string, number int) (al []AppLogs, err error) {
 	u := BaseURL()
 	u.Path = "/new/authorized/graphql_api/query"
 
@@ -350,7 +350,7 @@ func ApplicationLogs(accountID int, applicationID int, moduleName string, instan
 		"environmentId": environmentID,
 		"moduleName":    moduleName,
 		"instanceName":  instanceName,
-		"length":        length,
+		"length":        number,
 		// "startTimestamp": startTimestamp,
 		// "endTimestamp": endTimestamp,
 	}
