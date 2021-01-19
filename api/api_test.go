@@ -48,7 +48,10 @@ func TestPrettyTxIDErrorPrintsApertureTxID(t *testing.T) {
 	assert := assert.New(t)
 
 	// Invoke
-	resp := http.Response{Status: "500 Internal Server Error", Header: map[string][]string{"Aperture-Tx-Id": []string{"12345"}}}
+	resp := http.Response{
+		Status: "500 Internal Server Error",
+		Header: map[string][]string{"Aperture-Tx-Id": []string{"12345"}},
+	}
 	err := prettyTxIDError(&resp)
 
 	// Test
