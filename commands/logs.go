@@ -20,7 +20,7 @@ type LogsCmd struct {
 	AppID        int    `required short:"i" help:"ID of app to query"`
 	AppPath      string `default:"nodejs" help:"Path of NodeJS application in environment repository."`
 	InstanceName string `default:"" help:"Specific instance of NodeJS application running on Section platform."`
-	Number       int    `default:100 help:"Number of log lines to fetch."`
+	Number       int    `short:"n" default:100 help:"Number of log lines to fetch."`
 	Follow       bool   `help:"Displays recent logs and leaves the session open for logs to stream in. --instance-name required."`
 	// StartTimestamp  int    `default:0 help:"Start of log time stamp to fetch."`
 	// EndTimestamp    int    `default:0 help:"End of log time stamp to fetch."`
