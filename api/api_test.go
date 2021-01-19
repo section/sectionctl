@@ -159,3 +159,27 @@ func TestAPIrequestSendsHeaderArguments(t *testing.T) {
 	_, err = request(ctx, http.MethodGet, *u, nil, headers...)
 	assert.NoError(err)
 }
+
+func TestAPIrequestReturnsErrorsOnTimeouts(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(1 * time.Second)
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	u, err := url.Parse(ts.URL)
+	assert.NoError(err)
+	Token = "s3cr3t"
+
+	ctx, cancel := context.WithTimeout(context.Background(), 0*time.Second)
+	defer cancel()
+
+	// Invoke
+	_, err = request(ctx, http.MethodGet, *u, nil)
+
+	// Test
+	assert.Error(err)
+	assert.Regexp("context deadline exceeded", err)
+}
