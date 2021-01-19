@@ -29,7 +29,7 @@ type LogsCmd struct {
 func (c *LogsCmd) Run() (err error) {
 	s := NewSpinner("Getting logs from app")
 	logsHeader := "\nInstanceName[Log Type]\t\t\tLog Message\n"
-	s.FinalMSG = "done" + logsHeader
+	s.FinalMSG = logsHeader
 	s.Start()
 
 	if c.Number > maxNumberLogs {
