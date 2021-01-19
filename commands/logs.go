@@ -33,7 +33,7 @@ func (c *LogsCmd) Run() (err error) {
 	s.FinalMSG = "done" + logsHeader
 	s.Start()
 
-	if c.Length > maxNumberLogs {
+	if c.Number > maxNumberLogs {
 		return fmt.Errorf("number of logs queried cannot be over %d", maxNumberLogs)
 	}
 
