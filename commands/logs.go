@@ -57,6 +57,7 @@ func (c *LogsCmd) Run() (err error) {
 		if err != nil {
 			return err
 		}
+		var latestTimestamp string
 		for _, a := range appLogs {
 			a.Message = strings.TrimSpace(a.Message)
 
