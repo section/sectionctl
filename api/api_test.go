@@ -53,7 +53,7 @@ func TestPrettyTxIDErrorPrintsApertureTxID(t *testing.T) {
 
 	// Test
 	assert.Error(err)
-	assert.Regexp("transaction ID", err)
+	assert.Regexp("Section Transaction ID", err)
 	assert.Regexp(resp.Header["Aperture-Tx-Id"][0], err)
 }
 
@@ -67,7 +67,24 @@ func TestPrettyTxIDErrorHandlesNoApertureTxIDHeader(t *testing.T) {
 
 	// Test
 	assert.Error(err)
-	assert.NotRegexp("transaction ID", err)
+	assert.NotRegexp("Section Transaction ID", err)
+}
+
+func TestPrettyTxIDErrorHandlesRateLimiting(t *testing.T) {
+	assert := assert.New(t)
+
+	// Invoke
+	resp := http.Response{
+		StatusCode: http.StatusTooManyRequests,
+		Header:     map[string][]string{"Aperture-Tx-Id": []string{"12345"}},
+	}
+	assert.NotPanics(func() { prettyTxIDError(&resp) })
+	err := prettyTxIDError(&resp)
+
+	// Test
+	assert.Error(err)
+	assert.Regexp(resp.Header["Aperture-Tx-Id"][0], err)
+	assert.Regexp("Please wait a few minutes", err)
 }
 
 func TestAPIClientUsesCredentialsIfSpecified(t *testing.T) {
