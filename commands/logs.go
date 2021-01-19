@@ -19,7 +19,7 @@ type LogsCmd struct {
 	AppID           int    `required short:"i" help:"ID of app to query"`
 	AppPath         string `default:"nodejs" help:"Path of NodeJS application in environment repository."`
 	InstanceName    string `default:"" help:"Specific instance of NodeJS application running on Section platform."`
-	Length          int    `default:100 help:"Number of log lines to fetch."`
+	Number          int    `short:"n" default:100 help:"Number of log lines to fetch."`
 	// StartTimestamp  int    `default:0 help:"Start of log time stamp to fetch."`
 	// EndTimestamp    int    `default:0 help:"End of log time stamp to fetch."`
 }
@@ -29,11 +29,11 @@ func (c *LogsCmd) Run() (err error) {
 	s := NewSpinner("Getting logs from app")
 	s.Start()
 
-	if c.Length > maxNumberLogs {
+	if c.Number > maxNumberLogs {
 		return fmt.Errorf("number of logs queried cannot be over %d", maxNumberLogs)
 	}
 
-	appLogs, err := api.ApplicationLogs(c.AccountID, c.AppID, c.AppPath, c.InstanceName, c.Length)
+	appLogs, err := api.ApplicationLogs(c.AccountID, c.AppID, c.AppPath, c.InstanceName, c.Number)
 	s.Stop()
 	if err != nil {
 		return err
