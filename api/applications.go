@@ -242,7 +242,7 @@ func ApplicationEnvironmentModuleUpdate(accountID int, applicationID int, env st
 	}
 	log.Printf("[DEBUG] JSON payload: %s\n", b)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute) // because these requests can take a long time to complete on Section's side
 	defer cancel()
 	headers := map[string][]string{"filepath": []string{filePath}}
 
