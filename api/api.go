@@ -41,7 +41,7 @@ func BaseURL() (u url.URL) {
 //
 // You can pass 0 or more headers, and keys in the later headers will override earlier passed headers.
 func request(ctx context.Context, method string, u url.URL, body io.Reader, headers ...http.Header) (resp *http.Response, err error) {
-	var client http.Client{}
+	var client http.Client
 
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
