@@ -8,7 +8,6 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/hashicorp/logutils"
 	"github.com/posener/complete"
-	"github.com/section/sectionctl/analytics"
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/commands"
 	"github.com/section/sectionctl/credentials"
@@ -27,7 +26,6 @@ type CLI struct {
 	WhoAmI             commands.WhoAmICmd           `cmd name:"whoami" help:"Show information about the currently authenticated user"`
 	Ps                 commands.PsCmd               `cmd help:"Show status of running applications"`
 	Logs               commands.LogsCmd             `cmd help:"Show logs from running applications"`
-	Analytics          commands.AnalyticsCmd        `cmd hidden`
 	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
@@ -80,11 +78,9 @@ func main() {
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
 	bootstrap(cli, ctx)
-	analytics.AsyncLogInvoke(ctx)
 	err := ctx.Run()
 	if err != nil {
 		log.Printf("[ERROR] %s\n", err)
-		analytics.AsyncLogError(ctx, err)
 		os.Exit(2)
 	}
 }
