@@ -6,8 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/logrusorgru/aurora"
-	"github.com/mattn/go-colorable" // colorable
+	"github.com/logrusorgru/aurora" // colorable
 	"github.com/section/sectionctl/api"
 )
 
@@ -30,7 +29,7 @@ type LogsCmd struct {
 func (c *LogsCmd) Run() (err error) {
 	s := NewSpinner("Getting logs from app")
 	logsHeader := "\nInstanceName[Log Type]\t\t\tLog Message\n"
-	s.FinalMSG = "done" + logsHeader
+	s.FinalMSG = logsHeader
 	s.Start()
 
 	if c.Number > maxNumberLogs {
@@ -48,7 +47,6 @@ func (c *LogsCmd) Run() (err error) {
 
 	// Fix colorization issues between aurora and Windows
 	// https://github.com/logrusorgru/aurora#windows
-	log.SetOutput(colorable.NewColorableStdout())
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime)) // Remove local time prefix on output
 
 	for {

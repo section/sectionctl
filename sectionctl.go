@@ -8,6 +8,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/hashicorp/logutils"
+	"github.com/mattn/go-colorable"
 	"github.com/posener/complete"
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/commands"
@@ -38,10 +39,12 @@ func bootstrap(c CLI, ctx *kong.Context) {
 	api.PrefixURI = c.SectionAPIPrefix
 	api.Timeout = c.SectionAPITimeout
 
+	colorableWriter := colorable.NewColorableStderr()
+
 	filter := &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
 		MinLevel: logutils.LogLevel("INFO"),
-		Writer:   os.Stderr,
+		Writer:   colorableWriter,
 	}
 	if c.Debug {
 		filter.MinLevel = logutils.LogLevel("DEBUG")
