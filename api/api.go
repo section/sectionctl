@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -27,6 +28,9 @@ var (
 	ErrStatusUnauthorized = fmt.Errorf("check your token? API request is unauthorized: %w", ErrAuthDenied)
 	// ErrStatusForbidden (403) indicates that the server understood the request but refuses to authorize it.
 	ErrStatusForbidden = fmt.Errorf("check your token? API request is forbidden: %w", ErrAuthDenied)
+
+	// client is the HTTP client used across requests
+	client http.Client
 )
 
 // BaseURL returns a URL for building requests on
@@ -39,12 +43,8 @@ func BaseURL() (u url.URL) {
 // request does the heavy lifting of making requests to the Section API.
 //
 // You can pass 0 or more headers, and keys in the later headers will override earlier passed headers.
-func request(method string, u url.URL, body io.Reader, headers ...http.Header) (resp *http.Response, err error) {
-	client := &http.Client{
-		Timeout: Timeout,
-	}
-
-	req, err := http.NewRequest(method, u.String(), body)
+func request(ctx context.Context, method string, u url.URL, body io.Reader, headers ...http.Header) (resp *http.Response, err error) {
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
 		return resp, err
 	}
