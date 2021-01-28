@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/fatih/color"
 	hversion "github.com/hashicorp/go-version"
 	"github.com/section/sectionctl/version"
 )
@@ -53,7 +54,8 @@ func (c *VersionCmd) Run() (err error) {
 	}
 
 	if current.LessThan(latest) {
-		fmt.Fprintf(c.Out(), "\nA new version of sectionctl is available: %s\n", v)
+		green := color.New(color.FgGreen)
+		green.Fprintf(c.Out(), "\nA new version of sectionctl is available: %s\n", v)
 		fmt.Fprintf(c.Out(), "\nDownload at https://github.com/section/sectionctl/releases/%s\n", v)
 	}
 
