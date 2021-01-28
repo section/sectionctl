@@ -69,7 +69,7 @@ func (c *VersionCmd) checkVersion(latest chan string, errs chan error) {
 	}
 	req, err := http.NewRequestWithContext(ctx, "GET", c.LatestReleaseURL.String(), nil)
 	if err != nil {
-		errs <- err
+		errs <- fmt.Errorf("unable to make request: %w", err)
 		return
 	}
 	ua := fmt.Sprintf("sectionctl (%s; %s-%s)", version.Version, runtime.GOARCH, runtime.GOOS)
@@ -78,7 +78,7 @@ func (c *VersionCmd) checkVersion(latest chan string, errs chan error) {
 	var client http.Client
 	resp, err := client.Do(req)
 	if err != nil {
-		errs <- err
+		errs <- fmt.Errorf("unable to perform request: %w", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -90,7 +90,7 @@ func (c *VersionCmd) checkVersion(latest chan string, errs chan error) {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		errs <- err
+		errs <- fmt.Errorf("unable to read response: %w", err)
 		return
 	}
 
@@ -99,7 +99,7 @@ func (c *VersionCmd) checkVersion(latest chan string, errs chan error) {
 	}
 	err = json.Unmarshal(body, &latestResp)
 	if err != nil {
-		errs <- err
+		errs <- fmt.Errorf("unable to decode response: %w", err)
 		return
 	}
 	latest <- latestResp.TagName
