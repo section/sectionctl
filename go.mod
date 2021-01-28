@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/kong v0.2.12
 	github.com/briandowns/spinner v1.11.1
 	github.com/denisbrodbeck/machineid v1.0.1
+	github.com/hashicorp/go-version v1.2.1
 	github.com/hashicorp/logutils v1.0.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible
