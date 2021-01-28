@@ -32,7 +32,7 @@ type DeployCmd struct {
 	Debug          bool          `help:"Display extra debugging information about what is happening inside sectionctl."`
 	Directory      string        `default:"." help:"Directory which contains the application to deploy."`
 	ServerURL      *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload" help:"URL to upload application to"`
-	Timeout        time.Duration `default:"300s" help:"Timeout of individual HTTP requests."`
+	Timeout        time.Duration `default:"600s" help:"Timeout of individual HTTP requests."`
 	SkipDelete     bool          `help:"Skip delete of temporary tarball created to upload app."`
 	SkipValidation bool          `help:"Skip validation of the workload before pushing into Section. Use with caution."`
 	AppPath        string        `default:"nodejs" help:"Path of NodeJS application in environment repository."`
@@ -152,7 +152,7 @@ func (c *DeployCmd) Run() (err error) {
 	s = NewSpinner("Deploying app...")
 	s.Start()
 	var ups = []api.EnvironmentUpdateCommand{
-		api.EnvironmentUpdateCommand{
+		{
 			Op: "replace",
 			Value: PayloadValue{
 				ID: response.PayloadID,
