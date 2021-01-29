@@ -22,6 +22,7 @@ type CLI struct {
 	Logout             commands.LogoutCmd           `cmd help:"Revoke authentication tokens to Section's API."`
 	Accounts           commands.AccountsCmd         `cmd help:"Manage accounts on Section"`
 	Apps               commands.AppsCmd             `cmd help:"Manage apps on Section"`
+	Domains            commands.DomainsCmd          `cmd help:"Manage domains on Section"`
 	Certs              commands.CertsCmd            `cmd help:"Manage certificates on Section"`
 	Deploy             commands.DeployCmd           `cmd help:"Deploy an app to Section"`
 	Version            commands.VersionCmd          `cmd help:"Print sectionctl version"`
