@@ -25,10 +25,10 @@ type CLI struct {
 	Domains            commands.DomainsCmd          `cmd help:"Manage domains on Section"`
 	Certs              commands.CertsCmd            `cmd help:"Manage certificates on Section"`
 	Deploy             commands.DeployCmd           `cmd help:"Deploy an app to Section"`
+	Logs               commands.LogsCmd             `cmd help:"Show logs from running applications"`
+	Ps                 commands.PsCmd               `cmd help:"Show status of running applications"`
 	Version            commands.VersionCmd          `cmd help:"Print sectionctl version"`
 	WhoAmI             commands.WhoAmICmd           `cmd name:"whoami" help:"Show information about the currently authenticated user"`
-	Ps                 commands.PsCmd               `cmd help:"Show status of running applications"`
-	Logs               commands.LogsCmd             `cmd help:"Show logs from running applications"`
 	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
