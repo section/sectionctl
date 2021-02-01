@@ -9,6 +9,50 @@ import (
 	"time"
 )
 
+// DomainsResponse represents an API response to GET /account/{accountId}/domains
+type DomainsResponse struct {
+	DomainName string `json:"domain_name"`
+	Engaged    bool   `json:"engaged"`
+}
+
+// Domains returns a list of an account's domains
+func Domains(accountID int) (d []DomainsResponse, err error) {
+	u := BaseURL()
+	u.Path += fmt.Sprintf("/account/%d/domains", accountID)
+
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
+	resp, err := request(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return d, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		switch resp.StatusCode {
+		case 401:
+			return d, ErrStatusUnauthorized
+		case 403:
+			return d, ErrStatusForbidden
+		default:
+			return d, prettyTxIDError(resp)
+		}
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return d, err
+	}
+
+	err = json.Unmarshal(body, &d)
+	if err != nil {
+		return d, err
+	}
+
+	return d, err
+}
+
 /*
 {
 	  "issued": true,

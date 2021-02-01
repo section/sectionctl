@@ -6,3 +6,4 @@ os.Remove
 (*archive/tar.Writer).Close
 (*os.File).Close
 (*os.File).Write
+(*github.com/fatih/color.Color).Fprintf
