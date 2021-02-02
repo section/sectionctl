@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -32,10 +33,10 @@ location ~ "/notnuxt/" {
 // Run executes the command
 func (c *InitCmd) Run() (err error) {
 	if c.StackName == "nodejs-basic" {
-		fmt.Printf("Checking to see if server.conf exists\n")
+		fmt.Println("Checking to see if server.conf exists")
 		checkServConf, err := os.Open("server.conf")
 		if err != nil {
-			fmt.Printf("WARN: server.conf does not exist. Creating server.conf\n")
+			fmt.Println("WARN: server.conf does not exist. Creating server.conf")
 			f, err := os.Create("server.conf")
 			if err != nil {
 				panic(err)
@@ -44,14 +45,14 @@ func (c *InitCmd) Run() (err error) {
 			f.Write(b)
 			defer f.Close()
 		} else {
-			fmt.Printf("Validating server.conf\n")
+			fmt.Println("Validating server.conf")
 			fileinfo, err := checkServConf.Stat()
 			if err != nil {
 				panic(err)
 			}
-			b1 := make([]byte, fileinfo.Size())
-			checkServConf.Read(b1)
-			fileString := string(b1)
+			buff := make([]byte, fileinfo.Size())
+			checkServConf.Read(buff)
+			fileString := string(buff)
 			if !strings.Contains(fileString, "location / {") {
 				fmt.Println("WARN: default location unspecified. Edit or delete server.conf and rerun this command")
 			}
@@ -60,8 +61,42 @@ func (c *InitCmd) Run() (err error) {
 			}
 		}
 		defer checkServConf.Close()
+		fmt.Println("Checking to see if package.json exists")
+		checkPkgJSON, err := os.Open("package.json")
+		if err != nil {
+			fmt.Println("WARN: package.json does not exist. Creating package.json")
+			cmd := exec.Command("npm", "init", "-y")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			err := cmd.Run()
+			if err != nil {
+				fmt.Println("FATAL: There was an error creating package.json. Is node installed?")
+			} else {
+				fmt.Println("package.json created")
+				fmt.Println("WARN: package.json does not have a 'start' script. This is required")
+			}
+		} else {
+			fmt.Println("Validating package.json")
+			fileinfo, err := checkPkgJSON.Stat()
+			if err != nil {
+				panic(err)
+			}
+			buff := make([]byte, fileinfo.Size())
+			checkPkgJSON.Read(buff)
+			fileString := string(buff)
+			if !strings.Contains(fileString, "name") {
+				fmt.Println("WARN: name key value pair is required. Please add one to your package.json")
+			}
+			if !strings.Contains(fileString, "version") {
+				fmt.Println("WARN: version key value pair is required. Please add one to your package.json")
+			}
+			if !strings.Contains(fileString, "start") {
+				fmt.Println("WARN: start script is required. Please add one to your package.json")
+			}
+		}
+		defer checkPkgJSON.Close()
 	} else {
-		fmt.Printf("Stack name %s does not have an initialization defined\n", c.StackName)
+		fmt.Printf("FATAL: Stack name %s does not have an initialization defined\n", c.StackName)
 	}
 	return err
 }
