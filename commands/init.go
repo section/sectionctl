@@ -84,12 +84,6 @@ func (c *InitCmd) Run() (err error) {
 			buff := make([]byte, fileinfo.Size())
 			checkPkgJSON.Read(buff)
 			fileString := string(buff)
-			if !strings.Contains(fileString, "name") {
-				fmt.Println("WARN: name key value pair is required. Please add one to your package.json")
-			}
-			if !strings.Contains(fileString, "version") {
-				fmt.Println("WARN: version key value pair is required. Please add one to your package.json")
-			}
 			if !strings.Contains(fileString, "start") {
 				fmt.Println("WARN: start script is required. Please add one to your package.json")
 			}
