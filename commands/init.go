@@ -20,6 +20,12 @@ func buildServerConf() []byte {
 	proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
 	proxy_set_header Host $host;
 	include /etc/nginx/section.module/node.conf;
+
+location ~ "/next-proxy-hop/" {
+	proxy_set_header X-Forwarded-For $http_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+	proxy_set_header Host $host;
+	proxy_pass http://next-hop;
 }`)
 }
 
