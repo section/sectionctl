@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -66,8 +67,10 @@ func (c *InitCmd) Run() (err error) {
 		if err != nil {
 			fmt.Println("WARN: package.json does not exist. Creating package.json")
 			cmd := exec.Command("npm", "init", "-y")
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
 			err := cmd.Run()
 			if err != nil {
 				fmt.Println("FATAL: There was an error creating package.json. Is node installed?")
