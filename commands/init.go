@@ -20,13 +20,6 @@ func buildServerConf() []byte {
 	proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
 	proxy_set_header Host $host;
 	include /etc/nginx/section.module/node.conf;
-}
-		
-location ~ "/notnuxt/" {
-	proxy_set_header X-Forwarded-For $http_x_forwarded_for;
-	proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
-	proxy_set_header Host $host;
-	proxy_pass http://next-hop;
 }`)
 }
 
@@ -51,13 +44,13 @@ func (c *InitCmd) Run() (err error) {
 				panic(err)
 			}
 			buff := make([]byte, fileinfo.Size())
-			checkServConf.Read(buff)
+			_, err = checkServConf.Read(buff)
+			if err != nil {
+				panic(err)
+			}
 			fileString := string(buff)
 			if !strings.Contains(fileString, "location / {") {
 				fmt.Println("WARN: default location unspecified. Edit or delete server.conf and rerun this command")
-			}
-			if !strings.Contains(fileString, "/notnuxt/") {
-				fmt.Println("WARN: notnuxt location unspecified. Edit or delete server.conf and rerun this command")
 			}
 		}
 		defer checkServConf.Close()
@@ -82,7 +75,10 @@ func (c *InitCmd) Run() (err error) {
 				panic(err)
 			}
 			buff := make([]byte, fileinfo.Size())
-			checkPkgJSON.Read(buff)
+			_, err = checkPkgJSON.Read(buff)
+			if err != nil {
+				panic(err)
+			}
 			fileString := string(buff)
 			if !strings.Contains(fileString, "start") {
 				fmt.Println("WARN: start script is required. Please add one to your package.json")
