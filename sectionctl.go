@@ -18,8 +18,8 @@ import (
 
 // CLI exposes all the subcommands available
 type CLI struct {
-	Login              commands.LoginCmd            `cmd help:"Authenticate to Section's API."`
-	Logout             commands.LogoutCmd           `cmd help:"Revoke authentication tokens to Section's API."`
+	Login              commands.LoginCmd            `cmd help:"Authenticate to Section's API"`
+	Logout             commands.LogoutCmd           `cmd help:"Revoke authentication tokens to Section's API"`
 	Accounts           commands.AccountsCmd         `cmd help:"Manage accounts on Section"`
 	Apps               commands.AppsCmd             `cmd help:"Manage apps on Section"`
 	Domains            commands.DomainsCmd          `cmd help:"Manage domains on Section"`
