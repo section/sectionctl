@@ -177,7 +177,7 @@ func (c *AppsDeleteCmd) Run() (err error) {
 // AppsInitCmd creates and validates server.conf and package.json to prepare an app for deployment
 type AppsInitCmd struct {
 	StackName string `optional default:"nodejs-basic" short:"s" help:"Name of stack to deploy. Default is nodejs-basic"`
-	Force     string `optional default:"false" short:"f" help:"Resets deployment specific files to their default configuration"`
+	Force     bool   `optional short:"f" help:"Resets deployment specific files to their default configuration"`
 }
 
 func buildServerConf() []byte {
@@ -201,7 +201,7 @@ func (c *AppsInitCmd) Run() (err error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	if c.StackName == "nodejs-basic" {
-		if c.Force == "true" {
+		if c.Force {
 			fmt.Println("Removing old versions of server.conf and package.json")
 			err1 := os.Remove("package.json")
 			err2 := os.Remove("server.conf")
