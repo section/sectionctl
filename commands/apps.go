@@ -1,10 +1,13 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/olekukonko/tablewriter"
@@ -17,6 +20,7 @@ type AppsCmd struct {
 	Info   AppsInfoCmd   `cmd help:"Show detailed app information on Section."`
 	Create AppsCreateCmd `cmd help:"Create new app on Section."`
 	Delete AppsDeleteCmd `cmd help:"Delete an existing app on Section."`
+	Init   AppsInitCmd   `cmd help:"Initilize your project for deployment"`
 }
 
 // AppsListCmd handles listing apps running on Section
@@ -167,5 +171,123 @@ func (c *AppsDeleteCmd) Run() (err error) {
 
 	fmt.Printf("\nSuccess: deleted app with id '%d'\n", c.AppID)
 
+	return err
+}
+
+// AppsInitCmd creates and validates server.conf and package.json to prepare an app for deployment
+type AppsInitCmd struct {
+	StackName string `optional default:"nodejs-basic" short:"s" help:"Name of stack to deploy. Default is nodejs-basic"`
+	Force     string `optional default:"false" short:"f" help:"Resets deployment specific files to their default configuration"`
+}
+
+func buildServerConf() []byte {
+	return []byte(
+		`location / {
+	proxy_set_header X-Forwarded-For $http_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+	proxy_set_header Host $host;
+	include /etc/nginx/section.module/node.conf;
+}
+
+location ~ "/next-proxy-hop/" {
+	proxy_set_header X-Forwarded-For $http_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+	proxy_set_header Host $host;
+	proxy_pass http://next-hop;
+}`)
+}
+
+func (c *AppsInitCmd) Run() (err error) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if c.StackName == "nodejs-basic" {
+		if c.Force == "true" {
+			fmt.Println("Removing old versions of server.conf and package.json")
+			err1 := os.Remove("package.json")
+			err2 := os.Remove("server.conf")
+			if err1 != nil || err2 != nil {
+				fmt.Println("ERR: unable to remove files, perhaps they do not exist?")
+			} else {
+				fmt.Println("Files successfully removed")
+			}
+		}
+		fmt.Println("Checking to see if server.conf exists")
+		checkServConf, err := os.Open("server.conf")
+		if err != nil {
+			fmt.Println("WARN: server.conf does not exist. Creating server.conf")
+			f, err := os.Create("server.conf")
+			if err != nil {
+				panic(err)
+			}
+			b := buildServerConf()
+			f.Write(b)
+			defer f.Close()
+		} else {
+			fmt.Println("Validating server.conf")
+			fileinfo, err := checkServConf.Stat()
+			if err != nil {
+				panic(err)
+			}
+			buff := make([]byte, fileinfo.Size())
+			_, err = checkServConf.Read(buff)
+			if err != nil {
+				panic(err)
+			}
+			fileString := string(buff)
+			if !strings.Contains(fileString, "location / {") {
+				fmt.Println("WARN: default location unspecified. Edit or delete server.conf and rerun this command")
+			}
+		}
+		defer checkServConf.Close()
+		fmt.Println("Checking to see if package.json exists")
+		checkPkgJSON, err := os.Open("package.json")
+		if err != nil {
+			fmt.Println("WARN: package.json does not exist. Creating package.json")
+			cmd := exec.Command("npm", "init", "-y")
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+			err := cmd.Run()
+			if err != nil {
+				fmt.Println("FATAL: There was an error creating package.json. Is node installed?")
+				panic(err)
+			} else {
+				fmt.Println("package.json created")
+			}
+		}
+		defer checkPkgJSON.Close()
+		validPkgJSON, err := os.OpenFile("package.json", os.O_RDWR, 0777)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("Validating package.json")
+		fileinfo, err := validPkgJSON.Stat()
+		if err != nil {
+			panic(err)
+		}
+		buff := make([]byte, fileinfo.Size())
+		_, err = validPkgJSON.Read(buff)
+		if err != nil {
+			panic(err)
+		}
+		fileString := string(buff)
+		if !strings.Contains(fileString, "start") {
+			replacementString := `"scripts": {
+    "start": "node YOUR_SERVER_HERE.js",`
+			fileString = strings.Replace(fileString, `"scripts": {`, replacementString, 1)
+			err = validPkgJSON.Truncate(0)
+			if err != nil {
+				panic(err)
+			}
+			_, err = validPkgJSON.WriteString(fileString)
+			if err != nil {
+				fmt.Println("ERR: unable to add start script placeholder")
+			} else {
+				fmt.Println("ERR: start script is required. Please edit the placeholder in package.json")
+			}
+		}
+		defer validPkgJSON.Close()
+	} else {
+		fmt.Printf("FATAL: Stack name %s does not have an initialization defined\n", c.StackName)
+	}
 	return err
 }
