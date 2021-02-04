@@ -204,7 +204,10 @@ func (c *AppsInitCmd) Run() (err error) {
 	var stderr bytes.Buffer
 	switch c.StackName {
 	case "nodejs-basic":
-		c.InitializeNodeBasicApp(stdout, stderr)
+		err := c.InitializeNodeBasicApp(stdout, stderr)
+		if err != nil {
+			panic(err)
+		}
 	default:
 		log.Printf("[ERROR]: Stack name %s does not have an initialization defined\n", c.StackName)
 	}
