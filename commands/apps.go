@@ -21,7 +21,7 @@ type AppsCmd struct {
 	Info   AppsInfoCmd   `cmd help:"Show detailed app information on Section."`
 	Create AppsCreateCmd `cmd help:"Create new app on Section."`
 	Delete AppsDeleteCmd `cmd help:"Delete an existing app on Section."`
-	Init   AppsInitCmd   `cmd help:"Initilize your project for deployment"`
+	Init   AppsInitCmd   `cmd help:"Initialize your project for deployment"`
 }
 
 // AppsListCmd handles listing apps running on Section
