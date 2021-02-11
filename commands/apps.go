@@ -26,7 +26,7 @@ type AppsCmd struct {
 
 // AppsListCmd handles listing apps running on Section
 type AppsListCmd struct {
-	AccountID int `required short:"a"`
+	AccountID int `short:"a" help:"Account ID to find apps under"`
 }
 
 // NewTable returns a table with sectionctl standard formatting
@@ -40,21 +40,44 @@ func NewTable(out io.Writer) (t *tablewriter.Table) {
 
 // Run executes the command
 func (c *AppsListCmd) Run() (err error) {
-	s := NewSpinner("Looking up apps")
-	s.Start()
+	var aids []int
+	if c.AccountID == 0 {
+		s := NewSpinner("Looking up accounts")
+		s.Start()
 
-	apps, err := api.Applications(c.AccountID)
-	s.Stop()
-	if err != nil {
-		return err
+		as, err := api.Accounts()
+		if err != nil {
+			return fmt.Errorf("unable to look up accounts: %w", err)
+		}
+		for _, a := range as {
+			aids = append(aids, a.ID)
+		}
+
+		s.Stop()
+	} else {
+		aids = append(aids, c.AccountID)
 	}
 
-	table := NewTable(os.Stdout)
-	table.SetHeader([]string{"App ID", "App Name"})
+	s := NewSpinner("Looking up apps")
+	s.Start()
+	apps := make(map[int][]api.App)
+	for _, id := range aids {
+		as, err := api.Applications(id)
+		if err != nil {
+			return fmt.Errorf("unable to look up applications: %w", err)
+		}
+		apps[id] = as
+	}
+	s.Stop()
 
-	for _, a := range apps {
-		r := []string{strconv.Itoa(a.ID), a.ApplicationName}
-		table.Append(r)
+	table := NewTable(os.Stdout)
+	table.SetHeader([]string{"Account ID", "App ID", "App Name"})
+
+	for id, as := range apps {
+		for _, a := range as {
+			r := []string{strconv.Itoa(id), strconv.Itoa(a.ID), a.ApplicationName}
+			table.Append(r)
+		}
 	}
 
 	table.Render()
