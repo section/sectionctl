@@ -273,7 +273,14 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer, prefix string) e
 	// must provide real name
 	// (see https://golang.org/src/archive/tar/common.go?#L626)
 	header.Name = filepath.ToSlash(baseFilePath)
-
+  // ensure windows provides filemodes for binaries in node_modules/.bin
+	if runtime.GOOS == "windows" {
+		match := strings.Contains(baseFilePath,"node_modules\\.bin")
+		if match == true {
+			header.Mode = 511 // This is the value that it spat out when i ran npm i on linux then checked the int64 value of the stat.Mode() on files in node_modules/.bin/
+			fmt.Printf("added %s\n", baseFilePath);
+		}
+	}
 	err = tarWriter.WriteHeader(header)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("Could not write header for file '%s', got error '%s'", baseFilePath, err.Error()))
