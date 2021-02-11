@@ -277,7 +277,7 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer, prefix string) e
   // ensure windows provides filemodes for binaries in node_modules/.bin
 	if runtime.GOOS == "windows" {
 		match := strings.Contains(baseFilePath,"node_modules\\.bin")
-		if match == true {
+		if match {
 			header.Mode = 511 // This is the value that it spat out when i ran npm i on linux then checked the int64 value of the stat.Mode() on files in node_modules/.bin/
 			fmt.Printf("added %s\n", baseFilePath);
 		}
