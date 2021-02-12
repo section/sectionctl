@@ -13,16 +13,43 @@ type CertsCmd struct {
 
 // CertsRenewCmd handles renewing a certificate
 type CertsRenewCmd struct {
-	AccountID int    `required short:"a"`
-	Hostname  string `required`
+	Hostname string `arg help:"The domain name to renew the cert for"`
 }
 
 // Run executes the command
 func (c *CertsRenewCmd) Run() (err error) {
-	s := NewSpinner(fmt.Sprintf("Renewing cert for %s", c.Hostname))
+	var aid int
+	s := NewSpinner("Looking up accounts")
 	s.Start()
 
-	resp, err := api.DomainsRenewCert(c.AccountID, c.Hostname)
+	as, err := api.Accounts()
+	if err != nil {
+		return fmt.Errorf("unable to look up accounts: %w", err)
+	}
+
+	for _, a := range as {
+		ds, err := api.Domains(a.ID)
+		if err != nil {
+			return fmt.Errorf("unable to look up domains under account ID %d: %w", a.ID, err)
+		}
+		for _, d := range ds {
+			if d.DomainName == c.Hostname {
+				aid = a.ID
+				s.Stop()
+				break
+			}
+		}
+	}
+	s.Stop()
+
+	if aid == 0 {
+		return fmt.Errorf("unable to find the domain '%s' under any of your accounts.\n\nTry running `sectionctl domains` to see all your domains", c.Hostname)
+	}
+
+	s = NewSpinner(fmt.Sprintf("Renewing cert for %s", c.Hostname))
+	s.Start()
+
+	resp, err := api.DomainsRenewCert(aid, c.Hostname)
 	s.Stop()
 	if err != nil {
 		return err
