@@ -13,7 +13,7 @@ type CertsCmd struct {
 
 // CertsRenewCmd handles renewing a certificate
 type CertsRenewCmd struct {
-	AccountID int    `required short:"a"`
+	AccountID int    `required short:"a" help:"Account ID the domain belongs to"`
 	Hostname  string `required`
 }
 
