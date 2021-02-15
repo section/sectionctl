@@ -2,8 +2,10 @@ package commands
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -232,7 +234,7 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 		log.Println("[WARN] server.conf does not exist. Creating server.conf")
 		f, err := os.Create("server.conf")
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("error in creating a file: server.conf %v", err)
 		}
 		b := c.buildServerConf()
 		f.Write(b)
@@ -241,12 +243,12 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 		log.Println("[INFO] Validating server.conf")
 		fileinfo, err := checkServConf.Stat()
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("error in finding stat of server.conf %v", err)
 		}
 		buf := make([]byte, fileinfo.Size())
 		_, err = checkServConf.Read(buf)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("error in size stat of server.conf %v", err)
 		}
 		fStr := string(buf)
 		if !strings.Contains(fStr, "location / {") {
@@ -264,36 +266,47 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 		err := cmd.Run()
 		if err != nil {
 			log.Println("[ERROR] There was an error creating package.json. Is node installed?")
-			panic(err)
-		} else {
-			log.Println("[INFO] package.json created")
+			return fmt.Errorf("there was an error creating package.json. Is node installed? %v", err)
 		}
+		log.Println("[INFO] package.json created")
 	}
 	defer checkPkgJSON.Close()
 	validPkgJSON, err := os.OpenFile("package.json", os.O_RDWR, 0777)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to open package.json %v", err)
 	}
+	defer validPkgJSON.Close()
 	log.Println("[INFO] Validating package.json")
-	finfo, err := validPkgJSON.Stat()
+	buf, err := ioutil.ReadFile("package.json")
 	if err != nil {
-		panic(err)
-	}
-	buf := make([]byte, finfo.Size())
-	_, err = validPkgJSON.Read(buf)
-	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to read package.json %v", err)
 	}
 	fStr := string(buf)
-	if !strings.Contains(fStr, `"start": "`) {
-		replace := `"scripts": {
-    "start": "node YOUR_SERVER_HERE.js",`
-		fStr = strings.Replace(fStr, `"scripts": {`, replace, 1)
-		err = validPkgJSON.Truncate(0)
+	jsonMap := make(map[string]interface{})
+	err = json.Unmarshal(buf, &jsonMap)
+	if err != nil {
+		log.Println("[ERROR] JSON format invalid for package.json")
+		return fmt.Errorf("package.json is not valid JSON %v", err)
+	}
+	log.Println(jsonMap["scripts"])
+	lv := jsonMap["scripts"]
+	stringMap, ok := lv.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("json unable to be read as map[string]interface %v", err)
+	}
+	_, ok = stringMap["start"]
+	if !ok {
+		stringMap["start"] = "node YOUR_SERVER_HERE.js"
+		jsonMap["scripts"] = stringMap
+		err = os.Truncate("package.json", 0)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("failed to empty package.json %v", err)
 		}
-		_, err = validPkgJSON.WriteString(fStr)
+		set, err := json.MarshalIndent(jsonMap, "", "  ")
+		if err != nil {
+			log.Println("[ERROR] unable to add start script placeholder")
+		}
+		_, err = validPkgJSON.Write(set)
 		if err != nil {
 			log.Println("[ERROR] unable to add start script placeholder")
 		}
@@ -301,6 +314,5 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 	if strings.Contains(fStr, `YOUR_SERVER_HERE.js`) {
 		log.Println("[ERROR] start script is required. Please edit the placeholder in package.json")
 	}
-	defer validPkgJSON.Close()
 	return err
 }
