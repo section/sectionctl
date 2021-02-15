@@ -169,6 +169,18 @@ func (c *AppsCreateCmd) Run() (err error) {
 	r, err := api.ApplicationCreate(c.AccountID, c.Hostname, c.Origin, c.StackName)
 	s.Stop()
 	if err != nil {
+		if err == api.ErrStatusForbidden {
+			stacks, herr := api.Stacks()
+			if herr != nil {
+				return fmt.Errorf("unable to query stacks: %w", herr)
+			}
+			for _, s := range stacks {
+				if s.Name == c.StackName {
+					return err
+				}
+			}
+			return fmt.Errorf("bad request: unable to find stack %s", c.StackName)
+		}
 		return err
 	}
 

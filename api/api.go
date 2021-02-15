@@ -64,6 +64,9 @@ func request(ctx context.Context, method string, u url.URL, body io.Reader, head
 	log.Println("[DEBUG] Request URL:", method, req.URL)
 	for k, vs := range req.Header {
 		for _, v := range vs {
+			if k == "Section-Token" {
+				v = "********TOKEN HIDDEN********"
+			}
 			log.Printf("[DEBUG] Header: %s: %v\n", k, v)
 		}
 	}
