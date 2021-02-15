@@ -152,3 +152,37 @@ func TestAPIApplicationDeleteReturnsUniqueErrorsOnFailure(t *testing.T) {
 		})
 	}
 }
+
+func TestInitNodejsBasicAppEncounteringPossibleFailureStates(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup
+	var testCases = []struct {
+		serverConfBroken bool
+		pkgjsonBroken    bool
+	}{
+		{"not-nodejs", true},
+		{"not-nodejs", false},
+		{"", true},
+		{"", false},
+		{"nodejs-basic", true},
+		{"nodejs-basic", false},
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	for _, tc := range testCases {
+		n := fmt.Sprintf("%s-%b", stackName, force)
+		t.Run(n, func(t *testing.T) {
+			// Setup
+			err1 := os.Remove("package.json")
+			err2 := os.Remove("server.conf")
+
+			// Invoke
+			err = InitializeNodeBasicApp(stdout, stderr)
+
+			// Test
+			assert.Error(err)
+		})
+	}
+}

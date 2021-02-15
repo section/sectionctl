@@ -257,7 +257,7 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 		log.Println("[WARN] server.conf does not exist. Creating server.conf")
 		f, err := os.Create("server.conf")
 		if err != nil {
-			return fmt.Errorf("error in creating a file: server.conf %v", err)
+			return fmt.Errorf("error in creating a file: server.conf %w", err)
 		}
 		b := c.buildServerConf()
 		f.Write(b)
@@ -266,12 +266,12 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 		log.Println("[INFO] Validating server.conf")
 		fileinfo, err := checkServConf.Stat()
 		if err != nil {
-			return fmt.Errorf("error in finding stat of server.conf %v", err)
+			return fmt.Errorf("error in finding stat of server.conf %w", err)
 		}
 		buf := make([]byte, fileinfo.Size())
 		_, err = checkServConf.Read(buf)
 		if err != nil {
-			return fmt.Errorf("error in size stat of server.conf %v", err)
+			return fmt.Errorf("error in size stat of server.conf %w", err)
 		}
 		fStr := string(buf)
 		if !strings.Contains(fStr, "location / {") {
@@ -289,33 +289,33 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 		err := cmd.Run()
 		if err != nil {
 			log.Println("[ERROR] There was an error creating package.json. Is node installed?")
-			return fmt.Errorf("there was an error creating package.json. Is node installed? %v", err)
+			return fmt.Errorf("there was an error creating package.json. Is node installed? %w", err)
 		}
 		log.Println("[INFO] package.json created")
 	}
 	defer checkPkgJSON.Close()
 	validPkgJSON, err := os.OpenFile("package.json", os.O_RDWR, 0777)
 	if err != nil {
-		return fmt.Errorf("failed to open package.json %v", err)
+		return fmt.Errorf("failed to open package.json %w", err)
 	}
 	defer validPkgJSON.Close()
 	log.Println("[INFO] Validating package.json")
 	buf, err := ioutil.ReadFile("package.json")
 	if err != nil {
-		return fmt.Errorf("failed to read package.json %v", err)
+		return fmt.Errorf("failed to read package.json %w", err)
 	}
 	fStr := string(buf)
 	jsonMap := make(map[string]interface{})
 	err = json.Unmarshal(buf, &jsonMap)
 	if err != nil {
 		log.Println("[ERROR] JSON format invalid for package.json")
-		return fmt.Errorf("package.json is not valid JSON %v", err)
+		return fmt.Errorf("package.json is not valid JSON %w", err)
 	}
 	log.Println(jsonMap["scripts"])
 	lv := jsonMap["scripts"]
 	stringMap, ok := lv.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("json unable to be read as map[string]interface %v", err)
+		return fmt.Errorf("json unable to be read as map[string]interface %w", err)
 	}
 	_, ok = stringMap["start"]
 	if !ok {
@@ -323,7 +323,7 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 		jsonMap["scripts"] = stringMap
 		err = os.Truncate("package.json", 0)
 		if err != nil {
-			return fmt.Errorf("failed to empty package.json %v", err)
+			return fmt.Errorf("failed to empty package.json %w", err)
 		}
 		set, err := json.MarshalIndent(jsonMap, "", "  ")
 		if err != nil {
