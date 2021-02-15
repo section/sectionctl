@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5"
+	gitHTTP "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/section/sectionctl/api"
 )
 
@@ -150,27 +152,117 @@ func (c *DeployCmd) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
-	s = NewSpinner("Deploying app...")
-	s.Start()
-	var ups = []api.EnvironmentUpdateCommand{
-		{
-			Op: "replace",
-			Value: PayloadValue{
-				ID: response.PayloadID,
-			},
-		},
-	}
-	err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, c.Environment, c.AppPath+"/.section-external-source.json", ups)
-	s.Stop()
+	
+	err = updateGitViaGit(c, response);
 	if err != nil {
 		return fmt.Errorf("failed to trigger app update: %v", err)
 	}
+
+	// err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, c.Environment, c.AppPath+"/.section-external-source.json", ups)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to trigger app update: %v", err)
+	// }
 
 	fmt.Println("Done!")
 
 	return nil
 }
 
+func updateGitViaGit(c *DeployCmd,response UploadResponse) (error) {
+	app, err := api.Application(c.AccountID, c.AppID)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Cloning: https://aperture.section.io/account/%d/application/%d/%s.git ...\n",c.AccountID, c.AppID, app.ApplicationName)
+	tempDir, err := ioutil.TempDir("","sectinoctl-*")
+	if err != nil{
+		return err
+	}
+	fmt.Printf("[Debug] tempDir: %s\n\n",tempDir)
+	// Git objects storer based on memory
+	gitAuth :=	&gitHTTP.BasicAuth{
+		Username: "section-token", // yes, this can be anything except an empty string
+		Password: api.Token,
+	}
+	payload := PayloadValue{ID:response.PayloadID}
+	r, er := git.PlainClone(tempDir,false, &git.CloneOptions{
+		URL:     fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git",c.AccountID, c.AppID, app.ApplicationName),
+		Auth: gitAuth,
+		Progress: os.Stdout,
+	})
+	if(er != nil) {
+		return er
+	}
+	// ... retrieving the branch being pointed by HEAD
+	ref, err := r.Head()
+	// ... retrieving the commit object
+	commit, err := r.CommitObject(ref.Hash())
+	fmt.Printf("[DEBUG] HEAD commit %s\n",commit)
+	// ... retrieve the tree from the commit
+	tree, err := commit.Tree()
+	if err != nil{
+		return err
+	}
+	w,err := r.Worktree()
+	if err != nil{
+		return err
+	}
+	f,err := tree.File(c.AppPath+"/.section-external-source.json")
+	if err != nil{
+		return err
+	}
+	srcContent := PayloadValue{}
+	content, err := f.Contents()
+	json.Unmarshal([]byte(content), &srcContent)
+	if err != nil{
+		return err
+	}
+	ct, _ := f.Contents()
+	fmt.Printf("[DEBUG] Old external source contents: %s\n\n",ct)
+	fmt.Printf("[DEBUG] expected new tarball UUID: %s\n",response.PayloadID)
+	srcContent.ID = payload.ID
+	pl,e  := json.MarshalIndent(srcContent, "", "\t")
+	if e != nil{
+		return e
+	}
+	err = ioutil.WriteFile(filepath.Join(tempDir,c.AppPath+"/.section-external-source.json"), pl,0644)
+	if err != nil{
+		return err
+	}
+	_, err = w.Add(c.AppPath+"/.section-external-source.json")
+	if err != nil{
+		return err
+	}
+
+	status,err := w.Status()
+	if err != nil{
+		return err
+	}
+	fmt.Printf("[DEBUG] git status: %s \n\n", status)
+	_, err = w.Add(c.AppPath+"/.section-external-source.json")
+	if err != nil{
+		return err
+	}
+	commitHash, err := w.Commit("[sectionctl] updated nodejs/.section-external-source.json with new deployment.", &git.CommitOptions{})
+	cmt, _ :=r.CommitObject(commitHash)
+	fmt.Printf("[DEBUG] New Commit: %s\n",cmt.String())
+	newTree,err := cmt.Tree()
+	if err != nil{
+		return err
+	}
+	newF,err := newTree.File(c.AppPath+"/.section-external-source.json")
+	if err != nil{
+		return err
+	}
+	
+	ctt, _ := newF.Contents()
+	fmt.Printf("[DEBUG] contents in new commit: %s\n\n",ctt)
+	pushError := r.Push(&git.PushOptions{Auth:gitAuth, Progress: os.Stdout})
+	if pushError != nil{
+		return pushError
+	}
+	return nil
+}
 // IsValidNodeApp detects if a Node.js app is present in a given directory
 func IsValidNodeApp(dir string) (errs []error) {
 	packageJSONPath := filepath.Join(dir, "package.json")
