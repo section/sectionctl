@@ -8,6 +8,9 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"os"
+	"bytes"
+	"log"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -153,33 +156,127 @@ func TestAPIApplicationDeleteReturnsUniqueErrorsOnFailure(t *testing.T) {
 	}
 }
 
+// Looks like nested functions are not yet supported by the compiler
+func WriteFile(loc string, data string) (err error) {
+	f, err := os.Create(loc)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.WriteString(data)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
 func TestInitNodejsBasicAppEncounteringPossibleFailureStates(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
 	var testCases = []struct {
-		serverConfBroken bool
+		servConfBroken    bool
+		servConfExist    bool
 		pkgjsonBroken    bool
+		pkgjsonExist		 bool
 	}{
-		{"not-nodejs", true},
-		{"not-nodejs", false},
-		{"", true},
-		{"", false},
-		{"nodejs-basic", true},
-		{"nodejs-basic", false},
+		{false, false, false, false}, // no files are broken or missing
+		{true, false, true, false}, // both files are broken 
+		{false, true, false, true}, // both files are missing
 	}
+
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	for _, tc := range testCases {
-		n := fmt.Sprintf("%s-%b", stackName, force)
+		n := fmt.Sprintf("")
 		t.Run(n, func(t *testing.T) {
 			// Setup
 			err1 := os.Remove("package.json")
 			err2 := os.Remove("server.conf")
+			stackName := "nodejs-basic"
+			force := false
+			if err1 != nil || err2 != nil {
+				log.Println("[ERROR] unable to remove files, perhaps they do not exist?")
+			}
 
+			if tc.servConfBroken {
+				err := WriteFile("server.conf", `proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+						proxy_set_header Host $host;
+						include /etc/nginx/section.module/node.conf;
+					}
+					
+					location ~ "/next-proxy-hop/" {
+						proxy_set_header X-Forwarded-For $http_x_forwarded_for;
+						proxy_set_header X-Forwa`)
+				if err != nil {
+					fmt.Println("server.conf creation failed")
+				}
+			} else if (tc.servConfExist) {
+				err := WriteFile("server.conf", 	`location / {
+					proxy_set_header X-Forwarded-For $http_x_forwarded_for;
+					proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+					proxy_set_header Host $host;
+					include /etc/nginx/section.module/node.conf;
+				}
+				
+				location ~ "/next-proxy-hop/" {
+					proxy_set_header X-Forwarded-For $http_x_forwarded_for;
+					proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+					proxy_set_header Host $host;
+					proxy_pass http://next-hop;
+				}`)
+				if err != nil {
+					fmt.Println("server.conf creation failed")
+				}
+			}	
+			if tc.pkgjsonBroken {
+				err := WriteFile("package.json", `{
+					"name": "api-routes",
+					"version": "1.0.0",
+					"scripts": {
+						"dev": "next",
+						"build": "next build",
+						"predeploy": "npm install && npm run build",
+						"deploy": "sectionctl deploy -a 1887 -i 7749"
+					},
+					"dependencies": {
+						"next": "latest",
+						"react": "^16.8.6",
+						"react-dom": "^16.8.6",
+						"swr": "0.1.18"
+					},
+					"license": "MIT"
+				}`)
+
+					if err != nil {
+						fmt.Println("package.json creation failed")
+					}
+			} else if tc.pkgjsonExist {
+				err := WriteFile("package.json", `{
+					"name": "api-routes",
+					"version": "1.0.0",
+					"scripts": {
+						"dev": "next",
+						"build": "next build",
+						"start": "next start -p 8080",
+						"predeploy": "npm install && npm run build",
+						"deploy": "sectionctl deploy -a 1887 -i 7749"
+					},
+					"dependencies": {
+						"next": "latest",
+						"react": "^16.8.6",
+						"react-dom": "^16.8.6",
+						"swr": "0.1.18"
+					},
+					"license": "MIT"
+				}`)
+				if err != nil {
+					fmt.Println("package.json creation failed")
+				}
+			}
 			// Invoke
-			err = InitializeNodeBasicApp(stdout, stderr)
+			err := InitializeNodeBasicApp(stdout, stderr)
 
 			// Test
 			assert.Error(err)
