@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -73,7 +74,7 @@ func (c *DeployCmd) Run() (err error) {
 	s := NewSpinner(fmt.Sprintf("Packaging app in: %s", dir))
 	s.Start()
 
-	ignores := []string{".lint/", ".git/"}
+	ignores := []string{".lint", ".git"}
 	files, err := BuildFilelist(dir, ignores)
 	if err != nil {
 		s.Stop()
@@ -194,7 +195,10 @@ func IsValidNodeApp(dir string) (errs []error) {
 
 	return errs
 }
-
+// Split helps differentiate between different directory delimiters. / or \
+func Split(r rune) bool {
+    return r == '\\' || r == '/'
+}
 // BuildFilelist builds a list of files to be tarballed, with optional ignores.
 func BuildFilelist(dir string, ignores []string) (files []string, err error) {
 	var fi os.FileInfo
@@ -207,9 +211,11 @@ func BuildFilelist(dir string, ignores []string) (files []string, err error) {
 
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		for _, i := range ignores {
-			if strings.Contains(path, i) {
-				return nil
-
+			location := strings.FieldsFunc(path, Split) // split by subdirectory or filename
+			for _, loc := range location{
+				if strings.Contains(loc, i) {
+					return nil
+				}
 			}
 		}
 		files = append(files, path)
@@ -268,7 +274,13 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer, prefix string) e
 	// must provide real name
 	// (see https://golang.org/src/archive/tar/common.go?#L626)
 	header.Name = filepath.ToSlash(baseFilePath)
-
+  // ensure windows provides filemodes for binaries in node_modules/.bin
+	if runtime.GOOS == "windows" {
+		match := strings.Contains(baseFilePath,"node_modules\\.bin")
+		if match {
+			header.Mode = 0o755
+		}
+	}
 	err = tarWriter.WriteHeader(header)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("Could not write header for file '%s', got error '%s'", baseFilePath, err.Error()))
