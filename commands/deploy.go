@@ -195,10 +195,12 @@ func IsValidNodeApp(dir string) (errs []error) {
 
 	return errs
 }
+
 // Split helps differentiate between different directory delimiters. / or \
 func Split(r rune) bool {
-    return r == '\\' || r == '/'
+	return r == '\\' || r == '/'
 }
+
 // BuildFilelist builds a list of files to be tarballed, with optional ignores.
 func BuildFilelist(dir string, ignores []string) (files []string, err error) {
 	var fi os.FileInfo
@@ -212,7 +214,7 @@ func BuildFilelist(dir string, ignores []string) (files []string, err error) {
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		for _, i := range ignores {
 			location := strings.FieldsFunc(path, Split) // split by subdirectory or filename
-			for _, loc := range location{
+			for _, loc := range location {
 				if strings.Contains(loc, i) {
 					return nil
 				}
@@ -274,9 +276,9 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer, prefix string) e
 	// must provide real name
 	// (see https://golang.org/src/archive/tar/common.go?#L626)
 	header.Name = filepath.ToSlash(baseFilePath)
-  // ensure windows provides filemodes for binaries in node_modules/.bin
+	// ensure windows provides filemodes for binaries in node_modules/.bin
 	if runtime.GOOS == "windows" {
-		match := strings.Contains(baseFilePath,"node_modules\\.bin")
+		match := strings.Contains(baseFilePath, "node_modules\\.bin")
 		if match {
 			header.Mode = 0o755
 		}
