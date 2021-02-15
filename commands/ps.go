@@ -4,15 +4,18 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/section/sectionctl/api"
 )
 
 // PsCmd checks an application's status on Section's delivery platform
 type PsCmd struct {
-	AccountID int    `short:"a" help:"ID of account to query"`
-	AppID     int    `short:"i" help:"ID of app to query"`
-	AppPath   string `default:"nodejs" help:"Path of NodeJS application in environment repository."`
+	AccountID int           `short:"a" help:"ID of account to query"`
+	AppID     int           `short:"i" help:"ID of app to query"`
+	AppPath   string        `default:"nodejs" help:"Path of NodeJS application in environment repository."`
+	Watch     bool          `short:"w" help:"Run repeatedly, output status"`
+	Interval  time.Duration `short:"t" default:"10s" help:"Interval to poll if watching"`
 }
 
 func getStatus(as api.AppStatus) string {
@@ -65,6 +68,23 @@ func (c *PsCmd) Run() (err error) {
 		}
 	}
 
+	if c.Watch {
+		ticker := time.NewTicker(c.Interval)
+		for ; true; <-ticker.C {
+			err = pollAndOutput(targets, c.AppPath)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		err = pollAndOutput(targets, c.AppPath)
+		return err
+	}
+
+	return nil
+}
+
+func pollAndOutput(targets [][]int, appPath string) error {
 	s := NewSpinner("Getting status of apps")
 	s.Start()
 
@@ -72,7 +92,7 @@ func (c *PsCmd) Run() (err error) {
 	table.SetHeader([]string{"Account ID", "App ID", "App instance name", "App Status", "App Payload ID"})
 
 	for _, t := range targets {
-		appStatus, err := api.ApplicationStatus(t[0], t[1], c.AppPath)
+		appStatus, err := api.ApplicationStatus(t[0], t[1], appPath)
 		s.Stop()
 		if err != nil {
 			return err
