@@ -19,3 +19,4 @@ bin/
 build/
 dist/
 sectionctl
+__debug_bin
