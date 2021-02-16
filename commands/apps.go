@@ -21,7 +21,8 @@ type AppsCmd struct {
 	Info   AppsInfoCmd   `cmd help:"Show detailed app information on Section."`
 	Create AppsCreateCmd `cmd help:"Create new app on Section."`
 	Delete AppsDeleteCmd `cmd help:"Delete an existing app on Section."`
-	Init   AppsInitCmd   `cmd help:"Initialize your project for deployment"`
+	Init   AppsInitCmd   `cmd help:"Initialize your project for deployment."`
+	Stacks AppsStacksCmd `cmd help:"See the available stacks to create new apps with."`
 }
 
 // AppsListCmd handles listing apps running on Section
@@ -337,5 +338,30 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 		log.Println("[ERROR] start script is required. Please edit the placeholder in package.json")
 	}
 	defer validPkgJSON.Close()
+	return err
+}
+
+// AppsStacksCmd lists available stacks to create new apps with
+type AppsStacksCmd struct{}
+
+// Run executes the command
+func (c *AppsStacksCmd) Run() (err error) {
+	s := NewSpinner("Looking up stacks")
+	s.Start()
+	k, err := api.Stacks()
+	s.Stop()
+	if err != nil {
+		return fmt.Errorf("unable to look up stacks: %w", err)
+	}
+
+	table := NewTable(os.Stdout)
+	table.SetHeader([]string{"Name", "Label", "Description", "Type"})
+
+	for _, s := range k {
+		r := []string{s.Name, s.Label, s.Description, s.Type}
+		table.Append(r)
+	}
+
+	table.Render()
 	return err
 }
