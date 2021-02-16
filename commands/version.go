@@ -31,7 +31,7 @@ func (c *VersionCmd) Run() (err error) {
 	errs := make(chan error, 1)
 	go c.checkVersion(reply, errs)
 
-	fmt.Fprintf(c.Out(), "%s (%s-%s)\n", version.Version, runtime.GOOS, runtime.GOARCH)
+	fmt.Fprintf(c.Out(), "%s\n", c.String())
 
 	if version.Version == "dev" {
 		return err
@@ -105,6 +105,10 @@ func (c *VersionCmd) checkVersion(latest chan string, errs chan error) {
 		return
 	}
 	latest <- latestResp.TagName
+}
+
+func (c VersionCmd) String() string {
+	return fmt.Sprintf("%s (%s-%s)", version.Version, runtime.GOOS, runtime.GOARCH)
 }
 
 // In returns the input to read from
