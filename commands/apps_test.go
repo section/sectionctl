@@ -78,6 +78,11 @@ func TestInitNodejsBasicAppEncounteringPossibleFailureStates(t *testing.T) {
 		{false, true, false, true},   // both files are missing
 	}
 
+	cmd := AppsInitCmd{
+		StackName: "nodejs-basic",
+		Force:     false,
+	}
+
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	for _, tc := range testCases {
@@ -166,7 +171,7 @@ func TestInitNodejsBasicAppEncounteringPossibleFailureStates(t *testing.T) {
 				}
 			}
 			// Invoke
-			err := InitializeNodeBasicApp(stdout, stderr)
+			err := cmd.Run()
 
 			// Test
 			assert.Error(err)
