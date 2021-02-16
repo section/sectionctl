@@ -243,7 +243,8 @@ func (c *AppsInitCmd) Run() (err error) {
 	case "nodejs-basic":
 		err := c.InitializeNodeBasicApp(stdout, stderr)
 		if err != nil {
-			panic(err)
+			log.Printf("[ERROR]: init completed with error %x", err)
+			return err
 		}
 	default:
 		log.Printf("[ERROR]: Stack name %s does not have an initialization defined\n", c.StackName)

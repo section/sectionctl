@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net/http"
@@ -73,18 +72,15 @@ func TestInitNodejsBasicAppEncounteringPossibleFailureStates(t *testing.T) {
 		pkgjsonBroken  bool
 		pkgjsonExist   bool
 	}{
-		{false, false, false, false}, // no files are broken or missing
+		{false, true, false, true},   // no files are broken or missing
 		{true, false, true, false},   // both files are broken
-		{false, true, false, true},   // both files are missing
+		{false, false, false, false}, // both files are missing
 	}
 
 	cmd := AppsInitCmd{
 		StackName: "nodejs-basic",
 		Force:     false,
 	}
-
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
 	for _, tc := range testCases {
 		n := fmt.Sprintf("")
 		t.Run(n, func(t *testing.T) {
@@ -174,7 +170,7 @@ func TestInitNodejsBasicAppEncounteringPossibleFailureStates(t *testing.T) {
 			err := cmd.Run()
 
 			// Test
-			assert.Error(err)
+			assert.NoError(err)
 		})
 		err1 := os.Remove("testdata/package.json")
 		err2 := os.Remove("testdata/server.conf")
