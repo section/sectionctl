@@ -173,12 +173,12 @@ func updateGitViaGit(c *DeployCmd,response UploadResponse) (error) {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Cloning: https://aperture.section.io/account/%d/application/%d/%s.git ...\n",c.AccountID, c.AppID, app.ApplicationName)
+	log.Printf("[DEBUG] Cloning: https://aperture.section.io/account/%d/application/%d/%s.git ...\n",c.AccountID, c.AppID, app.ApplicationName)
 	tempDir, err := ioutil.TempDir("","sectinoctl-*")
 	if err != nil{
 		return err
 	}
-	fmt.Printf("[Debug] tempDir: %s\n\n",tempDir)
+	log.Println("[Debug] tempDir: ",tempDir)
 	// Git objects storer based on memory
 	gitAuth :=	&gitHTTP.BasicAuth{
 		Username: "section-token", // yes, this can be anything except an empty string
@@ -197,7 +197,7 @@ func updateGitViaGit(c *DeployCmd,response UploadResponse) (error) {
 	ref, err := r.Head()
 	// ... retrieving the commit object
 	commit, err := r.CommitObject(ref.Hash())
-	fmt.Printf("[DEBUG] HEAD commit %s\n",commit)
+	log.Println("[DEBUG] HEAD commit: ",commit)
 	// ... retrieve the tree from the commit
 	tree, err := commit.Tree()
 	if err != nil{
@@ -218,8 +218,8 @@ func updateGitViaGit(c *DeployCmd,response UploadResponse) (error) {
 		return err
 	}
 	ct, _ := f.Contents()
-	fmt.Printf("[DEBUG] Old external source contents: %s\n\n",ct)
-	fmt.Printf("[DEBUG] expected new tarball UUID: %s\n",response.PayloadID)
+	log.Println("[DEBUG] Old external source contents: ",ct)
+	log.Println("[DEBUG] expected new tarball UUID: ",response.PayloadID)
 	srcContent.ID = payload.ID
 	pl,e  := json.MarshalIndent(srcContent, "", "\t")
 	if e != nil{
@@ -238,14 +238,14 @@ func updateGitViaGit(c *DeployCmd,response UploadResponse) (error) {
 	if err != nil{
 		return err
 	}
-	fmt.Printf("[DEBUG] git status: %s \n\n", status)
+	log.Println("[DEBUG] git status: ", status)
 	_, err = w.Add(c.AppPath+"/.section-external-source.json")
 	if err != nil{
 		return err
 	}
 	commitHash, err := w.Commit("[sectionctl] updated nodejs/.section-external-source.json with new deployment.", &git.CommitOptions{})
 	cmt, _ :=r.CommitObject(commitHash)
-	fmt.Printf("[DEBUG] New Commit: %s\n",cmt.String())
+	log.Println("[DEBUG] New Commit: ",cmt.String())
 	newTree,err := cmt.Tree()
 	if err != nil{
 		return err
@@ -256,7 +256,7 @@ func updateGitViaGit(c *DeployCmd,response UploadResponse) (error) {
 	}
 	
 	ctt, _ := newF.Contents()
-	fmt.Printf("[DEBUG] contents in new commit: %s\n\n",ctt)
+	log.Println("[DEBUG] contents in new commit: ",ctt)
 	pushError := r.Push(&git.PushOptions{Auth:gitAuth, Progress: os.Stdout})
 	if pushError != nil{
 		return pushError
