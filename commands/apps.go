@@ -252,6 +252,15 @@ func (c *AppsInitCmd) Run() (err error) {
 	return err
 }
 
+// Create package.json
+func (c *AppsInitCmd) CreatePkgJson(stdout, stderr bytes.Buffer) (err error) {
+	cmd := exec.Command("npm", "init", "-y")
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+	return err
+}
+
 // InitializeNodeBasicApp initializes a basic node app.
 func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err error) {
 	if c.Force {
@@ -296,15 +305,13 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 	checkPkgJSON, err := os.Open("package.json")
 	if err != nil {
 		log.Println("[WARN] package.json does not exist. Creating package.json")
-		cmd := exec.Command("npm", "init", "-y")
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-		err := cmd.Run()
+		err := c.CreatePkgJson(stdout, stderr)
 		if err != nil {
 			log.Println("[ERROR] There was an error creating package.json. Is node installed?")
 			return fmt.Errorf("there was an error creating package.json. Is node installed? %w", err)
+		} else {
+			log.Println("[INFO] package.json created")
 		}
-		log.Println("[INFO] package.json created")
 	}
 	defer checkPkgJSON.Close()
 	validPkgJSON, err := os.OpenFile("package.json", os.O_RDWR, 0777)
@@ -318,6 +325,24 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 		return fmt.Errorf("failed to read package.json %w", err)
 	}
 	fStr := string(buf)
+	if fStr == "" {
+		err := os.Remove("package.json")
+		if err != nil {
+			log.Println("[ERROR] unable to remove empty package.json")
+		}
+		log.Println("[WARN] package.json is empty. Creating package.json")
+		err = c.CreatePkgJson(stdout, stderr)
+		if err != nil {
+			log.Println("[ERROR] There was an error creating package.json. Is node installed?")
+			return fmt.Errorf("there was an error creating package.json. Is node installed? %w", err)
+		}
+		log.Println("[INFO] package.json created from empty file")
+		buf, err = ioutil.ReadFile("package.json")
+		if err != nil {
+			return fmt.Errorf("failed to read package.json %w", err)
+		}
+		fStr = string(buf)
+	}
 	jsonMap := make(map[string]interface{})
 	err = json.Unmarshal(buf, &jsonMap)
 	if err != nil {
