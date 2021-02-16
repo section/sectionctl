@@ -82,7 +82,7 @@ func TestInitNodejsBasicAppEncounteringPossibleFailureStates(t *testing.T) {
 		Force:     false,
 	}
 	for _, tc := range testCases {
-		n := fmt.Sprintf("")
+		n := ""
 		t.Run(n, func(t *testing.T) {
 			// Setup
 			err1 := os.Remove("testdata/package.json")
