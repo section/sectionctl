@@ -325,7 +325,7 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 		return fmt.Errorf("failed to read package.json %w", err)
 	}
 	fStr := string(buf)
-	if fStr == "" {
+	if len(fStr) == 0 {
 		err := os.Remove("package.json")
 		if err != nil {
 			log.Println("[ERROR] unable to remove empty package.json")
@@ -349,7 +349,6 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 		log.Println("[ERROR] JSON format invalid for package.json")
 		return fmt.Errorf("package.json is not valid JSON %w", err)
 	}
-	log.Println(jsonMap["scripts"])
 	lv := jsonMap["scripts"]
 	stringMap, ok := lv.(map[string]interface{})
 	if !ok {

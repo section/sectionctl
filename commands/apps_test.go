@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -66,7 +67,7 @@ func OverwriteFile(loc string, data string) (err error) {
 	return err
 }
 
-func TestInitNodejsBasicAppEncounteringPossibleFailureStates(t *testing.T) {
+func TestCommandsAppsInitHandlesErrors(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
@@ -75,86 +76,31 @@ func TestInitNodejsBasicAppEncounteringPossibleFailureStates(t *testing.T) {
 		pkgJson  string
 		isFatal  bool
 	}{
-		{`location / {
-			proxy_set_header X-Forwarded-For $http_x_forwarded_for;
-			proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
-			proxy_set_header Host $host;
-			include /etc/nginx/section.module/node.conf;
-		}
-		
-		location ~ "/next-proxy-hop/" {
-			proxy_set_header X-Forwarded-For $http_x_forwarded_for;
-			proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
-			proxy_set_header Host $host;
-			proxy_pass http://next-hop;
-		}`, `{
-			"name": "api-routes",
-			"version": "1.0.0",
-			"scripts": {
-				"dev": "next",
-				"build": "next build",
-				"start": "next start -p 8080",
-				"predeploy": "npm install && npm run build",
-				"deploy": "sectionctl deploy -a 1887 -i 7749"
-			},
-			"dependencies": {
-				"next": "latest",
-				"react": "^16.8.6",
-				"react-dom": "^16.8.6",
-				"swr": "0.1.18"
-			},
-			"license": "MIT"
-		}`, false}, // no files are broken or missing
-		{`proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
-		proxy_set_header Host $host;
-		include /etc/nginx/section.module/node.conf;
-	}
-	
-	location ~ "/next-proxy-hop/" {
-		proxy_set_header X-Forwarded-For $http_x_forwarded_for;
-		proxy_set_header X-Forwa`, `{
-			"name": "api-routes",
-			"version": "1.0.0",
-			"scripts": {
-				"dev": "next",
-				"build": "next build",
-				"predeploy": "npm install && npm run build",
-				"deploy": "sectionctl deploy -a 1887 -i 7749"
-			},
-			"dependencies": {
-				"next": "latest",
-				"react": "^16.8.6",
-				"react-dom": "^16.8.6",
-				"swr": "0.1.18"
-			},
-			"license": "MIT"
-		}`, false}, // both files are broken
+		{string(helperLoadBytes(t, "apps/init.good.server.conf")), string(helperLoadBytes(t, "apps/init.good.package.json")), false}, // no files are broken or missing
+		{string(helperLoadBytes(t, "apps/init.bad.server.conf")), string(helperLoadBytes(t, "apps/init.bad.package.json")), false},   // both files are broken
 		{``, ``, false}, // both files are empty
-		{``, `{
-			"name": "api-routes",
-			"version": "1.0.0",
-			"scripts": {
-				"dev": "next",
-				"build": "next build"
-				"predeploy": "npm install887 -i 7749"
-			"dependencies": {
-				"next": "latest",
-				"react": "^16.8.6",
-				"react-dom": "^16.8.6",
-				"swr": "0.1.18"
-			},
-			"license": "MIT"`, true}, // package.json can not be unmarshalled
+		{``, string(helperLoadBytes(t, "apps/init.broken.package.json")), true}, // package.json can not be unmarshalled
 	}
 
 	cmd := AppsInitCmd{
 		StackName: "nodejs-basic",
 		Force:     false,
 	}
+
+	owd, err := os.Getwd()
+	assert.NoError(err)
+
 	for _, tc := range testCases {
 		n := ""
 		t.Run(n, func(t *testing.T) {
 			// Setup
-			err := OverwriteFile("server.conf", tc.servConf)
+			// Create a temp directory
+			tempDir, err := ioutil.TempDir("", "sectionctl-apps-init")
+			assert.NoError(err)
+			err = os.Chdir(tempDir)
+			assert.NoError(err)
+
+			err = OverwriteFile("server.conf", tc.servConf)
 			if err != nil {
 				fmt.Println("server.conf creation failed")
 			}
@@ -173,6 +119,10 @@ func TestInitNodejsBasicAppEncounteringPossibleFailureStates(t *testing.T) {
 			} else {
 				assert.NoError(err)
 			}
+
+			// Return to base directory
+			err = os.Chdir(owd)
+			assert.NoError(err)
 		})
 		err1 := os.Remove("package.json")
 		err2 := os.Remove("server.conf")
