@@ -19,3 +19,6 @@ bin/
 build/
 dist/
 sectionctl
+
+# Debug outputs
+sectionctl-debug-*.log

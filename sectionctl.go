@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"io"
 	"log"
 	"net/url"
 	"os"
@@ -49,6 +51,18 @@ func bootstrap(c CLI, ctx *kong.Context) {
 	}
 	if c.Debug {
 		filter.MinLevel = logutils.LogLevel("DEBUG")
+		logFilename := fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format(time.RFC3339))
+		logFile, err := os.OpenFile(logFilename, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Fprintf(logFile, "Version:   %s\n", commands.VersionCmd{}.String())
+		fmt.Fprintf(logFile, "Command:   %s\n", ctx.Args)
+		fmt.Fprintf(logFile, "PrefixURI: %s\n", api.PrefixURI)
+		fmt.Fprintf(logFile, "Timeout:   %s\n", api.Timeout)
+		fmt.Printf("Writing debug log to: %s\n", logFilename)
+		mw := io.MultiWriter(logFile, colorableWriter)
+		filter.Writer = mw
 	}
 	log.SetOutput(filter)
 
