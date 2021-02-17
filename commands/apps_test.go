@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -49,31 +48,13 @@ func TestCommandsAppsCreateAttemptsToValidateStackOnError(t *testing.T) {
 	assert.Regexp("bad request: unable to find stack", err)
 }
 
-// Looks like nested functions are not yet supported by the compiler
-func OverwriteFile(loc string, data string) (err error) {
-	err = os.Remove(loc)
-	if err != nil {
-		log.Println("[ERROR] unable to remove files, perhaps they do not exist?")
-	}
-	f, err := os.Create(loc)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = f.WriteString(data)
-	if err != nil {
-		return err
-	}
-	return err
-}
-
 func TestCommandsAppsInitHandlesErrors(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
 	var testCases = []struct {
 		servConf string
-		pkgJson  string
+		pkgJSON  string
 		isFatal  bool
 	}{
 		{string(helperLoadBytes(t, "apps/init.good.server.conf")), string(helperLoadBytes(t, "apps/init.good.package.json")), false}, // no files are broken or missing
@@ -85,6 +66,19 @@ func TestCommandsAppsInitHandlesErrors(t *testing.T) {
 	cmd := AppsInitCmd{
 		StackName: "nodejs-basic",
 		Force:     false,
+	}
+
+	OverwriteFile := func(loc string, data string) (err error) {
+		f, err := os.Create(loc)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		_, err = f.WriteString(data)
+		if err != nil {
+			return err
+		}
+		return err
 	}
 
 	owd, err := os.Getwd()
@@ -105,7 +99,7 @@ func TestCommandsAppsInitHandlesErrors(t *testing.T) {
 				fmt.Println("server.conf creation failed")
 			}
 
-			err = OverwriteFile("package.json", tc.pkgJson)
+			err = OverwriteFile("package.json", tc.pkgJSON)
 			if err != nil {
 				fmt.Println("server.conf creation failed")
 			}
@@ -124,10 +118,5 @@ func TestCommandsAppsInitHandlesErrors(t *testing.T) {
 			err = os.Chdir(owd)
 			assert.NoError(err)
 		})
-		err1 := os.Remove("package.json")
-		err2 := os.Remove("server.conf")
-		if err1 != nil || err2 != nil {
-			log.Println("[ERROR] unable to remove files, perhaps they do not exist?")
-		}
 	}
 }

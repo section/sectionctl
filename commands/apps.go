@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -243,8 +242,7 @@ func (c *AppsInitCmd) Run() (err error) {
 	case "nodejs-basic":
 		err := c.InitializeNodeBasicApp(stdout, stderr)
 		if err != nil {
-			log.Printf("[ERROR]: init completed with error %x", err)
-			return err
+			return fmt.Errorf("[ERROR]: init completed with error %x", err)
 		}
 	default:
 		log.Printf("[ERROR]: Stack name %s does not have an initialization defined\n", c.StackName)
@@ -253,7 +251,7 @@ func (c *AppsInitCmd) Run() (err error) {
 }
 
 // Create package.json
-func (c *AppsInitCmd) CreatePkgJson(stdout, stderr bytes.Buffer) (err error) {
+func (c *AppsInitCmd) CreatePkgJSON(stdout, stderr bytes.Buffer) (err error) {
 	cmd := exec.Command("npm", "init", "-y")
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -305,13 +303,11 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 	checkPkgJSON, err := os.Open("package.json")
 	if err != nil {
 		log.Println("[WARN] package.json does not exist. Creating package.json")
-		err := c.CreatePkgJson(stdout, stderr)
+		err := c.CreatePkgJSON(stdout, stderr)
 		if err != nil {
-			log.Println("[ERROR] There was an error creating package.json. Is node installed?")
 			return fmt.Errorf("there was an error creating package.json. Is node installed? %w", err)
-		} else {
-			log.Println("[INFO] package.json created")
 		}
+		log.Println("[INFO] package.json created")
 	}
 	defer checkPkgJSON.Close()
 	validPkgJSON, err := os.OpenFile("package.json", os.O_RDWR, 0777)
@@ -320,7 +316,7 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 	}
 	defer validPkgJSON.Close()
 	log.Println("[INFO] Validating package.json")
-	buf, err := ioutil.ReadFile("package.json")
+	buf, err := os.ReadFile("package.json")
 	if err != nil {
 		return fmt.Errorf("failed to read package.json %w", err)
 	}
@@ -331,13 +327,12 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 			log.Println("[ERROR] unable to remove empty package.json")
 		}
 		log.Println("[WARN] package.json is empty. Creating package.json")
-		err = c.CreatePkgJson(stdout, stderr)
+		err = c.CreatePkgJSON(stdout, stderr)
 		if err != nil {
-			log.Println("[ERROR] There was an error creating package.json. Is node installed?")
 			return fmt.Errorf("there was an error creating package.json. Is node installed? %w", err)
 		}
 		log.Println("[INFO] package.json created from empty file")
-		buf, err = ioutil.ReadFile("package.json")
+		buf, err = os.ReadFile("package.json")
 		if err != nil {
 			return fmt.Errorf("failed to read package.json %w", err)
 		}
@@ -346,18 +341,17 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 	jsonMap := make(map[string]interface{})
 	err = json.Unmarshal(buf, &jsonMap)
 	if err != nil {
-		log.Println("[ERROR] JSON format invalid for package.json")
 		return fmt.Errorf("package.json is not valid JSON %w", err)
 	}
 	lv := jsonMap["scripts"]
-	stringMap, ok := lv.(map[string]interface{})
+	jsonToStrMap, ok := lv.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("json unable to be read as map[string]interface %w", err)
 	}
-	_, ok = stringMap["start"]
+	_, ok = jsonToStrMap["start"]
 	if !ok {
-		stringMap["start"] = "node YOUR_SERVER_HERE.js"
-		jsonMap["scripts"] = stringMap
+		jsonToStrMap["start"] = "node YOUR_SERVER_HERE.js"
+		jsonMap["scripts"] = jsonToStrMap
 		err = os.Truncate("package.json", 0)
 		if err != nil {
 			return fmt.Errorf("failed to empty package.json %w", err)
