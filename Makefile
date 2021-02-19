@@ -43,9 +43,9 @@ check_version:
 	@if [ "$(shell echo $(VERSION) | cut -c 1)" != "v" ]; then echo "VERSION must be in the format v0.0.5"; exit 1 ; fi
 
 release: check_version
-	@if [ "$(shell git rev-parse --abbrev-ref HEAD)" != "master" ]; then echo "Must be on the 'master' branch"; exit 1 ; fi
+	@if [ "$(shell git rev-parse --abbrev-ref HEAD)" != "main" ]; then echo "Must be on the 'main' branch"; exit 1 ; fi
 	@git update-index --refresh
 	@git diff-index --quiet HEAD --
 	git tag -f -a $(VERSION) -m ''
-	git push origin master
+	git push origin main
 	git push origin refs/tags/$(VERSION)
