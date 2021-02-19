@@ -38,7 +38,7 @@ The easiest way to install `sectionctl` is by downloading [the latest release](h
 
 ## Developing
 
-Please ensure you're running at least Go 1.14.
+Please ensure you're running at least Go 1.16.
 
 To run tests:
 
