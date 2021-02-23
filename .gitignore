@@ -19,6 +19,7 @@ bin/
 build/
 dist/
 sectionctl
-
+.vscode/
+__debug_bin
 # Debug outputs
 sectionctl-debug-*.log

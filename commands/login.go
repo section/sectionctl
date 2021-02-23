@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/credentials"
@@ -21,6 +22,9 @@ func (c *LoginCmd) Run() (err error) {
 	if api.Token != "" {
 		err = credentials.Write(api.PrefixURI.Host, api.Token)
 		if err != nil {
+			if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+				fmt.Printf("Please execute the following or add it to your .bashrc/.zshrc: \nexport SECTION_TOKEN=%s\n",api.Token)
+			}
 			return fmt.Errorf("unable to write credential: %w", err)
 		}
 	} else {
@@ -30,7 +34,10 @@ func (c *LoginCmd) Run() (err error) {
 		}
 		api.Token = t
 	}
-
+	if runtime.GOOS == "windows" {
+		fmt.Printf("Please execute the following, add it to your Powershell profile, or add it to your environment variables in control panel: \nWith Powershell:\n$env:SECTION_TOKEN=\"%s\"\n\nWith CMD:\nset SECTION_TOKEN=%s\n\nWith control panel:\nhttps://raw.githubusercontent.com/section/sectionctl/main/docs/section_token_control_panel.png",api.Token,api.Token)
+		return nil
+	}
 	fmt.Print("\nValidating credentials...")
 	_, err = api.CurrentUser()
 	if err != nil {
