@@ -24,8 +24,9 @@ func (c *LoginCmd) Run() (err error) {
 		if err != nil {
 			if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 				fmt.Printf("Please execute the following or add it to your ~/.bashrc : \nexport SECTION_TOKEN=%s\n",api.Token)
+				return nil
 			}
-			return nil
+			return fmt.Errorf("unable to write credential: %w", err)
 		}
 	} else {
 		t, err := credentials.PromptAndWrite(c.In(), c.Out(), api.PrefixURI.Host)
