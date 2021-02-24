@@ -1,0 +1,86 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "deploy",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}/commands/testdata/deploy/api-routes-app",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["deploy", "-a", "replaceMeWithYourAccountID", "-i", "replaceMeWithYourApplicationID"]
+    },
+    {
+      "name": "accounts/list",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["accounts", "list"]
+    },
+    {
+      "name": "apps/list",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["apps", "list", "-a", "replaceMeWithYourAccountID"]
+    },
+    {
+      "name": "apps/info",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["apps", "info", "-a", "replaceMeWithYourAccountID", "-i", "replaceMeWithYourApplicationID"]
+    },
+    {
+      "name": "apps/stacks",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["apps", "stacks"]
+    },
+    {
+      "name": "domains/list",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["domains", "list"]
+    },
+    {
+      "name": "logs",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["logs", "-a", "replaceMeWithYourAccountID", "-i", "replaceMeWithYourApplicationID"]
+    },
+    {
+      "name": "ps",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["ps", "-a", "replaceMeWithYourAccountID"]
+    },
+    {
+      "name": "login",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["login", "--section-token", "replaceMeWithYourSectionToken"]
+    }
+  ]
+}
