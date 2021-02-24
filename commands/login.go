@@ -23,10 +23,11 @@ func (c *LoginCmd) Run() (err error) {
 		err = credentials.Write(api.PrefixURI.Host, api.Token)
 		if err != nil {
 			if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-				fmt.Printf("Please execute the following or add it to your ~/.bashrc : \nexport SECTION_TOKEN=%s\n",api.Token)
+				fmt.Printf("Unable to write credential.\n\nPlease run this command, and add it to your ~/.bashrc\n\nexport SECTION_TOKEN=%s\n",api.Token)
 				return nil
 			} else if runtime.GOOS == "windows" {
-				fmt.Printf("Please execute the following, add it to your Powershell profile, or add it to your environment variables in control panel: \nWith Powershell:\n$env:SECTION_TOKEN=\"%s\"\n\nWith CMD:\nset SECTION_TOKEN=%s\n\nWith control panel:\nhttps://raw.githubusercontent.com/section/sectionctl/main/docs/section_token_control_panel.png",api.Token,api.Token)
+				screenshot := "https://raw.githubusercontent.com/section/sectionctl/main/docs/section_token_control_panel.png"
+				fmt.Printf("Unable to write credential.\n\nPlease execute the following, add it to your Powershell profile, or add it to your environment variables in control panel: \nWith Powershell:\n$env:SECTION_TOKEN=\"%s\"\n\nWith CMD:\nset SECTION_TOKEN=%s\n\nWith control panel:\n%s",api.Token,api.Token,screenshot)
 				return nil
 			}
 			return fmt.Errorf("unable to write credential: %w", err)
