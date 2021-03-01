@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/alecthomas/kong"
@@ -32,6 +33,7 @@ type CLI struct {
 	Version            commands.VersionCmd          `cmd help:"Print sectionctl version"`
 	WhoAmI             commands.WhoAmICmd           `cmd name:"whoami" help:"Show information about the currently authenticated user"`
 	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
+	DebugFileDir       string                       `default:"." help:"Directory where debug output should be written"`
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
 	SectionAPITimeout  time.Duration                `default:"30s" env:"SECTION_API_TIMEOUT" help:"Request timeout for the Section API"`
@@ -52,7 +54,8 @@ func bootstrap(c CLI, ctx *kong.Context) {
 	if c.Debug {
 		filter.MinLevel = logutils.LogLevel("DEBUG")
 		logFilename := fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format(time.RFC3339))
-		logFile, err := os.OpenFile(logFilename, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+		logFilePath := filepath.Join(c.DebugFileDir, logFilename)
+		logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 		if err != nil {
 			panic(err)
 		}
@@ -60,7 +63,7 @@ func bootstrap(c CLI, ctx *kong.Context) {
 		fmt.Fprintf(logFile, "Command:   %s\n", ctx.Args)
 		fmt.Fprintf(logFile, "PrefixURI: %s\n", api.PrefixURI)
 		fmt.Fprintf(logFile, "Timeout:   %s\n", api.Timeout)
-		fmt.Printf("Writing debug log to: %s\n", logFilename)
+		fmt.Printf("Writing debug log to: %s\n", logFilePath)
 		mw := io.MultiWriter(logFile, colorableWriter)
 		filter.Writer = mw
 	}
