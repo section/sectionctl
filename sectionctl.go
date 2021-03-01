@@ -53,7 +53,7 @@ func bootstrap(c CLI, ctx *kong.Context) {
 	}
 	if c.Debug {
 		filter.MinLevel = logutils.LogLevel("DEBUG")
-		logFilename := fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format(time.RFC3339))
+		logFilename := fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format("2006-01-02-15-04-05Z0700"))
 		logFilePath := filepath.Join(c.DebugFileDir, logFilename)
 		logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 		if err != nil {
