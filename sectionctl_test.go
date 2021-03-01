@@ -20,7 +20,7 @@ func TestBootstrapSetsUpDebugLogFile(t *testing.T) {
 	assert.NoError(err)
 
 	var cli = CLI{Debug: true, SectionToken: "s3cr3t", SectionAPIPrefix: u, DebugFileDir: d}
-	var ctx = kong.Context{}
+	var ctx kong.Context
 
 	// Invoke
 	bootstrap(cli, &ctx)
