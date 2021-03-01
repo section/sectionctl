@@ -19,7 +19,7 @@ func TestBootstrapSetsUpDebugLogFile(t *testing.T) {
 	d, err := ioutil.TempDir("", "sectionctl")
 	assert.NoError(err)
 
-	var cli = CLI{Debug: true, SectionAPIPrefix: u, DebugFileDir: d}
+	var cli = CLI{Debug: true, SectionToken: "s3cr3t", SectionAPIPrefix: u, DebugFileDir: d}
 	var ctx = kong.Context{}
 
 	// Invoke
