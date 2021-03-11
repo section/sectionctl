@@ -1,17 +1,86 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run a test deployment",
+      "name": "deploy",
       "type": "go",
       "request": "launch",
       "mode": "debug",
       "cwd": "${workspaceFolder}/commands/testdata/deploy/api-routes-app",
       "program": "${workspaceFolder}/sectionctl.go",
       "args": ["deploy", "-a", "1887", "-i", "7749"]
+    },
+    {
+      "name": "accounts/list",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["accounts", "list"]
+    },
+    {
+      "name": "apps/list",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["apps", "list", "-a", "1887"]
+    },
+    {
+      "name": "apps/info",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["apps", "info", "-a", "1887", "-i", "7749"]
+    },
+    {
+      "name": "apps/stacks",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["apps", "stacks"]
+    },
+    {
+      "name": "domains/list",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["domains", "list"]
+    },
+    {
+      "name": "logs",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["logs", "-a", "1887", "-i", "7749"]
+    },
+    {
+      "name": "ps",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["ps", "-a", "1887", "--debug"]
+    },
+    {
+      "name": "login",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["login", "--section-token", "replaceMeWithYourSectionToken"]
     }
   ]
 }
