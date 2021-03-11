@@ -19,23 +19,28 @@ type LoginCmd struct {
 
 // Run executes the command
 func (c *LoginCmd) Run() (err error) {
+	screenshot := "https://raw.githubusercontent.com/section/sectionctl/main/docs/section_token_control_panel.png"
+	windowsStr := fmt.Sprintf("Unable to write credential.\n\nPlease execute the following, add it to your Powershell profile, or add it to your environment variables in control panel: \nWith Powershell:\n$env:SECTION_TOKEN=\"%s\"\n\nWith CMD:\nset SECTION_TOKEN=%s\n\nWith control panel:\n%s", api.Token, api.Token, screenshot)
+	linuxStr := fmt.Sprintf("Unable to write credential.\n\nPlease run this command, and add it to your ~/.bashrc (you do not need to run sectionctl login again)\n\nexport SECTION_TOKEN=%s", api.Token)
 	if api.Token != "" {
 		err = credentials.Write(api.PrefixURI.Host, api.Token)
 		if err != nil {
-			if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-				fmt.Printf("Unable to write credential.\n\nPlease run this command, and add it to your ~/.bashrc\n\nexport SECTION_TOKEN=%s\n",api.Token)
-				return nil
-			} else if runtime.GOOS == "windows" {
-				screenshot := "https://raw.githubusercontent.com/section/sectionctl/main/docs/section_token_control_panel.png"
-				fmt.Printf("Unable to write credential.\n\nPlease execute the following, add it to your Powershell profile, or add it to your environment variables in control panel: \nWith Powershell:\n$env:SECTION_TOKEN=\"%s\"\n\nWith CMD:\nset SECTION_TOKEN=%s\n\nWith control panel:\n%s",api.Token,api.Token,screenshot)
+			if runtime.GOOS == "windows" {
+				fmt.Print(windowsStr)
 				return nil
 			}
-			return fmt.Errorf("unable to write credential: %w", err)
+			fmt.Printf("%s\n", linuxStr)
+			return nil
 		}
 	} else {
 		t, err := credentials.PromptAndWrite(c.In(), c.Out(), api.PrefixURI.Host)
 		if err != nil {
-			return fmt.Errorf("unable to prompt and write credentials: %w", err)
+			if runtime.GOOS == "windows" {
+				fmt.Printf("Unable to write credential.\n\nPlease execute the following, add it to your Powershell profile, or add it to your environment variables in control panel: \nWith Powershell:\n$env:SECTION_TOKEN=\"%s\"\n\nWith CMD:\nset SECTION_TOKEN=%s\n\nWith control panel:\n%s", t, t, screenshot)
+				return nil
+			}
+			fmt.Printf("%s%s\n", linuxStr, t)
+			return nil
 		}
 		api.Token = t
 	}
