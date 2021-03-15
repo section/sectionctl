@@ -31,7 +31,7 @@ type DeployCmd struct {
 	AppID          int           `required short:"i" help:"AppID to deploy application to."`
 	Environment    string        `short:"e" default:"production" help:"Environment to deploy application to."`
 	Debug          bool          `help:"Display extra debugging information about what is happening inside sectionctl."`
-	Directory      string        `short:"C" default:"." help:"Directory which contains the application to deploy."`
+	Directory      string        `default:"." help:"Directory which contains the application to deploy."`
 	ServerURL      *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload" help:"URL to upload application to"`
 	Timeout        time.Duration `default:"600s" help:"Timeout of individual HTTP requests."`
 	SkipDelete     bool          `help:"Skip delete of temporary tarball created to upload app."`
@@ -150,18 +150,8 @@ func (c *DeployCmd) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
-	s = NewSpinner("Deploying app...")
-	s.Start()
-	var ups = []api.EnvironmentUpdateCommand{
-		{
-			Op: "replace",
-			Value: PayloadValue{
-				ID: response.PayloadID,
-			},
-		},
-	}
-	err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, c.Environment, c.AppPath+"/.section-external-source.json", ups)
-	s.Stop()
+
+	err = globalGitService.UpdateGitViaGit(c, response)
 	if err != nil {
 		return fmt.Errorf("failed to trigger app update: %v", err)
 	}

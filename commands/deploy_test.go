@@ -3,7 +3,6 @@ package commands
 import (
 	"archive/tar"
 	"compress/gzip"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,6 +17,15 @@ import (
 	"github.com/section/sectionctl/api"
 	"github.com/stretchr/testify/assert"
 )
+
+type MockGitService struct {
+	Called bool
+}
+
+func (g *MockGitService) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
+	g.Called = true
+	return nil
+}
 
 func helperLoadBytes(t *testing.T, name string) []byte {
 	path := filepath.Join("testdata", name) // relative path
@@ -207,13 +215,10 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	type req struct {
 		called    bool
 		token     string
-		body      []byte
 		accountID int
 		file      []byte
-		header    http.Header
 	}
 	var uploadReq req
-	var triggerUpdateReq req
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		to := r.Header.Get("section-token")
 		assert.NotEmpty(to)
@@ -237,14 +242,6 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprint(w, string(helperLoadBytes(t, "deploy/upload.response.with_success.json")))
-		case "/api/v1/account/100/application/200/environment/dev/update":
-			triggerUpdateReq.called = true
-			triggerUpdateReq.token = to
-			b, err := ioutil.ReadAll(r.Body)
-			assert.NoError(err)
-			triggerUpdateReq.body = b
-			triggerUpdateReq.header = r.Header
-			w.WriteHeader(http.StatusOK)
 		default:
 			assert.FailNowf("unhandled URL", "URL: %s", r.URL.Path)
 		}
@@ -258,6 +255,8 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	api.PrefixURI = url
 	api.Token = "s3cr3t"
 
+	mockGit := MockGitService{}
+	globalGitService = &mockGit
 	// Invoke
 	c := DeployCmd{
 		Directory:   dir,
@@ -279,18 +278,5 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	assert.Equal([]byte{0x1f, 0x8b}, uploadReq.file[0:2]) // gzip header
 	assert.Equal(c.AccountID, uploadReq.accountID)
 
-	// trigger update request
-	assert.True(triggerUpdateReq.called)
-	assert.Equal(api.Token, triggerUpdateReq.token)
-	assert.NotZero(len(triggerUpdateReq.body))
-	assert.Equal(triggerUpdateReq.header.Get("filepath"), "nodejs/.section-external-source.json")
-	var ups []api.EnvironmentUpdateCommand
-	err = json.Unmarshal(triggerUpdateReq.body, &ups)
-	assert.NoError(err)
-	assert.Equal(len(ups), 1)
-	up := ups[0]
-	assert.Equal(up.Op, "replace")
-	assert.NotEmpty(up.Value)
-	assert.NotEmpty(up.Value.(map[string]interface{})["section_payload_id"])
-	assert.Equal(up.Value.(map[string]interface{})["section_payload_id"].(string), "1234")
+	assert.True(mockGit.Called)
 }
