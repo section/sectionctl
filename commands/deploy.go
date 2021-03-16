@@ -150,18 +150,8 @@ func (c *DeployCmd) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
-	s = NewSpinner("Deploying app...")
-	s.Start()
-	var ups = []api.EnvironmentUpdateCommand{
-		{
-			Op: "replace",
-			Value: PayloadValue{
-				ID: response.PayloadID,
-			},
-		},
-	}
-	err = api.ApplicationEnvironmentModuleUpdate(c.AccountID, c.AppID, c.Environment, c.AppPath+"/.section-external-source.json", ups)
-	s.Stop()
+
+	err = globalGitService.UpdateGitViaGit(c, response)
 	if err != nil {
 		return fmt.Errorf("failed to trigger app update: %v", err)
 	}
