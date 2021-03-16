@@ -1,6 +1,7 @@
 # sectionctl
 
 [![Test status](https://github.com/section/sectionctl/workflows/Test/badge.svg?event=push)](https://github.com/section/sectionctl/actions?query=workflow%3ATest+event%3Apush)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fsection%2Fsectionctl.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fsection%2Fsectionctl?ref=badge_shield)
 
 Section command line tool.
 
@@ -69,3 +70,7 @@ make build
 Run `make release` and specify VERSION string prefaced with a `v`, like `v1.0.1`.
 
 This triggers [a GitHub Actions workflow](https://github.com/section/sectionctl/actions?query=workflow%3A%22Build+and+release+sectionctl+binaries%22) that does cross platform builds, and publishes [a draft release](https://github.com/section/sectionctl/releases).
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fsection%2Fsectionctl.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fsection%2Fsectionctl?ref=badge_large)
