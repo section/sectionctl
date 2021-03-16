@@ -7,10 +7,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-
+	"time"
 	"github.com/go-git/go-git/v5"
 	gitHTTP "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/section/sectionctl/api"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 // GitService interface provides a way to interact with Git
@@ -112,7 +113,11 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 	if err != nil {
 		return err
 	}
-	commitHash, err := w.Commit("[sectionctl] updated nodejs/.section-external-source.json with new deployment.", &git.CommitOptions{})
+	commitHash, err := w.Commit("[sectionctl] updated nodejs/.section-external-source.json with new deployment.", &git.CommitOptions{Author: &object.Signature{
+		Name:  "sectionctl",
+		Email: "noreply@section.io",
+		When:  time.Now(),
+	}})
 	if err != nil {
 		return fmt.Errorf("failed to make a commit on the temporary repository: %w", err)
 	}
