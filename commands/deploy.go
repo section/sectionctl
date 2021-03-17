@@ -29,7 +29,7 @@ const MaxFileSize = 1073741824 // 1GB
 type DeployCmd struct {
 	AccountID      int           `required short:"a" help:"AccountID to deploy application to."`
 	AppID          int           `required short:"i" help:"AppID to deploy application to."`
-	Environment    string        `short:"e" default:"Production" help:"Environment to deploy application to."`
+	Environment    string        `short:"e" default:"Production" help:"Environment to deploy application to. (name of git branch ie: Production, staging, development)"`
 	Debug          bool          `help:"Display extra debugging information about what is happening inside sectionctl."`
 	Directory      string        `short:"C" default:"." help:"Directory which contains the application to deploy."`
 	ServerURL      *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload" help:"URL to upload application to"`
