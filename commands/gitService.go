@@ -12,6 +12,7 @@ import (
 	gitHTTP "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/section/sectionctl/api"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // GitService interface provides a way to interact with Git
@@ -43,10 +44,12 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 		Password: api.Token,
 	}
 	payload := PayloadValue{ID: response.PayloadID}
+	branchRef := fmt.Sprintf("refs/heads/%s",c.Branch)
 	r, err := git.PlainClone(tempDir, false, &git.CloneOptions{
 		URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, app.ApplicationName),
 		Auth:     gitAuth,
 		Progress: os.Stdout,
+		ReferenceName: plumbing.ReferenceName(branchRef),
 	})
 	if err != nil {
 		return err

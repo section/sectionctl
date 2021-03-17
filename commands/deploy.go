@@ -37,6 +37,7 @@ type DeployCmd struct {
 	SkipDelete     bool          `help:"Skip delete of temporary tarball created to upload app."`
 	SkipValidation bool          `help:"Skip validation of the workload before pushing into Section. Use with caution."`
 	AppPath        string        `default:"nodejs" help:"Path of NodeJS application in environment repository."`
+	Branch         string        `short:"b" default:"Production" help:"Name of the environment repository branch to deploy to."`
 }
 
 // UploadResponse represents the response from a request to the upload service.
