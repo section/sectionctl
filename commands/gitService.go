@@ -44,7 +44,7 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 		Password: api.Token,
 	}
 	payload := PayloadValue{ID: response.PayloadID}
-	branchRef := fmt.Sprintf("refs/heads/%s",c.Branch)
+	branchRef := fmt.Sprintf("refs/heads/%s",c.Environment)
 	r, err := git.PlainClone(tempDir, false, &git.CloneOptions{
 		URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, app.ApplicationName),
 		Auth:     gitAuth,

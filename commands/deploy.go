@@ -29,7 +29,7 @@ const MaxFileSize = 1073741824 // 1GB
 type DeployCmd struct {
 	AccountID      int           `required short:"a" help:"AccountID to deploy application to."`
 	AppID          int           `required short:"i" help:"AppID to deploy application to."`
-	Environment    string        `short:"e" default:"production" help:"Environment to deploy application to."`
+	Environment    string        `short:"e" default:"Production" help:"Environment to deploy application to."`
 	Debug          bool          `help:"Display extra debugging information about what is happening inside sectionctl."`
 	Directory      string        `short:"C" default:"." help:"Directory which contains the application to deploy."`
 	ServerURL      *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload" help:"URL to upload application to"`
@@ -37,7 +37,6 @@ type DeployCmd struct {
 	SkipDelete     bool          `help:"Skip delete of temporary tarball created to upload app."`
 	SkipValidation bool          `help:"Skip validation of the workload before pushing into Section. Use with caution."`
 	AppPath        string        `default:"nodejs" help:"Path of NodeJS application in environment repository."`
-	Branch         string        `short:"b" default:"Production" help:"Name of the environment repository branch to deploy to."`
 }
 
 // UploadResponse represents the response from a request to the upload service.
