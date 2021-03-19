@@ -41,7 +41,7 @@ jobs:
             GOARCH: arm64
     env:
       VERSION: ${{ github.ref }}
-      GOARCH: amd64
+      GOARCH: ${{ matrix.GOARCH }}
       GOOS: ${{ matrix.GOOS }}
     steps:
     - name: Set up Go 1.x
