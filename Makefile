@@ -25,7 +25,6 @@ goerrcheck:
 build: clean
 	go build sectionctl.go
 
-export GOARCH := amd64
 build-release: clean check_version
 	@if [ -z "$(GOOS)" ]; then echo "Missing GOOS"; exit 1 ; fi
 	@if [ -z "$(GOARCH)" ]; then echo "Missing GOARCH"; exit 1 ; fi
