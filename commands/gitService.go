@@ -7,12 +7,14 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
+
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	gitHTTP "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/section/sectionctl/api"
-	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // GitService interface provides a way to interact with Git
@@ -32,8 +34,9 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("[DEBUG] Cloning: https://aperture.section.io/account/%d/application/%d/%s.git ...\n", c.AccountID, c.AppID, app.ApplicationName)
-	tempDir, err := ioutil.TempDir("", "sectinoctl-*")
+	appName := strings.ReplaceAll(app.ApplicationName, "/", "")
+	log.Printf("[DEBUG] Cloning: https://aperture.section.io/account/%d/application/%d/%s.git ...\n", c.AccountID, c.AppID, appName)
+	tempDir, err := ioutil.TempDir("", "sectionctl-*")
 	if err != nil {
 		return err
 	}
@@ -46,7 +49,7 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 	payload := PayloadValue{ID: response.PayloadID}
 	branchRef := fmt.Sprintf("refs/heads/%s",c.Environment)
 	r, err := git.PlainClone(tempDir, false, &git.CloneOptions{
-		URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, app.ApplicationName),
+		URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
 		Auth:     gitAuth,
 		Progress: os.Stdout,
 		ReferenceName: plumbing.ReferenceName(branchRef),
