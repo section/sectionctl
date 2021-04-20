@@ -57,6 +57,7 @@ func TestCommandsAppsInitHandlesErrors(t *testing.T) {
 		pkgJSON  string
 		isFatal  bool
 	}{
+		{"ABSENT", string(helperLoadBytes(t, "apps/init.good.package.json")), false},                                                 // server.conf is missing
 		{string(helperLoadBytes(t, "apps/init.good.server.conf")), string(helperLoadBytes(t, "apps/init.good.package.json")), false}, // no files are broken or missing
 		{string(helperLoadBytes(t, "apps/init.bad.server.conf")), string(helperLoadBytes(t, "apps/init.bad.package.json")), false},   // both files are broken
 		{``, ``, false}, // both files are empty
@@ -94,9 +95,11 @@ func TestCommandsAppsInitHandlesErrors(t *testing.T) {
 			err = os.Chdir(tempDir)
 			assert.NoError(err)
 
-			err = OverwriteFile("server.conf", tc.servConf)
-			if err != nil {
-				fmt.Println("server.conf creation failed")
+			if tc.servConf != "ABSENT" {
+				err = OverwriteFile("server.conf", tc.servConf)
+				if err != nil {
+					fmt.Println("server.conf creation failed")
+				}
 			}
 
 			err = OverwriteFile("package.json", tc.pkgJSON)

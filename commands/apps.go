@@ -212,27 +212,10 @@ func (c *AppsDeleteCmd) Run() (err error) {
 	return err
 }
 
-// AppsInitCmd creates and validates server.conf and package.json to prepare an app for deployment
+// AppsInitCmd creates and validates package.json to prepare an app for deployment
 type AppsInitCmd struct {
 	StackName string `optional default:"nodejs-basic" short:"s" help:"Name of stack to deploy. Default is nodejs-basic"`
 	Force     bool   `optional short:"f" help:"Resets deployment specific files to their default configuration"`
-}
-
-func (c *AppsInitCmd) buildServerConf() []byte {
-	return []byte(
-		`location / {
-	proxy_set_header X-Forwarded-For $http_x_forwarded_for;
-	proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
-	proxy_set_header Host $host;
-	include /etc/nginx/section.module/node.conf;
-}
-
-location ~ "/next-proxy-hop/" {
-	proxy_set_header X-Forwarded-For $http_x_forwarded_for;
-	proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
-	proxy_set_header Host $host;
-	proxy_pass http://next-hop;
-}`)
 }
 
 // Run executes the command
@@ -263,11 +246,13 @@ func (c *AppsInitCmd) CreatePkgJSON(stdout, stderr bytes.Buffer) (err error) {
 // InitializeNodeBasicApp initializes a basic node app.
 func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err error) {
 	if c.Force {
-		log.Println("[INFO] Removing old versions of server.conf and package.json")
-		err1 := os.Remove("package.json")
-		err2 := os.Remove("server.conf")
-		if err1 != nil || err2 != nil {
-			log.Println("[ERROR] unable to remove files, perhaps they do not exist?")
+		log.Println("[INFO] Removing old version of package.json")
+		err = os.Remove("package.json")
+		if err != nil {
+			if !os.IsNotExist(err) {
+				log.Println("[ERROR] unable to remove package.json file")
+				return err
+			}
 		} else {
 			log.Println("[DEBUG] Files successfully removed")
 		}
@@ -275,15 +260,13 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 	log.Println("[DEBUG] Checking to see if server.conf exists")
 	checkServConf, err := os.Open("server.conf")
 	if err != nil {
-		log.Println("[WARN] server.conf does not exist. Creating server.conf")
-		f, err := os.Create("server.conf")
-		if err != nil {
-			return fmt.Errorf("error in creating a file: server.conf %w", err)
+		if !os.IsNotExist(err) {
+			log.Println("[ERROR] server.conf file could not be opened")
+			return err
 		}
-		b := c.buildServerConf()
-		f.Write(b)
-		defer f.Close()
-	} else {
+	}
+	defer checkServConf.Close()
+	if err == nil {
 		log.Println("[INFO] Validating server.conf")
 		fileinfo, err := checkServConf.Stat()
 		if err != nil {
@@ -299,7 +282,6 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 			log.Println("[WARN] default location unspecified. Edit or delete server.conf and rerun this command")
 		}
 	}
-	defer checkServConf.Close()
 	log.Println("[DEBUG] Checking to see if package.json exists")
 	checkPkgJSON, err := os.Open("package.json")
 	if err != nil {
