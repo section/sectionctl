@@ -37,6 +37,8 @@ type DeployCmd struct {
 	SkipDelete     bool          `help:"Skip delete of temporary tarball created to upload app."`
 	SkipValidation bool          `help:"Skip validation of the workload before pushing into Section. Use with caution."`
 	AppPath        string        `default:"nodejs" help:"Path of NodeJS application in environment repository."`
+	CI             bool          `env:"CI" default:true help:"Enables minimal logging"`
+
 }
 
 // UploadResponse represents the response from a request to the upload service.
@@ -71,8 +73,11 @@ func (c *DeployCmd) Run() (err error) {
 		}
 	}
 
+
 	s := NewSpinner(fmt.Sprintf("Packaging app in: %s", dir))
-	s.Start()
+	if !(c.CI) {
+		s.Start()
+	}
 
 	ignores := []string{".lint", ".git"}
 	files, err := BuildFilelist(dir, ignores)
@@ -131,7 +136,9 @@ func (c *DeployCmd) Run() (err error) {
 	artifactSizeMB := stat.Size() / 1024 / 1024
 	log.Printf("[DEBUG] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size())
 	s = NewSpinner(fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB))
-	s.Start()
+	if !(c.CI){
+		s.Start()
+	}
 	client := &http.Client{
 		Timeout: c.Timeout,
 	}

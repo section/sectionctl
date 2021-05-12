@@ -38,6 +38,7 @@ type CLI struct {
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
 	SectionAPITimeout  time.Duration                `default:"30s" env:"SECTION_API_TIMEOUT" help:"Request timeout for the Section API"`
 	InstallCompletions kongplete.InstallCompletions `cmd:"" help:"install shell completions"`
+	CI                 bool                         `env:"CI" default:true help:"Enables minimal logging"`
 }
 
 func bootstrap(c CLI, ctx *kong.Context) {
@@ -46,9 +47,14 @@ func bootstrap(c CLI, ctx *kong.Context) {
 
 	colorableWriter := colorable.NewColorableStderr()
 
+	minLogLevel := logutils.LogLevel("INFO") 
+	if c.CI { 
+		minLogLevel = logutils.LogLevel("ERROR")
+	}
+
 	filter := &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
-		MinLevel: logutils.LogLevel("INFO"),
+		MinLevel: minLogLevel,
 		Writer:   colorableWriter,
 	}
 	if c.Debug {

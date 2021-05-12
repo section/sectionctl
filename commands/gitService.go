@@ -40,7 +40,7 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 	if err != nil {
 		return err
 	}
-	log.Println("[Debug] tempDir: ", tempDir)
+	log.Println("[DEBUG] tempDir: ", tempDir)
 	// Git objects storer based on memory
 	gitAuth := &gitHTTP.BasicAuth{
 		Username: "section-token", // yes, this can be anything except an empty string
@@ -48,12 +48,37 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 	}
 	payload := PayloadValue{ID: response.PayloadID}
 	branchRef := fmt.Sprintf("refs/heads/%s",c.Environment)
-	r, err := git.PlainClone(tempDir, false, &git.CloneOptions{
-		URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
-		Auth:     gitAuth,
-		Progress: os.Stdout,
-		ReferenceName: plumbing.ReferenceName(branchRef),
-	})
+	var r *git.Repository
+	// CIRead, CIWrite, err := os.Pipe()
+	if err != nil {
+		return err
+	}
+	if c.CI {
+		r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
+			URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
+			Auth:     gitAuth,
+			Progress: nil,
+			ReferenceName: plumbing.ReferenceName(branchRef),
+		})
+		// readIfErr := time.NewTimer(600 * time.Second)
+		// <-readIfErr.C
+		// buf := make([]byte, 4096)
+		// n, err := CIRead.Read(buf)
+		// if err != nil{
+		// 	return err
+		// }
+		// bufCheckIfErr := string(buf[:n])
+		// if !(strings.Contains(bufCheckIfErr, "npm start")){
+		// 	log.Println("[ERROR]", bufCheckIfErr)
+		// } 
+	} else {
+		r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
+			URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
+			Auth:     gitAuth,
+			Progress: os.Stderr,
+			ReferenceName: plumbing.ReferenceName(branchRef),
+		})
+	}
 	if err != nil {
 		return err
 	}
@@ -143,13 +168,33 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 
 	ctt, err := newF.Contents()
 	if err != nil {
-		return fmt.Errorf("could not open conetnts of new file in git: %w", err)
+		return fmt.Errorf("could not open contents of new file in git: %w", err)
 	}
 	log.Println("[DEBUG] contents in new commit: ", ctt)
-	err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: os.Stdout})
+	
+	CIRead, CIWrite, err := os.Pipe()
+	if err != nil {
+		return err
+	}
+	if c.CI {
+		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: CIWrite})
+		readIfErr := time.NewTimer(60 * time.Second)
+		<-readIfErr.C
+		buf := make([]byte, 4096)
+		n, err := CIRead.Read(buf)
+		if err != nil{
+			return err
+		}
+		bufCheckIfErr := string(buf[:n])
+		if !(strings.Contains(bufCheckIfErr, "npm start")){
+			log.Println("[ERROR]", bufCheckIfErr)
+		}
+	} else {
+		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: os.Stdout})
+	}
 	if err != nil {
 		return fmt.Errorf("failed to push git changes: %w", err)
 	}
-
+	
 	return nil
 }
