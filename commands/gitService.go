@@ -49,28 +49,16 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 	payload := PayloadValue{ID: response.PayloadID}
 	branchRef := fmt.Sprintf("refs/heads/%s",c.Environment)
 	var r *git.Repository
-	// CIRead, CIWrite, err := os.Pipe()
 	if err != nil {
 		return err
 	}
-	if c.CI {
+	if c.Quiet {
 		r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
 			URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
 			Auth:     gitAuth,
 			Progress: nil,
 			ReferenceName: plumbing.ReferenceName(branchRef),
 		})
-		// readIfErr := time.NewTimer(600 * time.Second)
-		// <-readIfErr.C
-		// buf := make([]byte, 4096)
-		// n, err := CIRead.Read(buf)
-		// if err != nil{
-		// 	return err
-		// }
-		// bufCheckIfErr := string(buf[:n])
-		// if !(strings.Contains(bufCheckIfErr, "npm start")){
-		// 	log.Println("[ERROR]", bufCheckIfErr)
-		// } 
 	} else {
 		r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
 			URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
@@ -176,9 +164,9 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 	if err != nil {
 		return err
 	}
-	if c.CI {
+	if c.Quiet {
 		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: CIWrite})
-		readIfErr := time.NewTimer(60 * time.Second)
+		readIfErr := time.NewTimer(c.Timeout * time.Second)
 		<-readIfErr.C
 		buf := make([]byte, 4096)
 		n, err := CIRead.Read(buf)
