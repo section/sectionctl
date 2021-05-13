@@ -46,9 +46,10 @@ func bootstrap(c CLI, ctx *kong.Context) {
 
 	colorableWriter := colorable.NewColorableStderr()
 
+	minLogLevel := logutils.LogLevel("INFO") 
 	filter := &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
-		MinLevel: logutils.LogLevel("INFO"),
+		MinLevel: minLogLevel,
 		Writer:   colorableWriter,
 	}
 	if c.Debug {

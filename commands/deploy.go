@@ -30,13 +30,13 @@ type DeployCmd struct {
 	AccountID      int           `required short:"a" help:"AccountID to deploy application to."`
 	AppID          int           `required short:"i" help:"AppID to deploy application to."`
 	Environment    string        `short:"e" default:"Production" help:"Environment to deploy application to. (name of git branch ie: Production, staging, development)"`
-	Debug          bool          `help:"Display extra debugging information about what is happening inside sectionctl."`
 	Directory      string        `short:"C" default:"." help:"Directory which contains the application to deploy."`
 	ServerURL      *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload" help:"URL to upload application to"`
 	Timeout        time.Duration `default:"600s" help:"Timeout of individual HTTP requests."`
 	SkipDelete     bool          `help:"Skip delete of temporary tarball created to upload app."`
 	SkipValidation bool          `help:"Skip validation of the workload before pushing into Section. Use with caution."`
 	AppPath        string        `default:"nodejs" help:"Path of NodeJS application in environment repository."`
+	Quiet					 bool          `help:"Enables minimal logging, for use in continuous integration. Also set by \"CI\" environment variable."`
 }
 
 // UploadResponse represents the response from a request to the upload service.
@@ -70,9 +70,18 @@ func (c *DeployCmd) Run() (err error) {
 			return fmt.Errorf("not a valid Node.js app: \n\n%s", errstr)
 		}
 	}
+	
+	
+	envCI, err := strconv.ParseBool(os.Getenv("CI"))
+	if err != nil {
+		envCI = false
+	}
+	c.Quiet =  c.Quiet || envCI
 
 	s := NewSpinner(fmt.Sprintf("Packaging app in: %s", dir))
-	s.Start()
+	if !(c.Quiet) {
+		s.Start()
+	}
 
 	ignores := []string{".lint", ".git"}
 	files, err := BuildFilelist(dir, ignores)
@@ -92,7 +101,7 @@ func (c *DeployCmd) Run() (err error) {
 	}
 	if c.SkipDelete {
 		s.Stop()
-		log.Println("[INFO] Temporary upload tarball location:", tempFile.Name())
+		log.Println("[DEBUG] Temporary upload tarball location:", tempFile.Name())
 		s.Start()
 	} else {
 		defer os.Remove(tempFile.Name())
@@ -131,7 +140,9 @@ func (c *DeployCmd) Run() (err error) {
 	artifactSizeMB := stat.Size() / 1024 / 1024
 	log.Printf("[DEBUG] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size())
 	s = NewSpinner(fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB))
-	s.Start()
+	if !(c.Quiet){
+		s.Start()
+	}
 	client := &http.Client{
 		Timeout: c.Timeout,
 	}
@@ -156,7 +167,9 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("failed to trigger app update: %v", err)
 	}
 
-	fmt.Println("Done!")
+	if !c.Quiet{
+		fmt.Println("Done!")
+	}
 
 	return nil
 }
