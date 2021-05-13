@@ -160,6 +160,7 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 	}
 	log.Println("[DEBUG] contents in new commit: ", ctt)
 	
+	var bufCheckIfErr string = "";
 	CIRead, CIWrite, err := os.Pipe()
 	if err != nil {
 		return err
@@ -169,18 +170,18 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 		readIfErr := time.NewTimer(c.Timeout * time.Second)
 		<-readIfErr.C
 		buf := make([]byte, 4096)
-		n, err := CIRead.Read(buf)
+		_, err := CIRead.Read(buf)
 		if err != nil{
 			return err
 		}
-		bufCheckIfErr := string(buf[:n])
-		if !(strings.Contains(bufCheckIfErr, "npm start")){
-			log.Println("[ERROR]", bufCheckIfErr)
-		}
+		bufCheckIfErr = string(buf[:])
 	} else {
 		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: os.Stdout})
 	}
 	if err != nil {
+		if c.Quiet {
+			log.Println("[ERROR]", bufCheckIfErr)
+		}
 		return fmt.Errorf("failed to push git changes: %w", err)
 	}
 	
