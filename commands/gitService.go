@@ -168,13 +168,13 @@ func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadR
 	if IsInCtxBool(ctx, "quiet"){
 		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: CIWrite})
 		buf := make([]byte, 4096)
-		_, err := CIRead.Read(buf)
+		n, err := CIRead.Read(buf)
 		if err != nil{
 			return err
 		}
-		bufCheckIfErr = string(buf[:])
+		bufCheckIfErr = string(buf[:n])
 	} else {
-		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: os.Stdout})
+		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: os.Stderr})
 	}
 	if err != nil {
 		if IsInCtxBool(ctx, "quiet") {
