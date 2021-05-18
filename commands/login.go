@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"runtime"
 
@@ -45,9 +46,7 @@ func (c *LoginCmd) Run(ctx context.Context) (err error) {
 		}
 		api.Token = t
 	}
-	if IsInCtxBool(ctx, "quiet") {
-		fmt.Print("\nValidating credentials...")
-	}
+	log.Print("[INFO]\nValidating credentials...")
 	_, err = api.CurrentUser()
 	if err != nil {
 		fmt.Println("error!")
@@ -56,9 +55,7 @@ func (c *LoginCmd) Run(ctx context.Context) (err error) {
 		}
 		return fmt.Errorf("could not fetch current user: %w", err)
 	}
-	if IsInCtxBool(ctx, "quiet") {
-		fmt.Println("success!")
-	}
+	log.Println("[INFO] success!")
 	
 	return err
 }

@@ -131,9 +131,7 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 	artifactSizeMB := stat.Size() / 1024 / 1024
 	log.Printf("[DEBUG] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size())
 	s = NewSpinner(ctx, fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB))
-	if IsInCtxBool(ctx, "quiet") {
-		s.Start()
-	}
+	s.Start()
 	client := &http.Client{
 		Timeout: c.Timeout,
 	}
@@ -158,9 +156,7 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("failed to trigger app update: %v", err)
 	}
 
-	if IsInCtxBool(ctx, "quiet") {
-		log.Println("[INFO] Done!")
-	}
+	log.Println("[INFO] Done!")
 
 	return nil
 }

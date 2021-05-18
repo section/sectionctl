@@ -107,7 +107,7 @@ func (c *AppsInfoCmd) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	if IsInCtxBool(ctx, "quiet") {
+	if !IsInCtxBool(ctx, "quiet") {
 		fmt.Printf("🌎🌏🌍\n")
 		fmt.Printf("App Name: %s\n", app.ApplicationName)
 		fmt.Printf("App ID: %d\n", app.ID)
@@ -191,9 +191,7 @@ func (c *AppsCreateCmd) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	if IsInCtxBool(ctx, "quiet") {
-		fmt.Printf("\nSuccess: created app '%s' with id '%d'\n", r.ApplicationName, r.ID)
-	}
+	log.Printf("[INFO]\nSuccess: created app '%s' with id '%d'\n", r.ApplicationName, r.ID)
 
 	return err
 }
@@ -216,9 +214,7 @@ func (c *AppsDeleteCmd) Run(ctx context.Context) (err error) {
 		return err
 	}
 	
-	if IsInCtxBool(ctx, "quiet") {
-		fmt.Printf("\nSuccess: deleted app with id '%d'\n", c.AppID)
-	}
+	log.Printf("[INFO]\nSuccess: deleted app with id '%d'\n", c.AppID)
 
 	return err
 }
@@ -257,9 +253,7 @@ func (c *AppsInitCmd) CreatePkgJSON(stdout, stderr bytes.Buffer) (err error) {
 // InitializeNodeBasicApp initializes a basic node app.
 func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.Buffer, stderr bytes.Buffer) (err error) {
 	if c.Force {
-		if IsInCtxBool(ctx, "quiet") {
-			log.Println("[INFO] Removing old version of package.json")
-		}
+		log.Println("[INFO] Removing old version of package.json")
 		err = os.Remove("package.json")
 		if err != nil {
 			if !os.IsNotExist(err) {
@@ -280,9 +274,7 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.B
 	}
 	defer checkServConf.Close()
 	if err == nil {
-		if IsInCtxBool(ctx, "quiet") {
-			log.Println("[INFO] Validating server.conf")
-		}
+		log.Println("[INFO] Validating server.conf")
 		fileinfo, err := checkServConf.Stat()
 		if err != nil {
 			return fmt.Errorf("error in finding stat of server.conf %w", err)
@@ -305,9 +297,7 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.B
 		if err != nil {
 			return fmt.Errorf("there was an error creating package.json. Is node installed? %w", err)
 		}
-		if IsInCtxBool(ctx, "quiet") {
-			log.Println("[INFO] package.json created")
-		}
+		log.Println("[INFO] package.json created")
 	}
 	defer checkPkgJSON.Close()
 	validPkgJSON, err := os.OpenFile("package.json", os.O_RDWR, 0777)
@@ -315,9 +305,7 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.B
 		return fmt.Errorf("failed to open package.json %w", err)
 	}
 	defer validPkgJSON.Close()
-	if IsInCtxBool(ctx, "quiet") {
-		log.Println("[INFO] Validating package.json")
-	}
+	log.Println("[INFO] Validating package.json")
 	buf, err := os.ReadFile("package.json")
 	if err != nil {
 		return fmt.Errorf("failed to read package.json %w", err)
@@ -333,9 +321,7 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.B
 		if err != nil {
 			return fmt.Errorf("there was an error creating package.json. Is node installed? %w", err)
 		}
-		if IsInCtxBool(ctx, "quiet") {
-			log.Println("[INFO] package.json created from empty file")
-		}
+		log.Println("[INFO] package.json created from empty file")
 		buf, err = os.ReadFile("package.json")
 		if err != nil {
 			return fmt.Errorf("failed to read package.json %w", err)

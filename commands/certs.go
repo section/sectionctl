@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/section/sectionctl/api"
 )
@@ -56,9 +57,7 @@ func (c *CertsRenewCmd) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	if IsInCtxBool(ctx, "quiet") {
-		fmt.Printf("\nSuccess: %s\n", resp.Message)
-	}
+	log.Printf("[INFO]\nSuccess: %s\n", resp.Message)
 
 	return err
 }

@@ -50,7 +50,7 @@ func (c *LogsCmd) Run(ctx context.Context) (err error) {
 	// https://github.com/logrusorgru/aurora#windows
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime)) // Remove local time prefix on output
 
-	if IsInCtxBool(ctx, "quiet") {
+	if !IsInCtxBool(ctx, "quiet") {
 		for {
 			appLogs, err := api.ApplicationLogs(c.AccountID, c.AppID, c.AppPath, c.InstanceName, c.Number, startTimestampRfc3339)
 			s.Stop()
