@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -38,8 +39,11 @@ func TestCommandsLoginValidatesGoodCredentials(t *testing.T) {
 		out: &out,
 	}
 
+	// Define Context
+	ctx := context.Background()
+
 	// Invoke
-	err = cmd.Run()
+	err = cmd.Run(ctx)
 
 	// Test
 	assert.NoError(err)
@@ -68,8 +72,11 @@ func TestCommandsLoginValidatesBadCredentials(t *testing.T) {
 		out: &out,
 	}
 
+	// Define Context
+	ctx:= context.Background()
+
 	// Invoke
-	err = cmd.Run()
+	err = cmd.Run(ctx)
 
 	// Test
 	assert.Error(err)
@@ -104,8 +111,11 @@ func TestCommandsLoginUsesAlreadySetAPIToken(t *testing.T) {
 		out: &bytes.Buffer{},
 	}
 
+	// Define Context
+	ctx := context.Background()
+
 	// Invoke
-	err = cmd.Run()
+	err = cmd.Run(ctx)
 
 	// Test
 	assert.NoError(err)

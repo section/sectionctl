@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/section/sectionctl/api"
@@ -17,9 +18,9 @@ type CertsRenewCmd struct {
 }
 
 // Run executes the command
-func (c *CertsRenewCmd) Run() (err error) {
+func (c *CertsRenewCmd) Run(ctx context.Context) (err error) {
 	var aid int
-	s := NewSpinner("Looking up accounts")
+	s := NewSpinner(ctx, "Looking up accounts")
 	s.Start()
 
 	as, err := api.Accounts()
@@ -46,7 +47,7 @@ func (c *CertsRenewCmd) Run() (err error) {
 		return fmt.Errorf("unable to find the domain '%s' under any of your accounts.\n\nTry running `sectionctl domains` to see all your domains", c.Hostname)
 	}
 
-	s = NewSpinner(fmt.Sprintf("Renewing cert for %s", c.Hostname))
+	s = NewSpinner(ctx, fmt.Sprintf("Renewing cert for %s", c.Hostname))
 	s.Start()
 
 	resp, err := api.DomainsRenewCert(aid, c.Hostname)
@@ -55,7 +56,9 @@ func (c *CertsRenewCmd) Run() (err error) {
 		return err
 	}
 
-	fmt.Printf("\nSuccess: %s\n", resp.Message)
+	if IsInCtxBool(ctx, "quiet") {
+		fmt.Printf("\nSuccess: %s\n", resp.Message)
+	}
 
 	return err
 }

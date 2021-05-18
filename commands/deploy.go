@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -36,7 +37,6 @@ type DeployCmd struct {
 	SkipDelete     bool          `help:"Skip delete of temporary tarball created to upload app."`
 	SkipValidation bool          `help:"Skip validation of the workload before pushing into Section. Use with caution."`
 	AppPath        string        `default:"nodejs" help:"Path of NodeJS application in environment repository."`
-	Quiet					 bool          `help:"Enables minimal logging, for use in continuous integration. Also set by \"CI\" environment variable."`
 }
 
 // UploadResponse represents the response from a request to the upload service.
@@ -50,7 +50,7 @@ type PayloadValue struct {
 }
 
 // Run deploys an app to Section's edge
-func (c *DeployCmd) Run() (err error) {
+func (c *DeployCmd) Run(ctx context.Context) (err error) {
 	dir := c.Directory
 	if dir == "." {
 		abs, err := filepath.Abs(dir)
@@ -70,18 +70,9 @@ func (c *DeployCmd) Run() (err error) {
 			return fmt.Errorf("not a valid Node.js app: \n\n%s", errstr)
 		}
 	}
-	
-	
-	envCI, err := strconv.ParseBool(os.Getenv("CI"))
-	if err != nil {
-		envCI = false
-	}
-	c.Quiet =  c.Quiet || envCI
 
-	s := NewSpinner(fmt.Sprintf("Packaging app in: %s", dir))
-	if !(c.Quiet) {
-		s.Start()
-	}
+	s := NewSpinner(ctx, fmt.Sprintf("Packaging app in: %s", dir))
+	s.Start()
 
 	ignores := []string{".lint", ".git"}
 	files, err := BuildFilelist(dir, ignores)
@@ -139,8 +130,8 @@ func (c *DeployCmd) Run() (err error) {
 
 	artifactSizeMB := stat.Size() / 1024 / 1024
 	log.Printf("[DEBUG] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size())
-	s = NewSpinner(fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB))
-	if !(c.Quiet){
+	s = NewSpinner(ctx, fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB))
+	if IsInCtxBool(ctx, "quiet") {
 		s.Start()
 	}
 	client := &http.Client{
@@ -162,13 +153,13 @@ func (c *DeployCmd) Run() (err error) {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
 
-	err = globalGitService.UpdateGitViaGit(c, response)
+	err = globalGitService.UpdateGitViaGit(ctx, c, response)
 	if err != nil {
 		return fmt.Errorf("failed to trigger app update: %v", err)
 	}
 
-	if !c.Quiet{
-		fmt.Println("Done!")
+	if IsInCtxBool(ctx, "quiet") {
+		log.Println("[INFO] Done!")
 	}
 
 	return nil

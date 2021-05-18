@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -38,15 +39,25 @@ type CLI struct {
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
 	SectionAPITimeout  time.Duration                `default:"30s" env:"SECTION_API_TIMEOUT" help:"Request timeout for the Section API"`
 	InstallCompletions kongplete.InstallCompletions `cmd:"" help:"install shell completions"`
+	Quiet					     bool                         `env:"SECTION_CI" help:"Enables minimal logging, for use in continuous integration."`
 }
 
-func bootstrap(c CLI, ctx *kong.Context) {
+
+
+
+func bootstrap(c CLI, ctx *kong.Context) context.Context {
 	api.PrefixURI = c.SectionAPIPrefix
 	api.Timeout = c.SectionAPITimeout
 
+	contxt := context.Background()
+	contxt = context.WithValue(contxt, commands.CTXKEY("quiet"), c.Quiet)
+
 	colorableWriter := colorable.NewColorableStderr()
 
-	minLogLevel := logutils.LogLevel("INFO") 
+	minLogLevel := logutils.LogLevel("INFO")
+	if contxt.Value(commands.CTXKEY("quiet")).(bool) {
+		minLogLevel = logutils.LogLevel("ERROR")
+	}
 	filter := &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
 		MinLevel: minLogLevel,
@@ -87,6 +98,7 @@ func bootstrap(c CLI, ctx *kong.Context) {
 		}
 		api.Token = t
 	}
+	return contxt
 }
 
 func main() {
@@ -102,8 +114,9 @@ func main() {
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
-	bootstrap(cli, ctx)
-	err := ctx.Run()
+	contxt := bootstrap(cli, ctx)
+	ctx.BindTo(contxt, (*context.Context)(nil))
+	err := ctx.Run(contxt)
 	if err != nil {
 		log.Printf("[ERROR] %s\n", err)
 		os.Exit(2)

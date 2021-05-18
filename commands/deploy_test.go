@@ -3,6 +3,7 @@ package commands
 import (
 	"archive/tar"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -22,7 +23,7 @@ type MockGitService struct {
 	Called bool
 }
 
-func (g *MockGitService) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
+func (g *MockGitService) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadResponse) error {
 	g.Called = true
 	return nil
 }
@@ -257,6 +258,10 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 
 	mockGit := MockGitService{}
 	globalGitService = &mockGit
+
+	// Define Context
+	ctx := context.Background()
+
 	// Invoke
 	c := DeployCmd{
 		Directory:   dir,
@@ -266,7 +271,7 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 		Environment: "dev",
 		AppPath:     "nodejs",
 	}
-	err = c.Run()
+	err = c.Run(ctx)
 
 	// Test
 	assert.NoError(err)

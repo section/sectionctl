@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -19,10 +20,10 @@ type DomainsListCmd struct {
 }
 
 // Run executes the command
-func (c *DomainsListCmd) Run() (err error) {
+func (c *DomainsListCmd) Run(ctx context.Context) (err error) {
 	var aids []int
 	if c.AccountID == 0 {
-		s := NewSpinner("Looking up accounts")
+		s := NewSpinner(ctx, "Looking up accounts")
 		s.Start()
 
 		as, err := api.Accounts()
@@ -38,7 +39,7 @@ func (c *DomainsListCmd) Run() (err error) {
 		aids = append(aids, c.AccountID)
 	}
 
-	s := NewSpinner("Looking up domains")
+	s := NewSpinner(ctx, "Looking up domains")
 	s.Start()
 	domains := make(map[int][]api.DomainsResponse)
 	for _, id := range aids {
@@ -50,7 +51,7 @@ func (c *DomainsListCmd) Run() (err error) {
 	}
 	s.Stop()
 
-	table := NewTable(os.Stdout)
+	table := NewTable(ctx, os.Stdout)
 	table.SetHeader([]string{"Account ID", "Domain", "Engaged"})
 
 	for id, ds := range domains {

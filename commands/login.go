@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -18,7 +19,7 @@ type LoginCmd struct {
 }
 
 // Run executes the command
-func (c *LoginCmd) Run() (err error) {
+func (c *LoginCmd) Run(ctx context.Context) (err error) {
 	screenshot := "https://raw.githubusercontent.com/section/sectionctl/main/docs/section_token_control_panel.png"
 	windowsStr := fmt.Sprintf("Unable to write credential.\n\nPlease execute the following, add it to your Powershell profile, or add it to your environment variables in control panel: \nWith Powershell:\n$env:SECTION_TOKEN=\"%s\"\n\nWith CMD:\nset SECTION_TOKEN=%s\n\nWith control panel:\n%s", api.Token, api.Token, screenshot)
 	linuxStr := fmt.Sprintf("Unable to write credential.\n\nPlease run this command, and add it to your ~/.bashrc (you do not need to run sectionctl login again)\n\nexport SECTION_TOKEN=%s", api.Token)
@@ -44,7 +45,9 @@ func (c *LoginCmd) Run() (err error) {
 		}
 		api.Token = t
 	}
-	fmt.Print("\nValidating credentials...")
+	if IsInCtxBool(ctx, "quiet") {
+		fmt.Print("\nValidating credentials...")
+	}
 	_, err = api.CurrentUser()
 	if err != nil {
 		fmt.Println("error!")
@@ -53,8 +56,10 @@ func (c *LoginCmd) Run() (err error) {
 		}
 		return fmt.Errorf("could not fetch current user: %w", err)
 	}
-	fmt.Println("success!")
-
+	if IsInCtxBool(ctx, "quiet") {
+		fmt.Println("success!")
+	}
+	
 	return err
 }
 

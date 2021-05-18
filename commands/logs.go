@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -26,8 +27,8 @@ type LogsCmd struct {
 }
 
 // Run executes the command
-func (c *LogsCmd) Run() (err error) {
-	s := NewSpinner("Getting logs from app")
+func (c *LogsCmd) Run(ctx context.Context) (err error) {
+	s := NewSpinner(ctx, "Getting logs from app")
 	logsHeader := "\nInstanceName[Log Type]\t\t\tLog Message\n"
 	s.FinalMSG = logsHeader
 	s.Start()
@@ -49,42 +50,44 @@ func (c *LogsCmd) Run() (err error) {
 	// https://github.com/logrusorgru/aurora#windows
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime)) // Remove local time prefix on output
 
-	for {
-		appLogs, err := api.ApplicationLogs(c.AccountID, c.AppID, c.AppPath, c.InstanceName, c.Number, startTimestampRfc3339)
-		s.Stop()
-		if err != nil {
-			return err
-		}
-		var latestTimestamp string
-		for _, a := range appLogs {
-			a.Message = strings.TrimSpace(a.Message)
+	if IsInCtxBool(ctx, "quiet") {
+		for {
+			appLogs, err := api.ApplicationLogs(c.AccountID, c.AppID, c.AppPath, c.InstanceName, c.Number, startTimestampRfc3339)
+			s.Stop()
+			if err != nil {
+				return err
+			}
+			var latestTimestamp string
+			for _, a := range appLogs {
+				a.Message = strings.TrimSpace(a.Message)
 
-			if a.Type == "app" {
-				log.Printf("%s%s\t%s\n", aurora.Cyan(a.InstanceName), aurora.Cyan("["+a.Type+"]"), a.Message)
-			} else if a.Type == "access" {
-				log.Printf("%s%s\t%s\n", aurora.Green(a.InstanceName), aurora.Green("["+a.Type+"]"), a.Message)
-			} else {
-				log.Printf("%s[%s]\t%s\n", a.InstanceName, a.Type, a.Message)
+				if a.Type == "app" {
+					log.Printf("%s%s\t%s\n", aurora.Cyan(a.InstanceName), aurora.Cyan("["+a.Type+"]"), a.Message)
+				} else if a.Type == "access" {
+					log.Printf("%s%s\t%s\n", aurora.Green(a.InstanceName), aurora.Green("["+a.Type+"]"), a.Message)
+				} else {
+					log.Printf("%s[%s]\t%s\n", a.InstanceName, a.Type, a.Message)
+				}
+				if a.Timestamp != "" {
+					latestTimestamp = a.Timestamp
+				}
 			}
-			if a.Timestamp != "" {
-				latestTimestamp = a.Timestamp
+			if !c.Follow {
+				break
 			}
+			if latestTimestamp == "" {
+				latestTimestamp = startTimestampRfc3339
+			}
+			t, err := time.Parse(time.RFC3339, latestTimestamp)
+			if err == nil {
+				t = t.Add(time.Second)
+				startTimestampRfc3339 = t.Format(time.RFC3339)
+			}
+			s.Prefix = ""
+			s.FinalMSG = ""
+			s.Start()
+			time.Sleep(5 * time.Second)
 		}
-		if !c.Follow {
-			break
-		}
-		if latestTimestamp == "" {
-			latestTimestamp = startTimestampRfc3339
-		}
-		t, err := time.Parse(time.RFC3339, latestTimestamp)
-		if err == nil {
-			t = t.Add(time.Second)
-			startTimestampRfc3339 = t.Format(time.RFC3339)
-		}
-		s.Prefix = ""
-		s.FinalMSG = ""
-		s.Start()
-		time.Sleep(5 * time.Second)
 	}
 	return nil
 }
