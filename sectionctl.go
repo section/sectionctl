@@ -35,7 +35,7 @@ type CLI struct {
 	WhoAmI             commands.WhoAmICmd           `cmd name:"whoami" help:"Show information about the currently authenticated user"`
 	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
 	DebugOutput        bool                         `short:"out" help:"Enable logging on the debug output."`
-	DebugFileDir       string                       `default:"." help:"Directory where debug output should be written"`
+	DebugFile       	 string                       `default:"." help:"Directory where debug output should be written"`
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
 	SectionAPITimeout  time.Duration                `default:"30s" env:"SECTION_API_TIMEOUT" help:"Request timeout for the Section API"`
@@ -66,9 +66,18 @@ func bootstrap(c CLI, cmd *kong.Context) context.Context {
 	}
 	if c.Debug {
 		filter.MinLevel = logutils.LogLevel("DEBUG")
-		if(c.DebugOutput){
-			logFilename := fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format("2006-01-02-15-04-05Z0700"))
-			logFilePath := filepath.Join(c.DebugFileDir, logFilename)
+		if(c.DebugOutput || len(c.DebugFile) > 1){
+			info, err := os.Stat(c.DebugFile); 
+			if err != nil {
+				panic(err)
+			}
+			var logFilePath string
+			if len(c.DebugFile) == 0 || info.IsDir() {
+				logFilePath = filepath.Join(c.DebugFile, fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format("2006-01-02-15-04-05Z0700")))
+				c.DebugFile = logFilePath 
+			} else {
+				logFilePath = filepath.Join(c.DebugFile)
+			}
 			logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 			if err != nil {
 				panic(err)
