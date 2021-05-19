@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -33,20 +34,31 @@ type CLI struct {
 	Version            commands.VersionCmd          `cmd help:"Print sectionctl version"`
 	WhoAmI             commands.WhoAmICmd           `cmd name:"whoami" help:"Show information about the currently authenticated user"`
 	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
-	DebugFileDir       string                       `default:"." help:"Directory where debug output should be written"`
+	DebugOutput        bool                         `short:"out" help:"Enable logging on the debug output."`
+	DebugFile       	 string                       `default:"." help:"Directory where debug output should be written"`
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
 	SectionAPITimeout  time.Duration                `default:"30s" env:"SECTION_API_TIMEOUT" help:"Request timeout for the Section API"`
 	InstallCompletions kongplete.InstallCompletions `cmd:"" help:"install shell completions"`
+	Quiet					     bool                         `env:"SECTION_CI" help:"Enables minimal logging, for use in continuous integration."`
 }
 
-func bootstrap(c CLI, ctx *kong.Context) {
+
+
+
+func bootstrap(c CLI, cmd *kong.Context) context.Context {
 	api.PrefixURI = c.SectionAPIPrefix
 	api.Timeout = c.SectionAPITimeout
 
+	ctx := context.Background()
+	minLogLevel := logutils.LogLevel("INFO")
+	if c.Quiet {
+		ctx = context.WithValue(ctx, commands.CtxKey("quiet"), c.Quiet)
+		minLogLevel = logutils.LogLevel("ERROR")
+	}
+
 	colorableWriter := colorable.NewColorableStderr()
 
-	minLogLevel := logutils.LogLevel("INFO") 
 	filter := &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
 		MinLevel: minLogLevel,
@@ -54,28 +66,37 @@ func bootstrap(c CLI, ctx *kong.Context) {
 	}
 	if c.Debug {
 		filter.MinLevel = logutils.LogLevel("DEBUG")
-		logFilename := fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format("2006-01-02-15-04-05Z0700"))
-		logFilePath := filepath.Join(c.DebugFileDir, logFilename)
-		logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
-		if err != nil {
-			panic(err)
+		if(c.DebugOutput || len(c.DebugFile) > 1){
+			info, err := os.Stat(c.DebugFile); 
+			if err != nil {
+				panic(err)
+			}
+			logFilePath := filepath.Join(c.DebugFile)
+			if len(c.DebugFile) == 0 || info.IsDir() {
+				logFilePath = filepath.Join(c.DebugFile, fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format("2006-01-02-15-04-05Z0700")))
+				c.DebugFile = logFilePath 
+			}
+			logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Fprintf(logFile, "Version:   %s\n", commands.VersionCmd{}.String())
+			fmt.Fprintf(logFile, "Command:   %s\n", cmd.Args)
+			fmt.Fprintf(logFile, "PrefixURI: %s\n", api.PrefixURI)
+			fmt.Fprintf(logFile, "Timeout:   %s\n", api.Timeout)
+			fmt.Printf("Writing debug log to: %s\n", logFilePath)
+			mw := io.MultiWriter(logFile, colorableWriter)
+			filter.Writer = mw
 		}
-		fmt.Fprintf(logFile, "Version:   %s\n", commands.VersionCmd{}.String())
-		fmt.Fprintf(logFile, "Command:   %s\n", ctx.Args)
-		fmt.Fprintf(logFile, "PrefixURI: %s\n", api.PrefixURI)
-		fmt.Fprintf(logFile, "Timeout:   %s\n", api.Timeout)
-		fmt.Printf("Writing debug log to: %s\n", logFilePath)
-		mw := io.MultiWriter(logFile, colorableWriter)
-		filter.Writer = mw
 	}
 	log.SetOutput(filter)
 
 	switch {
-	case ctx.Command() == "version":
+	case cmd.Command() == "version":
 		// bypass auth check for version command
-	case ctx.Command() == "login":
+	case cmd.Command() == "login":
 		api.Token = c.SectionToken
-	case ctx.Command() != "login" && ctx.Command() != "logout":
+	case cmd.Command() != "login" && cmd.Command() != "logout":
 		t := c.SectionToken
 		if t == "" {
 			to, err := credentials.Setup(api.PrefixURI.Host)
@@ -87,6 +108,7 @@ func bootstrap(c CLI, ctx *kong.Context) {
 		}
 		api.Token = t
 	}
+	return ctx
 }
 
 func main() {
@@ -97,13 +119,14 @@ func main() {
 		kongplete.WithPredictor("file", complete.PredictFiles("*")),
 	)
 
-	ctx := kong.Parse(&cli,
+	cmd := kong.Parse(&cli,
 		kong.Description("CLI to interact with Section."),
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
-	bootstrap(cli, ctx)
-	err := ctx.Run()
+	ctx := bootstrap(cli, cmd)
+	cmd.BindTo(ctx, (*context.Context)(nil))
+	err := cmd.Run(ctx)
 	if err != nil {
 		log.Printf("[ERROR] %s\n", err)
 		os.Exit(2)

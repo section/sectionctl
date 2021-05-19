@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -19,7 +21,7 @@ import (
 
 // GitService interface provides a way to interact with Git
 type GitService interface {
-	UpdateGitViaGit(c *DeployCmd, response UploadResponse) error
+	UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadResponse) error
 }
 
 // GS ...
@@ -29,7 +31,7 @@ type GS struct{}
 var globalGitService GitService = &GS{}
 
 // UpdateGitViaGit clones the application repository to a temporary directory then updates it with the latest payload id and pushes a new commit
-func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
+func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadResponse) error {
 	app, err := api.Application(c.AccountID, c.AppID)
 	if err != nil {
 		return err
@@ -49,24 +51,22 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 	payload := PayloadValue{ID: response.PayloadID}
 	branchRef := fmt.Sprintf("refs/heads/%s",c.Environment)
 	var r *git.Repository
-	if err != nil {
-		return err
-	}
-	if c.Quiet {
+	if IsInCtxBool(ctx, "quiet"){
 		r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
 			URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
 			Auth:     gitAuth,
-			Progress: nil,
+			Progress: io.Discard,
 			ReferenceName: plumbing.ReferenceName(branchRef),
 		})
 	} else {
 		r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
 			URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
 			Auth:     gitAuth,
-			Progress: os.Stderr,
+			Progress: os.Stdout,
 			ReferenceName: plumbing.ReferenceName(branchRef),
 		})
 	}
+	
 	if err != nil {
 		return err
 	}
@@ -165,21 +165,19 @@ func (g *GS) UpdateGitViaGit(c *DeployCmd, response UploadResponse) error {
 	if err != nil {
 		return err
 	}
-	if c.Quiet {
+	if IsInCtxBool(ctx, "quiet"){
 		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: CIWrite})
-		readIfErr := time.NewTimer(c.Timeout * time.Second)
-		<-readIfErr.C
 		buf := make([]byte, 4096)
-		_, err := CIRead.Read(buf)
+		n, err := CIRead.Read(buf)
 		if err != nil{
 			return err
 		}
-		bufCheckIfErr = string(buf[:])
+		bufCheckIfErr = string(buf[:n])
 	} else {
-		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: os.Stdout})
+		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: os.Stderr})
 	}
 	if err != nil {
-		if c.Quiet {
+		if IsInCtxBool(ctx, "quiet") {
 			log.Println("[ERROR]", bufCheckIfErr)
 		}
 		return fmt.Errorf("failed to push git changes: %w", err)

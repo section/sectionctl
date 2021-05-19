@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -20,8 +21,8 @@ func PrettyBool(b bool) (s string) {
 }
 
 // Run executes the command
-func (c *WhoAmICmd) Run() (err error) {
-	s := NewSpinner("Looking up current user")
+func (c *WhoAmICmd) Run(ctx context.Context) (err error) {
+	s := NewSpinner(ctx, "Looking up current user")
 	s.Start()
 
 	u, err := api.CurrentUser()
@@ -30,7 +31,7 @@ func (c *WhoAmICmd) Run() (err error) {
 		return err
 	}
 
-	table := NewTable(os.Stdout)
+	table := NewTable(ctx, os.Stdout)
 	table.SetHeader([]string{"Attribute", "Value"})
 	r := [][]string{
 		[]string{"Name", fmt.Sprintf("%s %s", u.FirstName, u.LastName)},

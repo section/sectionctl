@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -32,7 +33,10 @@ type AppsListCmd struct {
 }
 
 // NewTable returns a table with sectionctl standard formatting
-func NewTable(out io.Writer) (t *tablewriter.Table) {
+func NewTable(ctx context.Context, out io.Writer) (t *tablewriter.Table) {
+	if IsInCtxBool(ctx, "quiet") {
+		out = io.Discard
+	}
 	t = tablewriter.NewWriter(out)
 	t.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	t.SetCenterSeparator("|")
@@ -41,10 +45,10 @@ func NewTable(out io.Writer) (t *tablewriter.Table) {
 }
 
 // Run executes the command
-func (c *AppsListCmd) Run() (err error) {
+func (c *AppsListCmd) Run(ctx context.Context) (err error) {
 	var aids []int
 	if c.AccountID == 0 {
-		s := NewSpinner("Looking up accounts")
+		s := NewSpinner(ctx, "Looking up accounts")
 		s.Start()
 
 		as, err := api.Accounts()
@@ -60,7 +64,7 @@ func (c *AppsListCmd) Run() (err error) {
 		aids = append(aids, c.AccountID)
 	}
 
-	s := NewSpinner("Looking up apps")
+	s := NewSpinner(ctx, "Looking up apps")
 	s.Start()
 	apps := make(map[int][]api.App)
 	for _, id := range aids {
@@ -72,7 +76,7 @@ func (c *AppsListCmd) Run() (err error) {
 	}
 	s.Stop()
 
-	table := NewTable(os.Stdout)
+	table := NewTable(ctx, os.Stdout)
 	table.SetHeader([]string{"Account ID", "App ID", "App Name"})
 
 	for id, as := range apps {
@@ -93,8 +97,8 @@ type AppsInfoCmd struct {
 }
 
 // Run executes the command
-func (c *AppsInfoCmd) Run() (err error) {
-	s := NewSpinner("Looking up app info")
+func (c *AppsInfoCmd) Run(ctx context.Context) (err error) {
+	s := NewSpinner(ctx, "Looking up app info")
 	s.Start()
 
 	app, err := api.Application(c.AccountID, c.AppID)
@@ -103,51 +107,54 @@ func (c *AppsInfoCmd) Run() (err error) {
 		return err
 	}
 
-	fmt.Printf("🌎🌏🌍\n")
-	fmt.Printf("App Name: %s\n", app.ApplicationName)
-	fmt.Printf("App ID: %d\n", app.ID)
-	fmt.Printf("Environment count: %d\n", len(app.Environments))
+	if !IsInCtxBool(ctx, "quiet") {
+		fmt.Printf("🌎🌏🌍\n")
+		fmt.Printf("App Name: %s\n", app.ApplicationName)
+		fmt.Printf("App ID: %d\n", app.ID)
+		fmt.Printf("Environment count: %d\n", len(app.Environments))
 
-	for i, env := range app.Environments {
-		fmt.Printf("\n-----------------\n\n")
-		fmt.Printf("Environment #%d: %s (ID:%d)\n\n", i+1, env.EnvironmentName, env.ID)
-		fmt.Printf("💬 Domains (%d total)\n", len(env.Domains))
+		for i, env := range app.Environments {
+			fmt.Printf("\n-----------------\n\n")
+			fmt.Printf("Environment #%d: %s (ID:%d)\n\n", i+1, env.EnvironmentName, env.ID)
+			fmt.Printf("💬 Domains (%d total)\n", len(env.Domains))
 
-		for _, dom := range env.Domains {
+			for _, dom := range env.Domains {
+				fmt.Println()
+
+				table := NewTable(ctx, os.Stdout)
+				table.SetHeader([]string{"Attribute", "Value"})
+				table.SetAutoMergeCells(true)
+				r := [][]string{
+					[]string{"Domain name", dom.Name},
+					[]string{"Zone name", dom.ZoneName},
+					[]string{"CNAME", dom.CNAME},
+					[]string{"Mode", dom.Mode},
+				}
+				table.AppendBulk(r)
+				table.Render()
+			}
+
+			fmt.Println()
+			mod := "modules"
+			if len(env.Stack) == 1 {
+				mod = "module"
+			}
+			fmt.Printf("🥞 Stack (%d %s total)\n", len(env.Stack), mod)
 			fmt.Println()
 
-			table := NewTable(os.Stdout)
-			table.SetHeader([]string{"Attribute", "Value"})
+			table := NewTable(ctx, os.Stdout)
+			table.SetHeader([]string{"Name", "Image"})
 			table.SetAutoMergeCells(true)
-			r := [][]string{
-				[]string{"Domain name", dom.Name},
-				[]string{"Zone name", dom.ZoneName},
-				[]string{"CNAME", dom.CNAME},
-				[]string{"Mode", dom.Mode},
+			for _, p := range env.Stack {
+				r := []string{p.Name, p.Image}
+				table.Append(r)
 			}
-			table.AppendBulk(r)
 			table.Render()
 		}
 
 		fmt.Println()
-		mod := "modules"
-		if len(env.Stack) == 1 {
-			mod = "module"
-		}
-		fmt.Printf("🥞 Stack (%d %s total)\n", len(env.Stack), mod)
-		fmt.Println()
-
-		table := NewTable(os.Stdout)
-		table.SetHeader([]string{"Name", "Image"})
-		table.SetAutoMergeCells(true)
-		for _, p := range env.Stack {
-			r := []string{p.Name, p.Image}
-			table.Append(r)
-		}
-		table.Render()
 	}
 
-	fmt.Println()
 
 	return err
 }
@@ -161,8 +168,8 @@ type AppsCreateCmd struct {
 }
 
 // Run executes the command
-func (c *AppsCreateCmd) Run() (err error) {
-	s := NewSpinner(fmt.Sprintf("Creating new app %s", c.Hostname))
+func (c *AppsCreateCmd) Run(ctx context.Context) (err error) {
+	s := NewSpinner(ctx, fmt.Sprintf("Creating new app %s", c.Hostname))
 	s.Start()
 
 	api.Timeout = 120 * time.Second // this specific request can take a long time
@@ -184,7 +191,7 @@ func (c *AppsCreateCmd) Run() (err error) {
 		return err
 	}
 
-	fmt.Printf("\nSuccess: created app '%s' with id '%d'\n", r.ApplicationName, r.ID)
+	log.Printf("[INFO]\nSuccess: created app '%s' with id '%d'\n", r.ApplicationName, r.ID)
 
 	return err
 }
@@ -196,8 +203,8 @@ type AppsDeleteCmd struct {
 }
 
 // Run executes the command
-func (c *AppsDeleteCmd) Run() (err error) {
-	s := NewSpinner(fmt.Sprintf("Deleting app with id '%d'", c.AppID))
+func (c *AppsDeleteCmd) Run(ctx context.Context) (err error) {
+	s := NewSpinner(ctx, fmt.Sprintf("Deleting app with id '%d'", c.AppID))
 	s.Start()
 
 	api.Timeout = 120 * time.Second // this specific request can take a long time
@@ -206,8 +213,8 @@ func (c *AppsDeleteCmd) Run() (err error) {
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("\nSuccess: deleted app with id '%d'\n", c.AppID)
+	
+	log.Printf("[INFO]\nSuccess: deleted app with id '%d'\n", c.AppID)
 
 	return err
 }
@@ -219,12 +226,12 @@ type AppsInitCmd struct {
 }
 
 // Run executes the command
-func (c *AppsInitCmd) Run() (err error) {
+func (c *AppsInitCmd) Run(ctx context.Context) (err error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	switch c.StackName {
 	case "nodejs-basic":
-		err := c.InitializeNodeBasicApp(stdout, stderr)
+		err := c.InitializeNodeBasicApp(ctx, stdout, stderr)
 		if err != nil {
 			return fmt.Errorf("[ERROR]: init completed with error %x", err)
 		}
@@ -244,7 +251,7 @@ func (c *AppsInitCmd) CreatePkgJSON(stdout, stderr bytes.Buffer) (err error) {
 }
 
 // InitializeNodeBasicApp initializes a basic node app.
-func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err error) {
+func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.Buffer, stderr bytes.Buffer) (err error) {
 	if c.Force {
 		log.Println("[INFO] Removing old version of package.json")
 		err = os.Remove("package.json")
@@ -358,8 +365,8 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(stdout, stderr bytes.Buffer) (err e
 type AppsStacksCmd struct{}
 
 // Run executes the command
-func (c *AppsStacksCmd) Run() (err error) {
-	s := NewSpinner("Looking up stacks")
+func (c *AppsStacksCmd) Run(ctx context.Context) (err error) {
+	s := NewSpinner(ctx, "Looking up stacks")
 	s.Start()
 	k, err := api.Stacks()
 	s.Stop()
@@ -367,7 +374,7 @@ func (c *AppsStacksCmd) Run() (err error) {
 		return fmt.Errorf("unable to look up stacks: %w", err)
 	}
 
-	table := NewTable(os.Stdout)
+	table := NewTable(ctx, os.Stdout)
 	table.SetHeader([]string{"Name", "Label", "Description", "Type"})
 
 	for _, s := range k {

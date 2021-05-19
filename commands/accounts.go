@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"os"
 	"strconv"
 
@@ -16,8 +17,8 @@ type AccountsCmd struct {
 type AccountsListCmd struct{}
 
 // Run executes the command
-func (c *AccountsListCmd) Run() (err error) {
-	s := NewSpinner("Looking up accounts")
+func (c *AccountsListCmd) Run(ctx context.Context) (err error) {
+	s := NewSpinner(ctx, "Looking up accounts")
 	s.Start()
 
 	accounts, err := api.Accounts()
@@ -26,7 +27,7 @@ func (c *AccountsListCmd) Run() (err error) {
 		return err
 	}
 
-	table := NewTable(os.Stdout)
+	table := NewTable(ctx, os.Stdout)
 	table.SetHeader([]string{"Account ID", "Account Name"})
 
 	for _, a := range accounts {
