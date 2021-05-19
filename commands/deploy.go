@@ -28,8 +28,8 @@ const MaxFileSize = 1073741824 // 1GB
 
 // DeployCmd handles deploying an app to Section.
 type DeployCmd struct {
-	AccountID      int           `required short:"a" help:"AccountID to deploy application to."`
-	AppID          int           `required short:"i" help:"AppID to deploy application to."`
+	AccountID      int           `short:"a" help:"AccountID to deploy application to."`
+	AppID          int           `short:"i" help:"AppID to deploy application to."`
 	Environment    string        `short:"e" default:"Production" help:"Environment to deploy application to. (name of git branch ie: Production, staging, development)"`
 	Directory      string        `short:"C" default:"." help:"Directory which contains the application to deploy."`
 	ServerURL      *url.URL      `default:"https://aperture.section.io/new/code_upload/v1/upload" help:"URL to upload application to"`
@@ -58,7 +58,42 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 			dir = abs
 		}
 	}
-
+	packageJSONPath := filepath.Join(dir, "package.json")
+	if _, err := os.Stat(packageJSONPath); os.IsNotExist(err) {
+		log.Printf("[WARN] %w is not a file", packageJSONPath)
+	}else{
+		packageJSONContents, err := ioutil.ReadFile(packageJSONPath)
+		packageJSON ,err:= api.ParsePackageJSON(string(packageJSONContents))
+		if err != nil {
+			log.Printf("[DEBUG]%w",err)
+		}
+		fmt.Printf("\n%s\n",packageJSON.Name)
+		packageName := "your app"
+		if len(packageJSON.Name) > 0 {
+			packageName = packageJSON.Name
+		}
+		accountID,err := strconv.Atoi(packageJSON.Section.AccountID)
+		if err == nil{
+			fmt.Println("[DEBUG] c.AccountID:",c.AccountID)
+			if c.AccountID == 0 && accountID > 0 {
+				fmt.Println("[DEBUG] c.AccountID:",c.AccountID)
+				log.Printf("[DEBUG] accountid iszero and package.json has it as %d", accountID)
+				c.AccountID = accountID
+			}
+		}
+		appID, err := strconv.Atoi(packageJSON.Section.AppID)
+		if err == nil{
+			if c.AppID == 0 && appID > 0 {
+				log.Printf("[DEBUG] accountid iszero and package.json has it as %d", appID)
+				c.AppID = appID
+			}
+		}
+		if c.Environment == "Production" && len(packageJSON.Section.Environment) > 1 {
+			c.Environment = packageJSON.Section.Environment
+		}
+			
+		log.Printf("[INFO] Deploying your node.js package named %s to Account ID: %v, App ID: %v, Environment %s",packageName,c.AccountID, c.AppID, c.Environment)
+	}
 	if !c.SkipValidation {
 		errs := IsValidNodeApp(dir)
 		if len(errs) > 0 {
@@ -167,7 +202,6 @@ func IsValidNodeApp(dir string) (errs []error) {
 	if _, err := os.Stat(packageJSONPath); os.IsNotExist(err) {
 		errs = append(errs, fmt.Errorf("%s is not a file", packageJSONPath))
 	}
-
 	nodeModulesPath := filepath.Join(dir, "node_modules")
 	fi, err := os.Stat(nodeModulesPath)
 	if os.IsNotExist(err) {

@@ -11,8 +11,8 @@ type PackageJSON struct {
 	Name         string            `json:"name"`
 	Private      bool              `json:"private"`
 	Version      string            `json:"version"`
-	TCPPort      string               `json:"tcp_port"`
 	Dependencies map[string]string `json:"dependencies"`
+	Scripts map[string]string `json:"scripts"`
 	Section      struct {
 		AccountID   string `json:"accountId"`
 		AppID       string `json:"appId"`
