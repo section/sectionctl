@@ -40,7 +40,6 @@ func TestCommandsAppsCreateAttemptsToValidateStackOnError(t *testing.T) {
 		StackName: "helloworld-1.0.0",
 	}
 
-	// Define Contet
 	ctx := context.Background()
 
 	// Invoke
@@ -110,9 +109,6 @@ func TestCommandsAppsInitHandlesErrors(t *testing.T) {
 			if err != nil {
 				fmt.Println("server.conf creation failed")
 			}
-
-
-			// Define Context
 
 			ctx := context.Background()
 

@@ -45,19 +45,19 @@ type CLI struct {
 
 
 
-func bootstrap(c CLI, ctx *kong.Context) context.Context {
+func bootstrap(c CLI, cmd *kong.Context) context.Context {
 	api.PrefixURI = c.SectionAPIPrefix
 	api.Timeout = c.SectionAPITimeout
 
-	contxt := context.Background()
-	contxt = context.WithValue(contxt, commands.CTXKEY("quiet"), c.Quiet)
+	ctx := context.Background()
+	minLogLevel := logutils.LogLevel("INFO")
+	if c.Quiet {
+		ctx = context.WithValue(ctx, commands.CtxKey("quiet"), c.Quiet)
+		minLogLevel = logutils.LogLevel("ERROR")
+	}
 
 	colorableWriter := colorable.NewColorableStderr()
 
-	minLogLevel := logutils.LogLevel("INFO")
-	if contxt.Value(commands.CTXKEY("quiet")).(bool) {
-		minLogLevel = logutils.LogLevel("ERROR")
-	}
 	filter := &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
 		MinLevel: minLogLevel,
@@ -72,7 +72,7 @@ func bootstrap(c CLI, ctx *kong.Context) context.Context {
 			panic(err)
 		}
 		fmt.Fprintf(logFile, "Version:   %s\n", commands.VersionCmd{}.String())
-		fmt.Fprintf(logFile, "Command:   %s\n", ctx.Args)
+		fmt.Fprintf(logFile, "Command:   %s\n", cmd.Args)
 		fmt.Fprintf(logFile, "PrefixURI: %s\n", api.PrefixURI)
 		fmt.Fprintf(logFile, "Timeout:   %s\n", api.Timeout)
 		fmt.Printf("Writing debug log to: %s\n", logFilePath)
@@ -82,11 +82,11 @@ func bootstrap(c CLI, ctx *kong.Context) context.Context {
 	log.SetOutput(filter)
 
 	switch {
-	case ctx.Command() == "version":
+	case cmd.Command() == "version":
 		// bypass auth check for version command
-	case ctx.Command() == "login":
+	case cmd.Command() == "login":
 		api.Token = c.SectionToken
-	case ctx.Command() != "login" && ctx.Command() != "logout":
+	case cmd.Command() != "login" && cmd.Command() != "logout":
 		t := c.SectionToken
 		if t == "" {
 			to, err := credentials.Setup(api.PrefixURI.Host)
@@ -98,7 +98,7 @@ func bootstrap(c CLI, ctx *kong.Context) context.Context {
 		}
 		api.Token = t
 	}
-	return contxt
+	return ctx
 }
 
 func main() {
@@ -109,14 +109,14 @@ func main() {
 		kongplete.WithPredictor("file", complete.PredictFiles("*")),
 	)
 
-	ctx := kong.Parse(&cli,
+	cmd := kong.Parse(&cli,
 		kong.Description("CLI to interact with Section."),
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
-	contxt := bootstrap(cli, ctx)
-	ctx.BindTo(contxt, (*context.Context)(nil))
-	err := ctx.Run(contxt)
+	ctx := bootstrap(cli, cmd)
+	cmd.BindTo(ctx, (*context.Context)(nil))
+	err := cmd.Run(ctx)
 	if err != nil {
 		log.Printf("[ERROR] %s\n", err)
 		os.Exit(2)

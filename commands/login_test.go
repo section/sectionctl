@@ -39,7 +39,6 @@ func TestCommandsLoginValidatesGoodCredentials(t *testing.T) {
 		out: &out,
 	}
 
-	// Define Context
 	ctx := context.Background()
 
 	// Invoke
@@ -72,7 +71,6 @@ func TestCommandsLoginValidatesBadCredentials(t *testing.T) {
 		out: &out,
 	}
 
-	// Define Context
 	ctx:= context.Background()
 
 	// Invoke
@@ -111,7 +109,6 @@ func TestCommandsLoginUsesAlreadySetAPIToken(t *testing.T) {
 		out: &bytes.Buffer{},
 	}
 
-	// Define Context
 	ctx := context.Background()
 
 	// Invoke

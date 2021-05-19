@@ -17,10 +17,10 @@ func NewSpinner() *spinner.Spinner {
 }
 */
 
-type CTXKEY string
+type CtxKey string
 
 func IsInCtxBool(ctx context.Context, arg string) bool {
-	return ctx.Value(CTXKEY(arg)) != nil && ctx.Value(CTXKEY(arg)).(bool)
+	return ctx.Value(CtxKey(arg)) != nil && ctx.Value(CtxKey(arg)).(bool)
 }
 
 // NewSpinner returns a nicely formatted spinner for display while users are waiting.
