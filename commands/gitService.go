@@ -62,7 +62,7 @@ func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadR
 		r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
 			URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
 			Auth:     gitAuth,
-			Progress: os.Stderr,
+			Progress: os.Stdout,
 			ReferenceName: plumbing.ReferenceName(branchRef),
 		})
 	}
