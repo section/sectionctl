@@ -71,12 +71,10 @@ func bootstrap(c CLI, cmd *kong.Context) context.Context {
 			if err != nil {
 				panic(err)
 			}
-			var logFilePath string
+			logFilePath := filepath.Join(c.DebugFile)
 			if len(c.DebugFile) == 0 || info.IsDir() {
 				logFilePath = filepath.Join(c.DebugFile, fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format("2006-01-02-15-04-05Z0700")))
 				c.DebugFile = logFilePath 
-			} else {
-				logFilePath = filepath.Join(c.DebugFile)
 			}
 			logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 			if err != nil {
