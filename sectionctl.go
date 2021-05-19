@@ -34,6 +34,7 @@ type CLI struct {
 	Version            commands.VersionCmd          `cmd help:"Print sectionctl version"`
 	WhoAmI             commands.WhoAmICmd           `cmd name:"whoami" help:"Show information about the currently authenticated user"`
 	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
+	DebugOutput        bool                         `short:"out" help:"Enable logging on the debug output."`
 	DebugFileDir       string                       `default:"." help:"Directory where debug output should be written"`
 	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
 	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
@@ -65,19 +66,21 @@ func bootstrap(c CLI, cmd *kong.Context) context.Context {
 	}
 	if c.Debug {
 		filter.MinLevel = logutils.LogLevel("DEBUG")
-		logFilename := fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format("2006-01-02-15-04-05Z0700"))
-		logFilePath := filepath.Join(c.DebugFileDir, logFilename)
-		logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
-		if err != nil {
-			panic(err)
+		if(c.DebugOutput){
+			logFilename := fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format("2006-01-02-15-04-05Z0700"))
+			logFilePath := filepath.Join(c.DebugFileDir, logFilename)
+			logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Fprintf(logFile, "Version:   %s\n", commands.VersionCmd{}.String())
+			fmt.Fprintf(logFile, "Command:   %s\n", cmd.Args)
+			fmt.Fprintf(logFile, "PrefixURI: %s\n", api.PrefixURI)
+			fmt.Fprintf(logFile, "Timeout:   %s\n", api.Timeout)
+			fmt.Printf("Writing debug log to: %s\n", logFilePath)
+			mw := io.MultiWriter(logFile, colorableWriter)
+			filter.Writer = mw
 		}
-		fmt.Fprintf(logFile, "Version:   %s\n", commands.VersionCmd{}.String())
-		fmt.Fprintf(logFile, "Command:   %s\n", cmd.Args)
-		fmt.Fprintf(logFile, "PrefixURI: %s\n", api.PrefixURI)
-		fmt.Fprintf(logFile, "Timeout:   %s\n", api.Timeout)
-		fmt.Printf("Writing debug log to: %s\n", logFilePath)
-		mw := io.MultiWriter(logFile, colorableWriter)
-		filter.Writer = mw
 	}
 	log.SetOutput(filter)
 
