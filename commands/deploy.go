@@ -65,18 +65,15 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 		packageJSONContents, err := ioutil.ReadFile(packageJSONPath)
 		packageJSON ,err:= api.ParsePackageJSON(string(packageJSONContents))
 		if err != nil {
-			log.Printf("[DEBUG]%w",err)
+			log.Printf("[DEBUG] error parsing package.json: %w",err)
 		}
-		fmt.Printf("\n%s\n",packageJSON.Name)
 		packageName := "your app"
 		if len(packageJSON.Name) > 0 {
 			packageName = packageJSON.Name
 		}
 		accountID,err := strconv.Atoi(packageJSON.Section.AccountID)
 		if err == nil{
-			fmt.Println("[DEBUG] c.AccountID:",c.AccountID)
 			if c.AccountID == 0 && accountID > 0 {
-				fmt.Println("[DEBUG] c.AccountID:",c.AccountID)
 				log.Printf("[DEBUG] accountid iszero and package.json has it as %d", accountID)
 				c.AccountID = accountID
 			}
@@ -91,7 +88,21 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 		if c.Environment == "Production" && len(packageJSON.Section.Environment) > 1 {
 			c.Environment = packageJSON.Section.Environment
 		}
-			
+		if(c.AccountID == 0 || c.AppID == 0){
+			packageJSONExample := api.PackageJSON{}
+			packageJSONExample.Dependencies = map[string]string{"serve":"^11.3.2"}
+			packageJSONExample.Section.AccountID = "1234"
+			packageJSONExample.Section.AccountID = "4567"
+			packageJSONExample.Section.Environment = "Production"
+			packageJSONExample.Scripts = map[string]string{"start":"serve -s build -l 8080"}
+			exampleStr,err := json.MarshalIndent(packageJSONExample, "", "\t")
+			if err != nil{
+				log.Printf("[DEBUG] Failed to generate example package.json: ", err)
+			}
+			log.Printf("[ERROR] You must set an accountId and appId in the flags of this command.\nPlease run the following: \n sectionctl deploy --help \n\n======OR======\nIn the package.json, add a \"section\" property. For example: ")
+			log.Printf("%s", exampleStr)
+			os.Exit(1);
+		}
 		log.Printf("[INFO] Deploying your node.js package named %s to Account ID: %v, App ID: %v, Environment %s",packageName,c.AccountID, c.AppID, c.Environment)
 	}
 	if !c.SkipValidation {
