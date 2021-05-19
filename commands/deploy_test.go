@@ -259,7 +259,6 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 	mockGit := MockGitService{}
 	globalGitService = &mockGit
 
-	// Define Context
 	ctx := context.Background()
 
 	// Invoke
