@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -37,7 +36,8 @@ func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadR
 		return err
 	}
 	appName := strings.ReplaceAll(app.ApplicationName, "/", "")
-	log.Printf("[DEBUG] Cloning: https://aperture.section.io/account/%d/application/%d/%s.git ...\n", c.AccountID, c.AppID, appName)
+	cloneDir := fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName)
+	log.Printf("[INFO] Begin updating hash in .section-external-source.json:\n\tsection-configmap-tars/%v/%s.tar.gz\n",c.AccountID,response.PayloadID)
 	tempDir, err := ioutil.TempDir("", "sectionctl-*")
 	if err != nil {
 		return err
@@ -51,21 +51,19 @@ func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadR
 	payload := PayloadValue{ID: response.PayloadID}
 	branchRef := fmt.Sprintf("refs/heads/%s",c.Environment)
 	var r *git.Repository
+	var progressOutput io.Writer;
 	if IsInCtxBool(ctx, "quiet"){
-		r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
-			URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
-			Auth:     gitAuth,
-			Progress: io.Discard,
-			ReferenceName: plumbing.ReferenceName(branchRef),
-		})
-	} else {
-		r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
-			URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
-			Auth:     gitAuth,
-			Progress: os.Stdout,
-			ReferenceName: plumbing.ReferenceName(branchRef),
-		})
+		progressOutput = log.Writer()
+	}else{
+		progressOutput = log.Writer()
 	}
+	log.Println("[INFO] cloning application configuration repo to ",tempDir)
+	r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
+		URL:      cloneDir,
+		Auth:     gitAuth,
+		Progress: progressOutput,
+		ReferenceName: plumbing.ReferenceName(branchRef),
+	})
 	
 	if err != nil {
 		return err
@@ -97,17 +95,13 @@ func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadR
 	srcContent := PayloadValue{}
 	content, err := f.Contents()
 	if err != nil {
-		return nil
+		return fmt.Errorf("couldn't open contents of file: %w", err)
 	}
 	err = json.Unmarshal([]byte(content), &srcContent)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal json: %w", err)
 	}
-	ct, err := f.Contents()
-	if err != nil {
-		return fmt.Errorf("couldn't open contents of file: %w", err)
-	}
-	log.Println("[DEBUG] Old external source contents: ", ct)
+	log.Println("[DEBUG] Old external source contents: ", content)
 	log.Println("[DEBUG] expected new tarball UUID: ", response.PayloadID)
 	srcContent.ID = payload.ID
 	pl, err := json.MarshalIndent(srcContent, "", "\t")
@@ -160,26 +154,37 @@ func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadR
 	}
 	log.Println("[DEBUG] contents in new commit: ", ctt)
 	
-	var bufCheckIfErr string = "";
-	CIRead, CIWrite, err := os.Pipe()
+	configFile, err := tree.File("section.config.json")
 	if err != nil {
-		return err
+		log.Println("[ERROR] unable to open section.config.json which is used to log the image name and version: %w",err)
 	}
-	if IsInCtxBool(ctx, "quiet"){
-		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: CIWrite})
-		buf := make([]byte, 4096)
-		n, err := CIRead.Read(buf)
-		if err != nil{
-			return err
-		}
-		bufCheckIfErr = string(buf[:n])
-	} else {
-		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: os.Stderr})
-	}
+	sectionConfigContents, err := configFile.Contents()
 	if err != nil {
-		if IsInCtxBool(ctx, "quiet") {
-			log.Println("[ERROR]", bufCheckIfErr)
+		log.Println("[ERROR] unable to open section.config.json which is used to log the image name and version: %w" ,err)
+	}
+	sectionConfig, err := api.ParseSectionConfig(sectionConfigContents)
+	if err != nil{
+		log.Println("[ERROR] There was an issue reading the section.config.json:",err)
+	}
+	// if err := json.Unmarshal(sectionConfigContent.Bytes(), &sectionConfig); err != nil {
+	// 	log.Println("[ERROR] unable to decode the json for section.config.json which is used to log the image name and version: %w" ,err)
+	// }
+	moduleVersion := "unknown"
+	for _,v := range sectionConfig.Proxychain{
+		if(v.Name == c.AppPath){
+			moduleVersion = v.Image
 		}
+	}
+	if moduleVersion == "unknown"{
+		log.Println("[DEBUG] failed to pair app path (aka proxy name) with image (version)")
+	}
+	// for proxy, _ := range sectionConfig["proxychain"]{
+
+	// }
+	log.Printf("[Info] Pushing %s proxy tarball hash for module image version %s to git remote %s\n", c.AppPath, moduleVersion, cloneDir)
+	err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: progressOutput})
+
+	if err != nil {
 		return fmt.Errorf("failed to push git changes: %w", err)
 	}
 	
