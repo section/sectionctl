@@ -60,7 +60,7 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 	}
 	packageJSONPath := filepath.Join(dir, "package.json")
 	if _, err := os.Stat(packageJSONPath); os.IsNotExist(err) {
-		log.Printf("[WARN] %w is not a file", packageJSONPath)
+		log.Printf("[WARN] %s is not a file", packageJSONPath)
 	}else{
 		packageJSONContents, err := ioutil.ReadFile(packageJSONPath)
 		packageJSON ,err:= api.ParsePackageJSON(string(packageJSONContents))
