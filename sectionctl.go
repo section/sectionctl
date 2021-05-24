@@ -1,92 +1,72 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io"
-	"log"
-	"net/url"
+	golog "log"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/alecthomas/kong"
-	"github.com/hashicorp/logutils"
 	"github.com/mattn/go-colorable"
 	"github.com/posener/complete"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/commands"
 	"github.com/section/sectionctl/credentials"
 	"github.com/willabides/kongplete"
 )
 
-// CLI exposes all the subcommands available
-type CLI struct {
-	Login              commands.LoginCmd            `cmd help:"Authenticate to Section's API"`
-	Logout             commands.LogoutCmd           `cmd help:"Revoke authentication tokens to Section's API"`
-	Accounts           commands.AccountsCmd         `cmd help:"Manage accounts on Section"`
-	Apps               commands.AppsCmd             `cmd help:"Manage apps on Section"`
-	Domains            commands.DomainsCmd          `cmd help:"Manage domains on Section"`
-	Certs              commands.CertsCmd            `cmd help:"Manage certificates on Section"`
-	Deploy             commands.DeployCmd           `cmd help:"Deploy an app to Section"`
-	Logs               commands.LogsCmd             `cmd help:"Show logs from running applications"`
-	Ps                 commands.PsCmd               `cmd help:"Show status of running applications"`
-	Version            commands.VersionCmd          `cmd help:"Print sectionctl version"`
-	WhoAmI             commands.WhoAmICmd           `cmd name:"whoami" help:"Show information about the currently authenticated user"`
-	Debug              bool                         `env:"DEBUG" help:"Enable debug output"`
-	DebugOutput        bool                         `short:"out" help:"Enable logging on the debug output."`
-	DebugFile          string                       `help:"File path where debug output should be written"`
-	SectionToken       string                       `env:"SECTION_TOKEN" help:"Secret token for API auth"`
-	SectionAPIPrefix   *url.URL                     `default:"https://aperture.section.io" env:"SECTION_API_PREFIX"`
-	SectionAPITimeout  time.Duration                `default:"30s" env:"SECTION_API_TIMEOUT" help:"Request timeout for the Section API"`
-	InstallCompletions kongplete.InstallCompletions `cmd:"" help:"install shell completions"`
-	Quiet					     bool                         `env:"SECTION_CI" help:"Enables minimal logging, for use in continuous integration."`
-}
+func bootstrap(c *commands.CLI, cmd *kong.Context) {
 
-
-
-
-func bootstrap(c CLI, cmd *kong.Context) context.Context {
 	api.PrefixURI = c.SectionAPIPrefix
 	api.Timeout = c.SectionAPITimeout
-
-	ctx := context.Background()
-	minLogLevel := logutils.LogLevel("INFO")
-	if c.Quiet {
-		ctx = context.WithValue(ctx, commands.CtxKey("quiet"), c.Quiet)
-		minLogLevel = logutils.LogLevel("ERROR")
-	}
-
-	colorableWriter := colorable.NewColorableStderr()
-
-	filter := &logutils.LevelFilter{
-		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
-		MinLevel: minLogLevel,
-		Writer:   colorableWriter,
-	}
-	if c.Debug {
-		filter.MinLevel = logutils.LogLevel("DEBUG")
-		if(c.DebugOutput || len(c.DebugFile) > 1){
-
-			if len(c.DebugFile) == 0 {
-				c.DebugFile = fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format("2006-01-02-15-04-05Z0700"))
-			}
-			logFilePath := filepath.Join(c.DebugFile)
-			logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
-			if err != nil {
-				panic(err)
-			}
-			fmt.Fprintf(logFile, "Version:   %s\n", commands.VersionCmd{}.String())
-			fmt.Fprintf(logFile, "Command:   %s\n", cmd.Args)
-			fmt.Fprintf(logFile, "PrefixURI: %s\n", api.PrefixURI)
-			fmt.Fprintf(logFile, "Timeout:   %s\n", api.Timeout)
-			fmt.Printf("Writing debug log to: %s\n", logFilePath)
-			mw := io.MultiWriter(logFile, colorableWriter)
-			filter.Writer = mw
+	ctx := cmd
+	colorableWriter := colorable.NewColorableStdout()
+	consoleWriter := zerolog.ConsoleWriter{Out: colorableWriter, PartsExclude: []string{zerolog.TimestampFieldName,zerolog.LevelFieldName}}
+	fileOutput := io.Discard
+	multi := zerolog.MultiLevelWriter(consoleWriter)
+	if len(c.DebugFile)>0 || bool(c.DebugOutput){
+		if len(c.DebugFile) == 0 {
+			c.DebugFile = commands.DebugFileFlag(fmt.Sprintf("sectionctl-debug-%s.log", time.Now().Format("2006-01-02-15-04-05Z0700")))
 		}
+		logFilePath := filepath.Join(string(c.DebugFile))
+		logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Fprintf(logFile, "Version:   %s\n", commands.VersionCmd{}.String())
+		fmt.Fprintf(logFile, "Command:   %s\n", ctx.Args)
+		fmt.Fprintf(logFile, "PrefixURI: %s\n", api.PrefixURI)
+		fmt.Fprintf(logFile, "Timeout:   %s\n", api.Timeout)
+		fmt.Printf("Writing debug log to: %s\n", logFilePath)
+		fileOutput = zerolog.New(logFile).With().Timestamp().Logger()
+		if c.Quiet{
+			zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+		}
+		multi = zerolog.MultiLevelWriter(consoleWriter, fileOutput)
 	}
-	log.SetOutput(filter)
-
+	logger := zerolog.New(multi)
+	golog.SetOutput(multi)
+	log.Logger = logger
+	logWriters := commands.LogWriters{
+		ConsoleWriter: consoleWriter,
+		FileWriter: fileOutput,
+		ConsoleOnly: colorableWriter,
+		CarriageReturnWriter: colorableWriter,
+	}
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if c.Debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		logWriters.CarriageReturnWriter = io.MultiWriter(logWriters.ConsoleOnly,logWriters.FileWriter);
+	}
+	if c.Quiet {
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+		logWriters.CarriageReturnWriter = logWriters.FileWriter
+	}
+	ctx.Bind(&logWriters)
 	switch {
 	case cmd.Command() == "version":
 		// bypass auth check for version command
@@ -97,34 +77,35 @@ func bootstrap(c CLI, cmd *kong.Context) context.Context {
 		if t == "" {
 			to, err := credentials.Setup(api.PrefixURI.Host)
 			if err != nil {
-				log.Fatalf("[ERROR] %s\n", err)
+				log.Fatal().Err(err)
 			}
 			t = to
 
 		}
 		api.Token = t
 	}
-	return ctx
 }
 
 func main() {
 	// Handle completion requests
-	var cli CLI
-	parser := kong.Must(&cli, kong.Name("sectionctl"), kong.UsageOnError())
+	var c commands.CLI
+	parser := kong.Must(&c, kong.Name("sectionctl"), kong.UsageOnError())
 	kongplete.Complete(parser,
 		kongplete.WithPredictor("file", complete.PredictFiles("*")),
 	)
 
-	cmd := kong.Parse(&cli,
+
+	golog.SetFlags(0)
+	cmd := kong.Parse(&c,
 		kong.Description("CLI to interact with Section."),
 		kong.UsageOnError(),
+		kong.Bind(&c),
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
-	ctx := bootstrap(cli, cmd)
-	cmd.BindTo(ctx, (*context.Context)(nil))
-	err := cmd.Run(ctx)
-	if err != nil {
-		log.Printf("[ERROR] %s\n", err)
-		os.Exit(2)
-	}
+
+	bootstrap(&c, cmd)
+
+	
+	er := cmd.Run()
+	cmd.FatalIfErrorf(er)
 }

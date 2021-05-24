@@ -7,9 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 // App represents an application deployed on Section
@@ -240,7 +241,7 @@ func ApplicationEnvironmentModuleUpdate(accountID int, applicationID int, env st
 	if err != nil {
 		return fmt.Errorf("failed to encode json payload: %v", err)
 	}
-	log.Printf("[DEBUG] JSON payload: %s\n", b)
+	log.Debug().Msg(fmt.Sprintf(" JSON payload: %s\n", b))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute) // because these requests can take a long time to complete on Section's side
 	defer cancel()
@@ -331,7 +332,7 @@ func ApplicationStatus(accountID int, applicationID int, moduleName string) (as 
 		return as, fmt.Errorf("could not read response body: %s", err)
 	}
 
-	log.Printf("[DEBUG] RESPONSE: %s\n", string(body))
+	log.Debug().Msg(fmt.Sprintf(" RESPONSE: %s\n", string(body)))
 
 	var responseBody struct {
 		Data struct {
@@ -375,7 +376,7 @@ func ApplicationLogs(accountID int, applicationID int, moduleName string, instan
 		// "endTimestamp": endTimestamp,
 	}
 
-	log.Printf("[DEBUG] requestData: %v\n", requestData.Variables)
+	log.Debug().Msg(fmt.Sprintf(" requestData: %v\n", requestData.Variables))
 
 	requestData.Query = "query Logs($moduleName: String!, $environmentId: Int!, $instanceName: String, $length: Int){logs(moduleName:$moduleName, environmentId:$environmentId, instanceName:$instanceName, length:$length){timestamp instanceName message type}}"
 
@@ -402,7 +403,7 @@ func ApplicationLogs(accountID int, applicationID int, moduleName string, instan
 		return al, fmt.Errorf("could not read response body: %s", err)
 	}
 
-	log.Printf("[DEBUG] RESPONSE: %s\n", string(body))
+	log.Debug().Msg(fmt.Sprintf(" RESPONSE: %s\n", string(body)))
 
 	var responseBody struct {
 		Data struct {

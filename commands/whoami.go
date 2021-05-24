@@ -1,11 +1,12 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strconv"
 
+	"github.com/alecthomas/kong"
+	"github.com/olekukonko/tablewriter"
 	"github.com/section/sectionctl/api"
 )
 
@@ -21,8 +22,8 @@ func PrettyBool(b bool) (s string) {
 }
 
 // Run executes the command
-func (c *WhoAmICmd) Run(ctx context.Context) (err error) {
-	s := NewSpinner(ctx, "Looking up current user")
+func (c *WhoAmICmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
+	s := NewSpinner(cli, "Looking up current user",logWriters)
 	s.Start()
 
 	u, err := api.CurrentUser()
@@ -31,7 +32,7 @@ func (c *WhoAmICmd) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	table := NewTable(ctx, os.Stdout)
+	table := NewTable(cli, os.Stdout)
 	table.SetHeader([]string{"Attribute", "Value"})
 	r := [][]string{
 		[]string{"Name", fmt.Sprintf("%s %s", u.FirstName, u.LastName)},
@@ -42,6 +43,8 @@ func (c *WhoAmICmd) Run(ctx context.Context) (err error) {
 		[]string{"Verified?", PrettyBool(u.Verified)},
 		[]string{"Requires 2FA?", PrettyBool(u.Requires2FA)},
 	}
+	table.SetColumnColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgWhiteColor},
+	tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiGreenColor})
 	table.AppendBulk(r)
 	table.Render()
 

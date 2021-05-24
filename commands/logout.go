@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 
+	"github.com/alecthomas/kong"
 	"github.com/section/sectionctl/api"
 	"github.com/section/sectionctl/credentials"
 )
@@ -12,8 +12,8 @@ import (
 type LogoutCmd struct{}
 
 // Run executes the command
-func (c *LogoutCmd) Run(ctx context.Context) (err error) {
-	s := NewSpinner(ctx, fmt.Sprintf("Revoking your authentication for %s", api.PrefixURI.Host))
+func (c *LogoutCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
+	s := NewSpinner(cli, fmt.Sprintf("Revoking your authentication for %s", api.PrefixURI.Host),logWriters)
 	s.Start()
 	err = credentials.Delete(api.PrefixURI.Host)
 	s.Stop()

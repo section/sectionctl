@@ -1,13 +1,14 @@
 package commands
 
 import (
-	"context"
 	"fmt"
-	"log"
+	logLib "log"
 	"strings"
 	"time"
 
+	"github.com/alecthomas/kong"
 	"github.com/logrusorgru/aurora" // colorable
+	"github.com/rs/zerolog/log"
 	"github.com/section/sectionctl/api"
 )
 
@@ -27,8 +28,8 @@ type LogsCmd struct {
 }
 
 // Run executes the command
-func (c *LogsCmd) Run(ctx context.Context) (err error) {
-	s := NewSpinner(ctx, "Getting logs from app")
+func (c *LogsCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
+	s := NewSpinner(cli, "Getting logs from app",logWriters)
 	logsHeader := "\nInstanceName[Log Type]\t\t\tLog Message\n"
 	s.FinalMSG = logsHeader
 	s.Start()
@@ -39,7 +40,7 @@ func (c *LogsCmd) Run(ctx context.Context) (err error) {
 
 	var startTimestampRfc3339 string
 	if c.Follow {
-		log.Println("[DEBUG] Following logs...")
+		log.Debug().Msg(fmt.Sprintln("Following logs..."))
 		if c.InstanceName == "" {
 			return fmt.Errorf("--instance-name is required when using --follow")
 		}
@@ -48,9 +49,9 @@ func (c *LogsCmd) Run(ctx context.Context) (err error) {
 
 	// Fix colorization issues between aurora and Windows
 	// https://github.com/logrusorgru/aurora#windows
-	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime)) // Remove local time prefix on output
+	logLib.SetFlags(logLib.Flags() &^ (logLib.Ldate | logLib.Ltime)) // Remove local time prefix on output
 
-	if !IsInCtxBool(ctx, "quiet") {
+	if !(cli.Quiet) {
 		for {
 			appLogs, err := api.ApplicationLogs(c.AccountID, c.AppID, c.AppPath, c.InstanceName, c.Number, startTimestampRfc3339)
 			s.Stop()

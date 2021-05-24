@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"context"
 	"os"
 	"strconv"
 
+	"github.com/alecthomas/kong"
 	"github.com/section/sectionctl/api"
 )
 
@@ -17,8 +17,8 @@ type AccountsCmd struct {
 type AccountsListCmd struct{}
 
 // Run executes the command
-func (c *AccountsListCmd) Run(ctx context.Context) (err error) {
-	s := NewSpinner(ctx, "Looking up accounts")
+func (c *AccountsListCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
+	s := NewSpinner(cli, "Looking up accounts", logWriters)
 	s.Start()
 
 	accounts, err := api.Accounts()
@@ -27,7 +27,7 @@ func (c *AccountsListCmd) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	table := NewTable(ctx, os.Stdout)
+	table := NewTable(cli, os.Stdout)
 	table.SetHeader([]string{"Account ID", "Account Name"})
 
 	for _, a := range accounts {

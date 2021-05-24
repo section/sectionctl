@@ -4,12 +4,10 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -20,6 +18,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
+	"github.com/alecthomas/kong"
 	"github.com/section/sectionctl/api"
 )
 
@@ -50,7 +51,8 @@ type PayloadValue struct {
 }
 
 // Run deploys an app to Section's edge
-func (c *DeployCmd) Run(ctx context.Context) (err error) {
+func (c *DeployCmd) Run(cli *CLI, ctx *kong.Context, logWriters *LogWriters) (err error) {
+
 	dir := c.Directory
 	if dir == "." {
 		abs, err := filepath.Abs(dir)
@@ -60,12 +62,12 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 	}
 	packageJSONPath := filepath.Join(dir, "package.json")
 	if _, err := os.Stat(packageJSONPath); os.IsNotExist(err) {
-		log.Printf("[WARN] %s is not a file", packageJSONPath)
+		log.Debug().Msg(fmt.Sprintf("[WARN] %s is not a file", packageJSONPath))
 	}else{
 		packageJSONContents, err := ioutil.ReadFile(packageJSONPath)
-		packageJSON ,err:= api.ParsePackageJSON(string(packageJSONContents))
+		packageJSON ,err:= ParsePackageJSON(string(packageJSONContents))
 		if err != nil {
-			log.Printf("[DEBUG] error parsing package.json: %w",err)
+			log.Info().Err(err).Msg("Error parsing package.json")
 		}
 		packageName := "your app"
 		if len(packageJSON.Name) > 0 {
@@ -74,36 +76,35 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 		accountID,err := strconv.Atoi(packageJSON.Section.AccountID)
 		if err == nil{
 			if c.AccountID == 0 && accountID > 0 {
-				log.Printf("[DEBUG] accountid iszero and package.json has it as %d", accountID)
 				c.AccountID = accountID
 			}
 		}
 		appID, err := strconv.Atoi(packageJSON.Section.AppID)
 		if err == nil{
 			if c.AppID == 0 && appID > 0 {
-				log.Printf("[DEBUG] accountid iszero and package.json has it as %d", appID)
 				c.AppID = appID
 			}
 		}
-		if c.Environment == "Production" && len(packageJSON.Section.Environment) > 1 {
+		if c.Environment == "Production" && len(packageJSON.Section.Environment) > 0 {
 			c.Environment = packageJSON.Section.Environment
 		}
 		if(c.AccountID == 0 || c.AppID == 0){
-			packageJSONExample := api.PackageJSON{}
+			packageJSONExample := PackageJSON{}
 			packageJSONExample.Dependencies = map[string]string{"serve":"^11.3.2"}
 			packageJSONExample.Section.AccountID = "1234"
-			packageJSONExample.Section.AccountID = "4567"
+			packageJSONExample.Section.AppID = "4567"
 			packageJSONExample.Section.Environment = "Production"
 			packageJSONExample.Scripts = map[string]string{"start":"serve -s build -l 8080"}
-			exampleStr,err := json.MarshalIndent(packageJSONExample, "", "\t")
+			exampleStr,err := json.Marshal(packageJSONExample)
 			if err != nil{
-				log.Printf("[DEBUG] Failed to generate example package.json: ", err)
+				log.Debug().Err(err).Msg("Failed to generate example package.json")
 			}
-			log.Printf("[ERROR] You must set an accountId and appId in the flags of this command.\nPlease run the following: \n sectionctl deploy --help \n\n======OR======\nIn the package.json, add a \"section\" property. For example: ")
-			log.Printf("%s", exampleStr)
+			log.Error().Msg("You must set an accountId and appId in the flags of this command.\nPlease run the following: \n sectionctl deploy --help \n\n======OR======\nIn the package.json, add a \"section\" property. For example: ")
+			log.Info().RawJSON("example",[]byte(exampleStr))
+			ctx.PrintUsage(false)
 			os.Exit(1);
 		}
-		log.Printf("[INFO] Deploying your node.js package named %s to Account ID: %v, App ID: %v, Environment %s",packageName,c.AccountID, c.AppID, c.Environment)
+		log.Info().Msg(Green("Deploying your node.js package named %s to Account ID: %d, App ID: %d, Environment %s",packageName,c.AccountID, c.AppID, c.Environment))
 	}
 	if !c.SkipValidation {
 		errs := IsValidNodeApp(dir)
@@ -117,7 +118,7 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 		}
 	}
 
-	s := NewSpinner(ctx, fmt.Sprintf("Packaging app in: %s", dir))
+	s := NewSpinner(cli, fmt.Sprintf("Packaging app in: %s", dir), logWriters)
 	s.Start()
 
 	ignores := []string{".lint", ".git"}
@@ -126,9 +127,10 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 		s.Stop()
 		return fmt.Errorf("unable to build file list: %s", err)
 	}
-	log.Println("[DEBUG] Archiving files:")
+	s.Stop()
+	log.Debug().Msg("Archiving files:")
 	for _, file := range files {
-		log.Println("[DEBUG]", file)
+		log.Debug().Str("file",file)
 	}
 
 	tempFile, err := ioutil.TempFile("", "sectionctl-deploy.*.tar.gz")
@@ -138,7 +140,7 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 	}
 	if c.SkipDelete {
 		s.Stop()
-		log.Println("[DEBUG] Temporary upload tarball location:", tempFile.Name())
+		log.Debug().Str("Temporar upload tarball location", tempFile.Name())
 		s.Start()
 	} else {
 		defer os.Remove(tempFile.Name())
@@ -151,7 +153,7 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 	}
 	s.Stop()
 
-	log.Println("[DEBUG] Temporary tarball path:", tempFile.Name())
+	log.Debug().Str("Temporar file location", tempFile.Name())
 	stat, err := tempFile.Stat()
 	if err != nil {
 		return fmt.Errorf("%s: could not stat, got error: %s", tempFile.Name(), err)
@@ -172,11 +174,11 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 
 	req.Header.Add("section-token", api.Token)
 
-	log.Println("[DEBUG] Request URL:", req.URL)
+	log.Debug().Str("URL",req.URL.String())
 
 	artifactSizeMB := stat.Size() / 1024 / 1024
-	log.Printf("[DEBUG] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size())
-	s = NewSpinner(ctx, fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB))
+	log.Debug().Msg(fmt.Sprintf("[DEBUG] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size()))
+	s = NewSpinner(cli, fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB),logWriters)
 	s.Start()
 	client := &http.Client{
 		Timeout: c.Timeout,
@@ -197,12 +199,12 @@ func (c *DeployCmd) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("failed to decode response %v", err)
 	}
 
-	err = globalGitService.UpdateGitViaGit(ctx, c, response)
+	err = globalGitService.UpdateGitViaGit(cli, ctx, c, response, logWriters)
 	if err != nil {
 		return fmt.Errorf("failed to trigger app update: %v", err)
 	}
 
-	log.Println("[INFO] Done!")
+	log.Info().Msg("Done!")
 
 	return nil
 }
