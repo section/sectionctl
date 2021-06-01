@@ -19,7 +19,7 @@ import (
 
 // GitService interface provides a way to interact with Git
 type GitService interface {
-	UpdateGitViaGit(cli *CLI, ctx *kong.Context, c *DeployCmd, response UploadResponse, logWriters *LogWriters) error
+	UpdateGitViaGit(ctx *kong.Context, c *DeployCmd, response UploadResponse, logWriters *LogWriters) error
 }
 
 // GS ...
@@ -29,7 +29,7 @@ type GS struct{}
 var globalGitService GitService = &GS{}
 
 // UpdateGitViaGit clones the application repository to a temporary directory then updates it with the latest payload id and pushes a new commit
-func (g *GS) UpdateGitViaGit(cli *CLI, ctx *kong.Context, c *DeployCmd, response UploadResponse,logWriters *LogWriters) error {
+func (g *GS) UpdateGitViaGit(ctx *kong.Context, c *DeployCmd, response UploadResponse,logWriters *LogWriters) error {
 	app, err := api.Application(c.AccountID, c.AppID)
 	if err != nil {
 		return err
@@ -173,12 +173,16 @@ func (g *GS) UpdateGitViaGit(cli *CLI, ctx *kong.Context, c *DeployCmd, response
 		}
 	}
 	if moduleVersion == "unknown"{
-		log.Debug().Msg(fmt.Sprintln("failed to pair app path (aka proxy name) with image (version)"))
+		log.Debug().Msg("failed to pair app path (aka proxy name) with image (version)")
 	}
 	// for proxy, _ := range sectionConfig["proxychain"]{
 
 	// }
-	log.Info().Str("Git Remote",cloneDir).Str("Module Name",c.AppPath).Str("Module Version",moduleVersion).Str("Tarball Source",fmt.Sprintf("%v/%s.tar.gz",c.AccountID,response.PayloadID)).Msg("Pushing...")
+	log.Info().Str("Git Remote",cloneDir).Msg("")
+	log.Info().Str("Tarball Source",fmt.Sprintf("%v/%s.tar.gz",c.AccountID,response.PayloadID)).Msg("")
+	log.Info().Str("Module Name",c.AppPath).Msg("")
+	log.Info().Str("Module Version",moduleVersion).Msg("")
+	log.Info().Msg("Validating your app...")
 	err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: progressOutput})
 
 	if err != nil {

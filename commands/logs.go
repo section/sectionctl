@@ -2,11 +2,9 @@ package commands
 
 import (
 	"fmt"
-	logLib "log"
 	"strings"
 	"time"
 
-	"github.com/alecthomas/kong"
 	"github.com/logrusorgru/aurora" // colorable
 	"github.com/rs/zerolog/log"
 	"github.com/section/sectionctl/api"
@@ -28,8 +26,8 @@ type LogsCmd struct {
 }
 
 // Run executes the command
-func (c *LogsCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
-	s := NewSpinner(cli, "Getting logs from app",logWriters)
+func (c *LogsCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
+	s := NewSpinner("Getting logs from app",logWriters)
 	logsHeader := "\nInstanceName[Log Type]\t\t\tLog Message\n"
 	s.FinalMSG = logsHeader
 	s.Start()
@@ -47,10 +45,6 @@ func (c *LogsCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err e
 		startTimestampRfc3339 = time.Now().Format(time.RFC3339)
 	}
 
-	// Fix colorization issues between aurora and Windows
-	// https://github.com/logrusorgru/aurora#windows
-	logLib.SetFlags(logLib.Flags() &^ (logLib.Ldate | logLib.Ltime)) // Remove local time prefix on output
-
 	if !(cli.Quiet) {
 		for {
 			appLogs, err := api.ApplicationLogs(c.AccountID, c.AppID, c.AppPath, c.InstanceName, c.Number, startTimestampRfc3339)
@@ -63,11 +57,11 @@ func (c *LogsCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err e
 				a.Message = strings.TrimSpace(a.Message)
 
 				if a.Type == "app" {
-					log.Printf("%s%s\t%s\n", aurora.Cyan(a.InstanceName), aurora.Cyan("["+a.Type+"]"), a.Message)
+					log.Info().Msg(fmt.Sprintf("%s%s\t%s", aurora.Cyan(a.InstanceName), aurora.Cyan("["+a.Type+"]"), a.Message))
 				} else if a.Type == "access" {
-					log.Printf("%s%s\t%s\n", aurora.Green(a.InstanceName), aurora.Green("["+a.Type+"]"), a.Message)
+					log.Info().Msg(fmt.Sprintf("%s%s\t%s", aurora.Green(a.InstanceName), aurora.Green("["+a.Type+"]"), a.Message))
 				} else {
-					log.Printf("%s[%s]\t%s\n", a.InstanceName, a.Type, a.Message)
+					log.Info().Msg(fmt.Sprintf("%s[%s]\t%s", a.InstanceName, a.Type, a.Message))
 				}
 				if a.Timestamp != "" {
 					latestTimestamp = a.Timestamp

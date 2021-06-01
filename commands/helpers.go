@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/rs/zerolog/log"
 )
 
 /*
@@ -15,9 +16,14 @@ func NewSpinner() *spinner.Spinner {
 */
 
 // NewSpinner returns a nicely formatted spinner for display while users are waiting.
-func NewSpinner(cli *CLI, txt string, logWriters *LogWriters) (s *spinner.Spinner) {
-	s = spinner.New(spinner.CharSets[35], 500*time.Millisecond, spinner.WithWriter(logWriters.CarriageReturnWriter))
-	s.Color("cyan")
+func NewSpinner(txt string, logWriters *LogWriters) (s *spinner.Spinner) {
+	log.Debug().Msg(txt)
+	s = spinner.New(spinner.CharSets[14], 450*time.Millisecond, spinner.WithWriter(logWriters.ConsoleOnly))
+	err := s.Color("cyan")
+	if err != nil {
+		// have an internal fit about it
+		log.Debug().Msg("couldn't set the color on the spinner 🥺")
+	}
 	s.Prefix = fmt.Sprintf("%s... ", txt)
 	s.FinalMSG = fmt.Sprintf("%s... ✔️\n", txt)
 	return s

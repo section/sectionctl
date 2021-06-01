@@ -13,7 +13,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/alecthomas/kong"
 	"github.com/olekukonko/tablewriter"
 	"github.com/section/sectionctl/api"
 )
@@ -23,7 +22,7 @@ type AppsCmd struct {
 	List   AppsListCmd   `cmd help:"List apps on Section." default:"1"`
 	Info   AppsInfoCmd   `cmd help:"Show detailed app information on Section."`
 	Create AppsCreateCmd `cmd help:"Create new app on Section."`
-	Delete AppsDeleteCmd `cmd help:"Delete an existing app on Section."`
+	Delete AppsDeleteCmd `cmd help:"DANGER ZONE. This deletes an existing app on Section."`
 	Init   AppsInitCmd   `cmd help:"Initialize your project for deployment."`
 	Stacks AppsStacksCmd `cmd help:"See the available stacks to create new apps with."`
 }
@@ -46,10 +45,10 @@ func NewTable(cli *CLI, out io.Writer) (t *tablewriter.Table) {
 }
 
 // Run executes the command
-func (c *AppsListCmd) Run(cli *CLI, ctx *kong.Context, logWriters *LogWriters) (err error) {
+func (c *AppsListCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
 	var aids []int
 	if c.AccountID == 0 {
-		s := NewSpinner(cli, "Looking up accounts",logWriters)
+		s := NewSpinner("Looking up accounts",logWriters)
 		s.Start()
 
 		as, err := api.Accounts()
@@ -66,7 +65,7 @@ func (c *AppsListCmd) Run(cli *CLI, ctx *kong.Context, logWriters *LogWriters) (
 		aids = append(aids, c.AccountID)
 	}
 
-	s := NewSpinner(cli, "Looking up apps",logWriters)
+	s := NewSpinner("Looking up apps",logWriters)
 	s.Start()
 	apps := make(map[int][]api.App)
 	for _, id := range aids {
@@ -104,8 +103,8 @@ type AppsInfoCmd struct {
 }
 
 // Run executes the command
-func (c *AppsInfoCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
-	s := NewSpinner(cli, "Looking up app info", logWriters)
+func (c *AppsInfoCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
+	s := NewSpinner("Looking up app info", logWriters)
 	s.Start()
 
 	app, err := api.Application(c.AccountID, c.AppID)
@@ -137,10 +136,10 @@ func (c *AppsInfoCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (e
 					tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiCyanColor})
 				table.SetAutoMergeCells(true)
 				r := [][]string{
-					[]string{"Domain name", dom.Name},
-					[]string{"Zone name", dom.ZoneName},
-					[]string{"CNAME", dom.CNAME},
-					[]string{"Mode", dom.Mode},
+					{"Domain name", dom.Name},
+					{"Zone name", dom.ZoneName},
+					{"CNAME", dom.CNAME},
+					{"Mode", dom.Mode},
 				}
 				table.AppendBulk(r)
 				table.Render()
@@ -180,12 +179,12 @@ type AppsCreateCmd struct {
 	AccountID int    `required short:"a" help:"ID of account to create the app under"`
 	Hostname  string `required short:"d" help:"FQDN the app can be accessed at"`
 	Origin    string `required short:"o" help:"URL to fetch the origin"`
-	StackName string `required short:"s" help:"Name of stack to deploy"`
+	StackName string `required short:"s" help:"Name of stack to deploy. Try, for example, nodejs-basic"`
 }
 
 // Run executes the command
-func (c *AppsCreateCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
-	s := NewSpinner(cli, fmt.Sprintf("Creating new app %s", c.Hostname),logWriters)
+func (c *AppsCreateCmd) Run(logWriters *LogWriters) (err error) {	
+	s := NewSpinner(fmt.Sprintf("Creating new app %s", c.Hostname),logWriters)
 	s.Start()
 
 	api.Timeout = 120 * time.Second // this specific request can take a long time
@@ -220,8 +219,8 @@ type AppsDeleteCmd struct {
 }
 
 // Run executes the command
-func (c *AppsDeleteCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
-	s := NewSpinner(cli, fmt.Sprintf("Deleting app with id '%d'", c.AppID),logWriters)
+func (c *AppsDeleteCmd) Run(logWriters *LogWriters) (err error) {
+	s := NewSpinner(fmt.Sprintf("Deleting app with id '%d'", c.AppID),logWriters)
 	s.Start()
 
 	api.Timeout = 120 * time.Second // this specific request can take a long time
@@ -243,12 +242,12 @@ type AppsInitCmd struct {
 }
 
 // Run executes the command
-func (c *AppsInitCmd) Run(cli *CLI, ctx *kong.Context) (err error) {
+func (c *AppsInitCmd) Run() (err error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	switch c.StackName {
 	case "nodejs-basic":
-		err := c.InitializeNodeBasicApp(ctx, stdout, stderr)
+		err := c.InitializeNodeBasicApp(stdout, stderr)
 		if err != nil {
 			return fmt.Errorf("[ERROR]: init completed with error %x", err)
 		}
@@ -268,7 +267,7 @@ func (c *AppsInitCmd) CreatePkgJSON(stdout, stderr bytes.Buffer) (err error) {
 }
 
 // InitializeNodeBasicApp initializes a basic node app.
-func (c *AppsInitCmd) InitializeNodeBasicApp(ctx *kong.Context, stdout bytes.Buffer, stderr bytes.Buffer) (err error) {
+func (c *AppsInitCmd) InitializeNodeBasicApp(stdout bytes.Buffer, stderr bytes.Buffer) (err error) {
 	if c.Force {
 		log.Info().Msg(fmt.Sprintln("Removing old version of package.json"))
 		err = os.Remove("package.json")
@@ -382,8 +381,8 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(ctx *kong.Context, stdout bytes.Buf
 type AppsStacksCmd struct{}
 
 // Run executes the command
-func (c *AppsStacksCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
-	s := NewSpinner(cli, "Looking up stacks",logWriters)
+func (c *AppsStacksCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
+	s := NewSpinner("Looking up stacks",logWriters)
 	s.Start()
 	k, err := api.Stacks()
 	s.Stop()

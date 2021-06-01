@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -40,10 +40,10 @@ func TestCommandsAppsCreateAttemptsToValidateStackOnError(t *testing.T) {
 		StackName: "helloworld-1.0.0",
 	}
 
-	ctx := context.Background()
 
 	// Invoke
-	err = cmd.Run(ctx)
+	logWriters := LogWriters{ConsoleWriter: io.Discard,FileWriter: io.Discard,ConsoleOnly: io.Discard,CarriageReturnWriter: io.Discard}
+	err = cmd.Run(&logWriters)
 
 	// Test
 	assert.True(stackCalled)
@@ -110,10 +110,9 @@ func TestCommandsAppsInitHandlesErrors(t *testing.T) {
 				fmt.Println("server.conf creation failed")
 			}
 
-			ctx := context.Background()
 
 			// Invoke
-			err = cmd.Run(ctx)
+			err = cmd.Run()
 
 			// Test
 			if tc.isFatal {
@@ -128,3 +127,4 @@ func TestCommandsAppsInitHandlesErrors(t *testing.T) {
 		})
 	}
 }
+  

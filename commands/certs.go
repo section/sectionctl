@@ -20,9 +20,9 @@ type CertsRenewCmd struct {
 }
 
 // Run executes the command
-func (c *CertsRenewCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
+func (c *CertsRenewCmd) Run(ctx *kong.Context,logWriters *LogWriters) (err error) {
 	var aid int
-	s := NewSpinner(cli, "Looking up accounts",logWriters)
+	s := NewSpinner("Looking up accounts",logWriters)
 	s.Start()
 
 	as, err := api.Accounts()
@@ -49,7 +49,7 @@ func (c *CertsRenewCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) 
 		return fmt.Errorf("unable to find the domain '%s' under any of your accounts.\n\nTry running `sectionctl domains` to see all your domains", c.Hostname)
 	}
 
-	s = NewSpinner(cli, fmt.Sprintf("Renewing cert for %s", c.Hostname),logWriters)
+	s = NewSpinner(fmt.Sprintf("Renewing cert for %s", c.Hostname),logWriters)
 	s.Start()
 
 	resp, err := api.DomainsRenewCert(aid, c.Hostname)

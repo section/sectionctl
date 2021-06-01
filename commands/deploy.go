@@ -51,7 +51,7 @@ type PayloadValue struct {
 }
 
 // Run deploys an app to Section's edge
-func (c *DeployCmd) Run(cli *CLI, ctx *kong.Context, logWriters *LogWriters) (err error) {
+func (c *DeployCmd) Run(ctx *kong.Context, logWriters *LogWriters) (err error) {
 
 	dir := c.Directory
 	if dir == "." {
@@ -65,6 +65,9 @@ func (c *DeployCmd) Run(cli *CLI, ctx *kong.Context, logWriters *LogWriters) (er
 		log.Debug().Msg(fmt.Sprintf("[WARN] %s is not a file", packageJSONPath))
 	}else{
 		packageJSONContents, err := ioutil.ReadFile(packageJSONPath)
+		if err != nil {
+			log.Info().Err(err).Msg("Error reading your package.json")
+		}
 		packageJSON ,err:= ParsePackageJSON(string(packageJSONContents))
 		if err != nil {
 			log.Info().Err(err).Msg("Error parsing package.json")
@@ -88,6 +91,9 @@ func (c *DeployCmd) Run(cli *CLI, ctx *kong.Context, logWriters *LogWriters) (er
 		if c.Environment == "Production" && len(packageJSON.Section.Environment) > 0 {
 			c.Environment = packageJSON.Section.Environment
 		}
+		if c.AppPath == "nodejs" && len(packageJSON.Section.ModuleName) > 0 {
+			c.AppPath = packageJSON.Section.ModuleName
+		}
 		if(c.AccountID == 0 || c.AppID == 0){
 			packageJSONExample := PackageJSON{}
 			packageJSONExample.Dependencies = map[string]string{"serve":"^11.3.2"}
@@ -101,7 +107,10 @@ func (c *DeployCmd) Run(cli *CLI, ctx *kong.Context, logWriters *LogWriters) (er
 			}
 			log.Error().Msg("You must set an accountId and appId in the flags of this command.\nPlease run the following: \n sectionctl deploy --help \n\n======OR======\nIn the package.json, add a \"section\" property. For example: ")
 			log.Info().RawJSON("example",[]byte(exampleStr))
-			ctx.PrintUsage(false)
+			err = ctx.PrintUsage(false)
+			if err != nil{
+				log.Error().Err(err).Msg("Errored while trying to error")
+			}
 			os.Exit(1);
 		}
 		log.Info().Msg(Green("Deploying your node.js package named %s to Account ID: %d, App ID: %d, Environment %s",packageName,c.AccountID, c.AppID, c.Environment))
@@ -118,7 +127,7 @@ func (c *DeployCmd) Run(cli *CLI, ctx *kong.Context, logWriters *LogWriters) (er
 		}
 	}
 
-	s := NewSpinner(cli, fmt.Sprintf("Packaging app in: %s", dir), logWriters)
+	s := NewSpinner(fmt.Sprintf("Packaging app in: %s", dir), logWriters)
 	s.Start()
 
 	ignores := []string{".lint", ".git"}
@@ -177,8 +186,8 @@ func (c *DeployCmd) Run(cli *CLI, ctx *kong.Context, logWriters *LogWriters) (er
 	log.Debug().Str("URL",req.URL.String())
 
 	artifactSizeMB := stat.Size() / 1024 / 1024
-	log.Debug().Msg(fmt.Sprintf("[DEBUG] Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size()))
-	s = NewSpinner(cli, fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB),logWriters)
+	log.Debug().Msg(fmt.Sprintf("Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size()))
+	s = NewSpinner(fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB),logWriters)
 	s.Start()
 	client := &http.Client{
 		Timeout: c.Timeout,
@@ -199,8 +208,11 @@ func (c *DeployCmd) Run(cli *CLI, ctx *kong.Context, logWriters *LogWriters) (er
 		return fmt.Errorf("failed to decode response %v", err)
 	}
 
-	err = globalGitService.UpdateGitViaGit(cli, ctx, c, response, logWriters)
+	err = globalGitService.UpdateGitViaGit(ctx, c, response, logWriters)
 	if err != nil {
+		if err.Error() == "file not found" {
+			return fmt.Errorf("this application is not configured to host a node.js app on Section, or, possibly, you didn't specify the proper --AppPath")
+		}
 		return fmt.Errorf("failed to trigger app update: %v", err)
 	}
 

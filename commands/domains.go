@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/alecthomas/kong"
 	"github.com/olekukonko/tablewriter"
 	"github.com/section/sectionctl/api"
 )
@@ -21,10 +20,10 @@ type DomainsListCmd struct {
 }
 
 // Run executes the command
-func (c *DomainsListCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
+func (c *DomainsListCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
 	var aids []int
 	if c.AccountID == 0 {
-		s := NewSpinner(cli, "Looking up accounts",logWriters)
+		s := NewSpinner("Looking up accounts",logWriters)
 		s.Start()
 
 		as, err := api.Accounts()
@@ -40,7 +39,7 @@ func (c *DomainsListCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters)
 		aids = append(aids, c.AccountID)
 	}
 
-	s := NewSpinner(cli, "Looking up domains",logWriters)
+	s := NewSpinner("Looking up domains",logWriters)
 	s.Start()
 	domains := make(map[int][]api.DomainsResponse)
 	for _, id := range aids {

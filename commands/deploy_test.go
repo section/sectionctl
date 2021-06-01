@@ -3,7 +3,6 @@ package commands
 import (
 	"archive/tar"
 	"compress/gzip"
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -15,15 +14,17 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/alecthomas/kong"
 	"github.com/section/sectionctl/api"
 	"github.com/stretchr/testify/assert"
 )
+
 
 type MockGitService struct {
 	Called bool
 }
 
-func (g *MockGitService) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadResponse) error {
+func (g *MockGitService) UpdateGitViaGit(ctx *kong.Context, c *DeployCmd,response UploadResponse,logWriters *LogWriters) error {
 	g.Called = true
 	return nil
 }
@@ -258,9 +259,6 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 
 	mockGit := MockGitService{}
 	globalGitService = &mockGit
-
-	ctx := context.Background()
-
 	// Invoke
 	c := DeployCmd{
 		Directory:   dir,
@@ -270,7 +268,9 @@ func TestCommandsDeployUploadsTarball(t *testing.T) {
 		Environment: "dev",
 		AppPath:     "nodejs",
 	}
-	err = c.Run(ctx)
+	kongContext := kong.Context{}
+	logWriters := LogWriters{ConsoleWriter: io.Discard,FileWriter: io.Discard,ConsoleOnly: io.Discard,CarriageReturnWriter: io.Discard}
+	err = c.Run(&kongContext, &logWriters)
 
 	// Test
 	assert.NoError(err)

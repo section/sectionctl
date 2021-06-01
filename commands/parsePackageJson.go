@@ -19,6 +19,7 @@ type PackageJSON struct {
 		AccountID   string `json:"accountId"`
 		AppID       string `json:"appId"`
 		Environment string `json:"environment"`
+		ModuleName  string `json:"module-name"`
 		StartScript string `json:"start-script"`
 	} `json:"section"`
 	X map[string]interface{} `json:"-"` // Rest of the fields should go here.
@@ -34,6 +35,7 @@ type MinimalPackageJSON struct {
 		AccountID   string `json:"accountId"`
 		AppID       string `json:"appId"`
 		Environment string `json:"environment"`
+		ModuleName  string `json:"module-name"`
 		StartScript string `json:"start-script"`
 	} `json:"section"`
 	X map[string]interface{} `json:"-"` // Rest of the fields should go here.
@@ -43,19 +45,6 @@ type SectionConfigJSON struct {
 		Name  string `json:"name"`
 		Image string `json:"image"`
 	} `json:"proxychain"`
-	Environments struct {
-		Production struct {
-			Origin struct {
-				Address string `json:"address"`
-			} `json:"origin"`
-			IPBlacklist []string `json:"ip_blacklist"`
-		} `json:"Production"`
-		Development struct {
-			Origin struct {
-				Address string `json:"address"`
-			} `json:"origin"`
-		} `json:"Development"`
-	} `json:"environments"`
 	X map[string]interface{} `json:"-"` // Rest of the fields should go here.
 }
 
@@ -89,9 +78,9 @@ func ParseSectionConfig(sectionConfigContents string) (SectionConfigJSON, error)
 		log.Debug().Err(err).Msg("Error compacting json while parsing your section.config.json")
 	}
 	sectionConfig := SectionConfigJSON{}
-	dec := json.NewDecoder(strings.NewReader(string(sectionConfigContent.Bytes())))
+	dec := json.NewDecoder(strings.NewReader(sectionConfigContent.String()))
 	if err := dec.Decode(&sectionConfig); err != nil {
-		return SectionConfigJSON{}, fmt.Errorf("Failed to decode JSON: %v", err)
+		return SectionConfigJSON{}, fmt.Errorf("failed to decode JSON: %v", err)
 	}
 	return sectionConfig, nil
 }

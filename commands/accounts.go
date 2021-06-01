@@ -18,7 +18,7 @@ type AccountsListCmd struct{}
 
 // Run executes the command
 func (c *AccountsListCmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
-	s := NewSpinner(cli, "Looking up accounts", logWriters)
+	s := NewSpinner("Looking up accounts", logWriters)
 	s.Start()
 
 	accounts, err := api.Accounts()

@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/alecthomas/kong"
 	"github.com/olekukonko/tablewriter"
 	"github.com/section/sectionctl/api"
 )
@@ -22,8 +21,8 @@ func PrettyBool(b bool) (s string) {
 }
 
 // Run executes the command
-func (c *WhoAmICmd) Run(cli *CLI, ctx *kong.Context,logWriters *LogWriters) (err error) {
-	s := NewSpinner(cli, "Looking up current user",logWriters)
+func (c *WhoAmICmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
+	s := NewSpinner("Looking up current user",logWriters)
 	s.Start()
 
 	u, err := api.CurrentUser()
