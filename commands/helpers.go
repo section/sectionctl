@@ -18,7 +18,7 @@ func NewSpinner() *spinner.Spinner {
 // NewSpinner returns a nicely formatted spinner for display while users are waiting.
 func NewSpinner(txt string, logWriters *LogWriters) (s *spinner.Spinner) {
 	log.Debug().Msg(txt)
-	s = spinner.New(spinner.CharSets[14], 450*time.Millisecond, spinner.WithWriter(logWriters.ConsoleOnly))
+	s = spinner.New(spinner.CharSets[14], 50*time.Millisecond, spinner.WithWriter(logWriters.ConsoleOnly))
 	err := s.Color("cyan")
 	if err != nil {
 		// have an internal fit about it
