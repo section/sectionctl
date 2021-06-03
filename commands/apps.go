@@ -2,16 +2,16 @@ package commands
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/section/sectionctl/api"
@@ -22,7 +22,7 @@ type AppsCmd struct {
 	List   AppsListCmd   `cmd help:"List apps on Section." default:"1"`
 	Info   AppsInfoCmd   `cmd help:"Show detailed app information on Section."`
 	Create AppsCreateCmd `cmd help:"Create new app on Section."`
-	Delete AppsDeleteCmd `cmd help:"Delete an existing app on Section."`
+	Delete AppsDeleteCmd `cmd help:"DANGER ZONE. This deletes an existing app on Section."`
 	Init   AppsInitCmd   `cmd help:"Initialize your project for deployment."`
 	Stacks AppsStacksCmd `cmd help:"See the available stacks to create new apps with."`
 }
@@ -33,22 +33,22 @@ type AppsListCmd struct {
 }
 
 // NewTable returns a table with sectionctl standard formatting
-func NewTable(ctx context.Context, out io.Writer) (t *tablewriter.Table) {
-	if IsInCtxBool(ctx, "quiet") {
+func NewTable(cli *CLI, out io.Writer) (t *tablewriter.Table) {
+	if cli.Quiet {
 		out = io.Discard
 	}
 	t = tablewriter.NewWriter(out)
-	t.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
+	t.SetBorders(tablewriter.Border{Left: true, Top: true, Right: true, Bottom: true})
 	t.SetCenterSeparator("|")
 	t.SetAlignment(tablewriter.ALIGN_LEFT)
 	return t
 }
 
 // Run executes the command
-func (c *AppsListCmd) Run(ctx context.Context) (err error) {
+func (c *AppsListCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
 	var aids []int
 	if c.AccountID == 0 {
-		s := NewSpinner(ctx, "Looking up accounts")
+		s := NewSpinner("Looking up accounts",logWriters)
 		s.Start()
 
 		as, err := api.Accounts()
@@ -60,11 +60,12 @@ func (c *AppsListCmd) Run(ctx context.Context) (err error) {
 		}
 
 		s.Stop()
+		fmt.Println()
 	} else {
 		aids = append(aids, c.AccountID)
 	}
 
-	s := NewSpinner(ctx, "Looking up apps")
+	s := NewSpinner("Looking up apps",logWriters)
 	s.Start()
 	apps := make(map[int][]api.App)
 	for _, id := range aids {
@@ -75,13 +76,18 @@ func (c *AppsListCmd) Run(ctx context.Context) (err error) {
 		apps[id] = as
 	}
 	s.Stop()
-
-	table := NewTable(ctx, os.Stdout)
+	fmt.Println()
+	table := NewTable(cli, os.Stdout)
 	table.SetHeader([]string{"Account ID", "App ID", "App Name"})
-
+	table.SetHeaderColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgWhiteColor},
+		tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor},
+		tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor})
+		table.SetColumnColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgHiWhiteColor},
+			tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor},
+			tablewriter.Colors{tablewriter.Normal, tablewriter.FgCyanColor})
 	for id, as := range apps {
 		for _, a := range as {
-			r := []string{strconv.Itoa(id), strconv.Itoa(a.ID), a.ApplicationName}
+			r := []string{strconv.Itoa(id), strconv.Itoa(a.ID), Green(a.ApplicationName)}
 			table.Append(r)
 		}
 	}
@@ -97,17 +103,18 @@ type AppsInfoCmd struct {
 }
 
 // Run executes the command
-func (c *AppsInfoCmd) Run(ctx context.Context) (err error) {
-	s := NewSpinner(ctx, "Looking up app info")
+func (c *AppsInfoCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
+	s := NewSpinner("Looking up app info", logWriters)
 	s.Start()
 
 	app, err := api.Application(c.AccountID, c.AppID)
 	s.Stop()
+	fmt.Println()
 	if err != nil {
 		return err
 	}
 
-	if !IsInCtxBool(ctx, "quiet") {
+	if !(cli.Quiet){
 		fmt.Printf("🌎🌏🌍\n")
 		fmt.Printf("App Name: %s\n", app.ApplicationName)
 		fmt.Printf("App ID: %d\n", app.ID)
@@ -121,14 +128,18 @@ func (c *AppsInfoCmd) Run(ctx context.Context) (err error) {
 			for _, dom := range env.Domains {
 				fmt.Println()
 
-				table := NewTable(ctx, os.Stdout)
+				table := NewTable(cli, os.Stdout)
 				table.SetHeader([]string{"Attribute", "Value"})
+				table.SetHeaderColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgWhiteColor},
+					tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor})
+				table.SetColumnColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgWhiteColor},
+					tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiCyanColor})
 				table.SetAutoMergeCells(true)
 				r := [][]string{
-					[]string{"Domain name", dom.Name},
-					[]string{"Zone name", dom.ZoneName},
-					[]string{"CNAME", dom.CNAME},
-					[]string{"Mode", dom.Mode},
+					{"Domain name", dom.Name},
+					{"Zone name", dom.ZoneName},
+					{"CNAME", dom.CNAME},
+					{"Mode", dom.Mode},
 				}
 				table.AppendBulk(r)
 				table.Render()
@@ -142,8 +153,12 @@ func (c *AppsInfoCmd) Run(ctx context.Context) (err error) {
 			fmt.Printf("🥞 Stack (%d %s total)\n", len(env.Stack), mod)
 			fmt.Println()
 
-			table := NewTable(ctx, os.Stdout)
+			table := NewTable(cli, os.Stdout)
 			table.SetHeader([]string{"Name", "Image"})
+			table.SetHeaderColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgWhiteColor},
+				tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor})
+			table.SetColumnColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgWhiteColor},
+				tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiCyanColor})
 			table.SetAutoMergeCells(true)
 			for _, p := range env.Stack {
 				r := []string{p.Name, p.Image}
@@ -164,17 +179,18 @@ type AppsCreateCmd struct {
 	AccountID int    `required short:"a" help:"ID of account to create the app under"`
 	Hostname  string `required short:"d" help:"FQDN the app can be accessed at"`
 	Origin    string `required short:"o" help:"URL to fetch the origin"`
-	StackName string `required short:"s" help:"Name of stack to deploy"`
+	StackName string `required short:"s" help:"Name of stack to deploy. Try, for example, nodejs-basic"`
 }
 
 // Run executes the command
-func (c *AppsCreateCmd) Run(ctx context.Context) (err error) {
-	s := NewSpinner(ctx, fmt.Sprintf("Creating new app %s", c.Hostname))
+func (c *AppsCreateCmd) Run(logWriters *LogWriters) (err error) {	
+	s := NewSpinner(fmt.Sprintf("Creating new app %s", c.Hostname),logWriters)
 	s.Start()
 
 	api.Timeout = 120 * time.Second // this specific request can take a long time
 	r, err := api.ApplicationCreate(c.AccountID, c.Hostname, c.Origin, c.StackName)
 	s.Stop()
+	fmt.Println()
 	if err != nil {
 		if err == api.ErrStatusForbidden {
 			stacks, herr := api.Stacks()
@@ -191,7 +207,7 @@ func (c *AppsCreateCmd) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	log.Printf("[INFO]\nSuccess: created app '%s' with id '%d'\n", r.ApplicationName, r.ID)
+	log.Info().Msg(fmt.Sprintf("\nSuccess: created app '%s' with id '%d'\n", r.ApplicationName, r.ID))
 
 	return err
 }
@@ -203,8 +219,8 @@ type AppsDeleteCmd struct {
 }
 
 // Run executes the command
-func (c *AppsDeleteCmd) Run(ctx context.Context) (err error) {
-	s := NewSpinner(ctx, fmt.Sprintf("Deleting app with id '%d'", c.AppID))
+func (c *AppsDeleteCmd) Run(logWriters *LogWriters) (err error) {
+	s := NewSpinner(fmt.Sprintf("Deleting app with id '%d'", c.AppID),logWriters)
 	s.Start()
 
 	api.Timeout = 120 * time.Second // this specific request can take a long time
@@ -214,7 +230,7 @@ func (c *AppsDeleteCmd) Run(ctx context.Context) (err error) {
 		return err
 	}
 	
-	log.Printf("[INFO]\nSuccess: deleted app with id '%d'\n", c.AppID)
+	log.Info().Msg(fmt.Sprintf("\nSuccess: deleted app with id '%d'\n", c.AppID))
 
 	return err
 }
@@ -226,17 +242,17 @@ type AppsInitCmd struct {
 }
 
 // Run executes the command
-func (c *AppsInitCmd) Run(ctx context.Context) (err error) {
+func (c *AppsInitCmd) Run() (err error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	switch c.StackName {
 	case "nodejs-basic":
-		err := c.InitializeNodeBasicApp(ctx, stdout, stderr)
+		err := c.InitializeNodeBasicApp(stdout, stderr)
 		if err != nil {
 			return fmt.Errorf("[ERROR]: init completed with error %x", err)
 		}
 	default:
-		log.Printf("[ERROR]: Stack name %s does not have an initialization defined\n", c.StackName)
+		log.Error().Msg(fmt.Sprintf(": Stack name %s does not have an initialization defined\n", c.StackName))
 	}
 	return err
 }
@@ -251,30 +267,30 @@ func (c *AppsInitCmd) CreatePkgJSON(stdout, stderr bytes.Buffer) (err error) {
 }
 
 // InitializeNodeBasicApp initializes a basic node app.
-func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.Buffer, stderr bytes.Buffer) (err error) {
+func (c *AppsInitCmd) InitializeNodeBasicApp(stdout bytes.Buffer, stderr bytes.Buffer) (err error) {
 	if c.Force {
-		log.Println("[INFO] Removing old version of package.json")
+		log.Info().Msg(fmt.Sprintln("Removing old version of package.json"))
 		err = os.Remove("package.json")
 		if err != nil {
 			if !os.IsNotExist(err) {
-				log.Println("[ERROR] unable to remove package.json file")
+				log.Error().Msg(fmt.Sprintln("unable to remove package.json file"))
 				return err
 			}
 		} else {
-			log.Println("[DEBUG] Files successfully removed")
+			log.Debug().Msg(fmt.Sprintln("Files successfully removed"))
 		}
 	}
-	log.Println("[DEBUG] Checking to see if server.conf exists")
+	log.Debug().Msg(fmt.Sprintln("Checking to see if server.conf exists"))
 	checkServConf, err := os.Open("server.conf")
 	if err != nil {
 		if !os.IsNotExist(err) {
-			log.Println("[ERROR] server.conf file could not be opened")
+			log.Error().Msg(fmt.Sprintln("server.conf file could not be opened"))
 			return err
 		}
 	}
 	defer checkServConf.Close()
 	if err == nil {
-		log.Println("[INFO] Validating server.conf")
+		log.Info().Msg(fmt.Sprintln("Validating server.conf"))
 		fileinfo, err := checkServConf.Stat()
 		if err != nil {
 			return fmt.Errorf("error in finding stat of server.conf %w", err)
@@ -286,18 +302,18 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.B
 		}
 		fStr := string(buf)
 		if !strings.Contains(fStr, "location / {") {
-			log.Println("[WARN] default location unspecified. Edit or delete server.conf and rerun this command")
+			log.Warn().Msg(fmt.Sprintln("default location unspecified. Edit or delete server.conf and rerun this command"))
 		}
 	}
-	log.Println("[DEBUG] Checking to see if package.json exists")
+	log.Debug().Msg(fmt.Sprintln("Checking to see if package.json exists"))
 	checkPkgJSON, err := os.Open("package.json")
 	if err != nil {
-		log.Println("[WARN] package.json does not exist. Creating package.json")
+		log.Warn().Msg(fmt.Sprintln("package.json does not exist. Creating package.json"))
 		err := c.CreatePkgJSON(stdout, stderr)
 		if err != nil {
 			return fmt.Errorf("there was an error creating package.json. Is node installed? %w", err)
 		}
-		log.Println("[INFO] package.json created")
+		log.Info().Msg(fmt.Sprintln("package.json created"))
 	}
 	defer checkPkgJSON.Close()
 	validPkgJSON, err := os.OpenFile("package.json", os.O_RDWR, 0777)
@@ -305,7 +321,7 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.B
 		return fmt.Errorf("failed to open package.json %w", err)
 	}
 	defer validPkgJSON.Close()
-	log.Println("[INFO] Validating package.json")
+	log.Info().Msg(fmt.Sprintln("Validating package.json"))
 	buf, err := os.ReadFile("package.json")
 	if err != nil {
 		return fmt.Errorf("failed to read package.json %w", err)
@@ -314,14 +330,14 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.B
 	if len(fStr) == 0 {
 		err := os.Remove("package.json")
 		if err != nil {
-			log.Println("[ERROR] unable to remove empty package.json")
+			log.Error().Msg(fmt.Sprintln("unable to remove empty package.json"))
 		}
-		log.Println("[WARN] package.json is empty. Creating package.json")
+		log.Warn().Msg(fmt.Sprintln("package.json is empty. Creating package.json"))
 		err = c.CreatePkgJSON(stdout, stderr)
 		if err != nil {
 			return fmt.Errorf("there was an error creating package.json. Is node installed? %w", err)
 		}
-		log.Println("[INFO] package.json created from empty file")
+		log.Info().Msg(fmt.Sprintln("package.json created from empty file"))
 		buf, err = os.ReadFile("package.json")
 		if err != nil {
 			return fmt.Errorf("failed to read package.json %w", err)
@@ -348,15 +364,15 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.B
 		}
 		set, err := json.MarshalIndent(jsonMap, "", "  ")
 		if err != nil {
-			log.Println("[ERROR] unable to add start script placeholder")
+			log.Error().Msg(fmt.Sprintln("unable to add start script placeholder"))
 		}
 		_, err = validPkgJSON.Write(set)
 		if err != nil {
-			log.Println("[ERROR] unable to add start script placeholder")
+			log.Error().Msg(fmt.Sprintln("unable to add start script placeholder"))
 		}
 	}
 	if strings.Contains(fStr, `YOUR_SERVER_HERE.js`) {
-		log.Println("[ERROR] start script is required. Please edit the placeholder in package.json")
+		log.Error().Msg(fmt.Sprintln("start script is required. Please edit the placeholder in package.json"))
 	}
 	return err
 }
@@ -365,8 +381,8 @@ func (c *AppsInitCmd) InitializeNodeBasicApp(ctx context.Context, stdout bytes.B
 type AppsStacksCmd struct{}
 
 // Run executes the command
-func (c *AppsStacksCmd) Run(ctx context.Context) (err error) {
-	s := NewSpinner(ctx, "Looking up stacks")
+func (c *AppsStacksCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
+	s := NewSpinner("Looking up stacks",logWriters)
 	s.Start()
 	k, err := api.Stacks()
 	s.Stop()
@@ -374,7 +390,7 @@ func (c *AppsStacksCmd) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("unable to look up stacks: %w", err)
 	}
 
-	table := NewTable(ctx, os.Stdout)
+	table := NewTable(cli, os.Stdout)
 	table.SetHeader([]string{"Name", "Label", "Description", "Type"})
 
 	for _, s := range k {

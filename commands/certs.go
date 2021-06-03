@@ -1,10 +1,11 @@
 package commands
 
 import (
-	"context"
 	"fmt"
-	"log"
 
+	"github.com/rs/zerolog/log"
+
+	"github.com/alecthomas/kong"
 	"github.com/section/sectionctl/api"
 )
 
@@ -19,9 +20,9 @@ type CertsRenewCmd struct {
 }
 
 // Run executes the command
-func (c *CertsRenewCmd) Run(ctx context.Context) (err error) {
+func (c *CertsRenewCmd) Run(ctx *kong.Context,logWriters *LogWriters) (err error) {
 	var aid int
-	s := NewSpinner(ctx, "Looking up accounts")
+	s := NewSpinner("Looking up accounts",logWriters)
 	s.Start()
 
 	as, err := api.Accounts()
@@ -48,7 +49,7 @@ func (c *CertsRenewCmd) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("unable to find the domain '%s' under any of your accounts.\n\nTry running `sectionctl domains` to see all your domains", c.Hostname)
 	}
 
-	s = NewSpinner(ctx, fmt.Sprintf("Renewing cert for %s", c.Hostname))
+	s = NewSpinner(fmt.Sprintf("Renewing cert for %s", c.Hostname),logWriters)
 	s.Start()
 
 	resp, err := api.DomainsRenewCert(aid, c.Hostname)
@@ -57,7 +58,7 @@ func (c *CertsRenewCmd) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	log.Printf("[INFO]\nSuccess: %s\n", resp.Message)
+	log.Info().Msg(fmt.Sprintf("\nSuccess: %s\n", resp.Message))
 
 	return err
 }

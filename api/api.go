@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"runtime"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/section/sectionctl/version"
 )
@@ -61,13 +62,13 @@ func request(ctx context.Context, method string, u url.URL, body io.Reader, head
 
 	req.Header.Add("section-token", Token)
 
-	log.Println("[DEBUG] Request URL:", method, req.URL)
+	log.Debug().Str("Request Method",method).Str("Request URL", req.URL.String()).Msg("Making Request")
 	for k, vs := range req.Header {
 		for _, v := range vs {
 			if k == "Section-Token" {
 				v = "********TOKEN HIDDEN********"
 			}
-			log.Printf("[DEBUG] Header: %s: %v\n", k, v)
+			log.Debug().Str(k,v).Msg("Header")
 		}
 	}
 	resp, err = client.Do(req)

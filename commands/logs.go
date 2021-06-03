@@ -1,13 +1,12 @@
 package commands
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/logrusorgru/aurora" // colorable
+	"github.com/rs/zerolog/log"
 	"github.com/section/sectionctl/api"
 )
 
@@ -27,8 +26,8 @@ type LogsCmd struct {
 }
 
 // Run executes the command
-func (c *LogsCmd) Run(ctx context.Context) (err error) {
-	s := NewSpinner(ctx, "Getting logs from app")
+func (c *LogsCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
+	s := NewSpinner("Getting logs from app",logWriters)
 	logsHeader := "\nInstanceName[Log Type]\t\t\tLog Message\n"
 	s.FinalMSG = logsHeader
 	s.Start()
@@ -39,18 +38,14 @@ func (c *LogsCmd) Run(ctx context.Context) (err error) {
 
 	var startTimestampRfc3339 string
 	if c.Follow {
-		log.Println("[DEBUG] Following logs...")
+		log.Debug().Msg(fmt.Sprintln("Following logs..."))
 		if c.InstanceName == "" {
 			return fmt.Errorf("--instance-name is required when using --follow")
 		}
 		startTimestampRfc3339 = time.Now().Format(time.RFC3339)
 	}
 
-	// Fix colorization issues between aurora and Windows
-	// https://github.com/logrusorgru/aurora#windows
-	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime)) // Remove local time prefix on output
-
-	if !IsInCtxBool(ctx, "quiet") {
+	if !(cli.Quiet) {
 		for {
 			appLogs, err := api.ApplicationLogs(c.AccountID, c.AppID, c.AppPath, c.InstanceName, c.Number, startTimestampRfc3339)
 			s.Stop()
@@ -62,11 +57,11 @@ func (c *LogsCmd) Run(ctx context.Context) (err error) {
 				a.Message = strings.TrimSpace(a.Message)
 
 				if a.Type == "app" {
-					log.Printf("%s%s\t%s\n", aurora.Cyan(a.InstanceName), aurora.Cyan("["+a.Type+"]"), a.Message)
+					log.Info().Msg(fmt.Sprintf("%s%s\t%s", aurora.Cyan(a.InstanceName), aurora.Cyan("["+a.Type+"]"), a.Message))
 				} else if a.Type == "access" {
-					log.Printf("%s%s\t%s\n", aurora.Green(a.InstanceName), aurora.Green("["+a.Type+"]"), a.Message)
+					log.Info().Msg(fmt.Sprintf("%s%s\t%s", aurora.Green(a.InstanceName), aurora.Green("["+a.Type+"]"), a.Message))
 				} else {
-					log.Printf("%s[%s]\t%s\n", a.InstanceName, a.Type, a.Message)
+					log.Info().Msg(fmt.Sprintf("%s[%s]\t%s", a.InstanceName, a.Type, a.Message))
 				}
 				if a.Timestamp != "" {
 					latestTimestamp = a.Timestamp

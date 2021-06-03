@@ -1,11 +1,11 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strconv"
 
+	"github.com/olekukonko/tablewriter"
 	"github.com/section/sectionctl/api"
 )
 
@@ -20,10 +20,10 @@ type DomainsListCmd struct {
 }
 
 // Run executes the command
-func (c *DomainsListCmd) Run(ctx context.Context) (err error) {
+func (c *DomainsListCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
 	var aids []int
 	if c.AccountID == 0 {
-		s := NewSpinner(ctx, "Looking up accounts")
+		s := NewSpinner("Looking up accounts",logWriters)
 		s.Start()
 
 		as, err := api.Accounts()
@@ -39,7 +39,7 @@ func (c *DomainsListCmd) Run(ctx context.Context) (err error) {
 		aids = append(aids, c.AccountID)
 	}
 
-	s := NewSpinner(ctx, "Looking up domains")
+	s := NewSpinner("Looking up domains",logWriters)
 	s.Start()
 	domains := make(map[int][]api.DomainsResponse)
 	for _, id := range aids {
@@ -51,9 +51,10 @@ func (c *DomainsListCmd) Run(ctx context.Context) (err error) {
 	}
 	s.Stop()
 
-	table := NewTable(ctx, os.Stdout)
+	table := NewTable(cli, os.Stdout)
 	table.SetHeader([]string{"Account ID", "Domain", "Engaged"})
-
+	table.SetHeaderColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgWhiteColor},tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor},tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor})
+	table.SetColumnColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgWhiteColor},tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiCyanColor},tablewriter.Colors{tablewriter.Normal,tablewriter.FgWhiteColor})
 	for id, ds := range domains {
 		for _, d := range ds {
 			r := []string{strconv.Itoa(id), d.DomainName, fmt.Sprintf("%t", d.Engaged)}

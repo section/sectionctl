@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -30,10 +29,10 @@ func getStatus(as api.AppStatus) string {
 }
 
 // Run executes the command
-func (c *PsCmd) Run(ctx context.Context) (err error) {
+func (c *PsCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
 	var aids []int
 	if c.AccountID == 0 {
-		s := NewSpinner(ctx, "Looking up accounts")
+		s := NewSpinner("Looking up accounts", logWriters)
 		s.Start()
 
 		as, err := api.Accounts()
@@ -52,7 +51,7 @@ func (c *PsCmd) Run(ctx context.Context) (err error) {
 	var targets [][]int
 	for _, id := range aids {
 		if c.AppID == 0 {
-			s := NewSpinner(ctx, "Looking up applications")
+			s := NewSpinner("Looking up applications", logWriters)
 			s.Start()
 
 			as, err := api.Applications(id)
@@ -72,24 +71,24 @@ func (c *PsCmd) Run(ctx context.Context) (err error) {
 	if c.Watch {
 		ticker := time.NewTicker(c.Interval)
 		for ; true; <-ticker.C {
-			err = pollAndOutput(ctx, targets, c.AppPath)
+			err = pollAndOutput(cli, targets, c.AppPath,logWriters)
 			if err != nil {
 				return err
 			}
 		}
 	} else {
-		err = pollAndOutput(ctx, targets, c.AppPath)
+		err = pollAndOutput(cli, targets, c.AppPath,logWriters)
 		return err
 	}
 
 	return nil
 }
 
-func pollAndOutput(ctx context.Context, targets [][]int, appPath string) error {
-	s := NewSpinner(ctx, "Getting status of apps")
+func pollAndOutput(cli *CLI, targets [][]int, appPath string, logWriters *LogWriters) error {
+	s := NewSpinner("Getting status of apps",logWriters)
 	s.Start()
 
-	table := NewTable(ctx, os.Stdout)
+	table := NewTable(cli, os.Stdout)
 	table.SetHeader([]string{"Account ID", "App ID", "App instance name", "App Status", "App Payload ID"})
 
 	for _, t := range targets {

@@ -1,27 +1,25 @@
 package commands
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"log"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/alecthomas/kong"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	gitHTTP "github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/rs/zerolog/log"
 	"github.com/section/sectionctl/api"
 )
 
 // GitService interface provides a way to interact with Git
 type GitService interface {
-	UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadResponse) error
+	UpdateGitViaGit(ctx *kong.Context, c *DeployCmd, response UploadResponse, logWriters *LogWriters) error
 }
 
 // GS ...
@@ -31,18 +29,19 @@ type GS struct{}
 var globalGitService GitService = &GS{}
 
 // UpdateGitViaGit clones the application repository to a temporary directory then updates it with the latest payload id and pushes a new commit
-func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadResponse) error {
+func (g *GS) UpdateGitViaGit(ctx *kong.Context, c *DeployCmd, response UploadResponse,logWriters *LogWriters) error {
 	app, err := api.Application(c.AccountID, c.AppID)
 	if err != nil {
 		return err
 	}
 	appName := strings.ReplaceAll(app.ApplicationName, "/", "")
-	log.Printf("[DEBUG] Cloning: https://aperture.section.io/account/%d/application/%d/%s.git ...\n", c.AccountID, c.AppID, appName)
+	cloneDir := fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName)
+	log.Debug().Msg(fmt.Sprintf(" Begin updating hash in .section-external-source.json:\n\tsection-configmap-tars/%v/%s.tar.gz\n",c.AccountID,response.PayloadID))
 	tempDir, err := ioutil.TempDir("", "sectionctl-*")
 	if err != nil {
 		return err
 	}
-	log.Println("[DEBUG] tempDir: ", tempDir)
+	log.Debug().Msg(fmt.Sprintln("tempDir: ", tempDir))
 	// Git objects storer based on memory
 	gitAuth := &gitHTTP.BasicAuth{
 		Username: "section-token", // yes, this can be anything except an empty string
@@ -51,36 +50,32 @@ func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadR
 	payload := PayloadValue{ID: response.PayloadID}
 	branchRef := fmt.Sprintf("refs/heads/%s",c.Environment)
 	var r *git.Repository
-	if IsInCtxBool(ctx, "quiet"){
-		r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
-			URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
-			Auth:     gitAuth,
-			Progress: io.Discard,
-			ReferenceName: plumbing.ReferenceName(branchRef),
-		})
-	} else {
-		r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
-			URL:      fmt.Sprintf("https://aperture.section.io/account/%d/application/%d/%s.git", c.AccountID, c.AppID, appName),
-			Auth:     gitAuth,
-			Progress: os.Stdout,
-			ReferenceName: plumbing.ReferenceName(branchRef),
-		})
-	}
+	progressOutput := logWriters.CarriageReturnWriter
+	log.Info().Msg(fmt.Sprintln("Cloning section config repo for your application to ",tempDir))
+	r, err = git.PlainClone(tempDir, false, &git.CloneOptions{
+		URL:      cloneDir,
+		Auth:     gitAuth,
+		Progress: progressOutput,
+		ReferenceName: plumbing.ReferenceName(branchRef),
+	})
 	
 	if err != nil {
+		log.Error().Err(err).Msg("error cloning")
 		return err
 	}
 	// ... retrieving the branch being pointed by HEAD
 	ref, err := r.Head()
 	if err != nil {
+		log.Error().Err(err).Msg("error retrieving the git HEAD")
 		return err
 	}
 	// ... retrieving the commit object
 	commit, err := r.CommitObject(ref.Hash())
 	if err != nil {
+		log.Error().Err(err).Msg("error retrieving the commit hash")
 		return err
 	}
-	log.Println("[DEBUG] HEAD commit: ", commit)
+	log.Debug().Msg(fmt.Sprintln("HEAD commit: ", commit))
 	// ... retrieve the tree from the commit
 	tree, err := commit.Tree()
 	if err != nil {
@@ -97,18 +92,14 @@ func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadR
 	srcContent := PayloadValue{}
 	content, err := f.Contents()
 	if err != nil {
-		return nil
+		return fmt.Errorf("couldn't open contents of file: %w", err)
 	}
 	err = json.Unmarshal([]byte(content), &srcContent)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal json: %w", err)
 	}
-	ct, err := f.Contents()
-	if err != nil {
-		return fmt.Errorf("couldn't open contents of file: %w", err)
-	}
-	log.Println("[DEBUG] Old external source contents: ", ct)
-	log.Println("[DEBUG] expected new tarball UUID: ", response.PayloadID)
+	log.Debug().Str("Old tarball UUID",  content);
+	log.Debug().Str("New tarball UUID",  response.PayloadID)
 	srcContent.ID = payload.ID
 	pl, err := json.MarshalIndent(srcContent, "", "\t")
 	if err != nil {
@@ -127,7 +118,7 @@ func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadR
 	if err != nil {
 		return err
 	}
-	log.Println("[DEBUG] git status: ", status)
+	log.Debug().Msg(fmt.Sprintln("git status: ", status))
 	_, err = w.Add(c.AppPath + "/.section-external-source.json")
 	if err != nil {
 		return err
@@ -144,7 +135,7 @@ func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadR
 	if err != nil {
 		return fmt.Errorf("failed to get commit object: %w", err)
 	}
-	log.Println("[DEBUG] New Commit: ", cmt.String())
+	log.Debug().Msg(fmt.Sprintln("New Commit: ", cmt.String()))
 	newTree, err := cmt.Tree()
 	if err != nil {
 		return err
@@ -158,28 +149,43 @@ func (g *GS) UpdateGitViaGit(ctx context.Context, c *DeployCmd, response UploadR
 	if err != nil {
 		return fmt.Errorf("could not open contents of new file in git: %w", err)
 	}
-	log.Println("[DEBUG] contents in new commit: ", ctt)
+	log.Debug().Msg(fmt.Sprintln("contents in new commit: ", ctt))
 	
-	var bufCheckIfErr string = "";
-	CIRead, CIWrite, err := os.Pipe()
+	configFile, err := tree.File("section.config.json")
 	if err != nil {
-		return err
+		log.Error().Err(err).Msg("unable to open section.config.json which is used to log the image name and version")
 	}
-	if IsInCtxBool(ctx, "quiet"){
-		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: CIWrite})
-		buf := make([]byte, 4096)
-		n, err := CIRead.Read(buf)
-		if err != nil{
-			return err
-		}
-		bufCheckIfErr = string(buf[:n])
-	} else {
-		err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: os.Stderr})
-	}
+	sectionConfigContents, err := configFile.Contents()
 	if err != nil {
-		if IsInCtxBool(ctx, "quiet") {
-			log.Println("[ERROR]", bufCheckIfErr)
+		log.Error().Err(err).Msg("unable to open section.config.json which is used to log the image name and version")
+	}
+	sectionConfig, err := ParseSectionConfig(sectionConfigContents)
+	if err != nil{
+		log.Error().Err(err).Msg("There was an issue reading the section.config.json")
+	}
+	// if err := json.Unmarshal(sectionConfigContent.Bytes(), &sectionConfig); err != nil {
+	// 	log.Error().Err(err).Msg("unable to decode the json for section.config.json which is used to log the image name and version")
+	// }
+	moduleVersion := "unknown"
+	for _,v := range sectionConfig.Proxychain{
+		if(v.Name == c.AppPath){
+			moduleVersion = v.Image
 		}
+	}
+	if moduleVersion == "unknown"{
+		log.Debug().Msg("failed to pair app path (aka proxy name) with image (version)")
+	}
+	// for proxy, _ := range sectionConfig["proxychain"]{
+
+	// }
+	log.Info().Str("Git Remote",cloneDir).Msg("")
+	log.Info().Str("Tarball Source",fmt.Sprintf("%v/%s.tar.gz",c.AccountID,response.PayloadID)).Msg("")
+	log.Info().Str("Module Name",c.AppPath).Msg("")
+	log.Info().Str("Module Version",moduleVersion).Msg("")
+	log.Info().Msg("Validating your app...")
+	err = r.Push(&git.PushOptions{Auth: gitAuth, Progress: progressOutput})
+
+	if err != nil {
 		return fmt.Errorf("failed to push git changes: %w", err)
 	}
 	
