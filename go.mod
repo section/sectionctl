@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/alecthomas/kong v0.2.16
 	github.com/alecthomas/repr v0.0.0-20210301060118-828286944d6a // indirect
-	github.com/briandowns/spinner v1.11.1
+	github.com/briandowns/spinner v1.14.0
 	github.com/fatih/color v1.10.0
 	github.com/go-git/go-git/v5 v5.3.0
 	github.com/hashicorp/go-version v1.2.1
