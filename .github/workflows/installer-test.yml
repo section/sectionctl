@@ -71,6 +71,10 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: dist
+          path: dist/
+
+      - run: ls
+      - run: ls dist/
 
       - name: Get Version
         id: get_version
@@ -139,7 +143,10 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: dist
+          path: dist/
 
+      - run: ls
+      - run: ls dist/
       - name: Get Version
         id: get_version
         uses: battila7/get-version-action@v2
@@ -166,8 +173,6 @@ jobs:
       - name: 'Set Plugin permissions'
         run: sudo chown -R $(whoami) /usr/share/nsis/Plugins/
         # if: ${{matrix.GOOS == 'windows' }}
-      - run: ls
-      - run: ls dist/
       - run: ls packaging/windows/
       - name: Create nsis installer
         uses: joncloud/makensis-action@v3.3
