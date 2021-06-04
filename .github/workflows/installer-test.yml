@@ -1,9 +1,9 @@
 on: [push]
 
 jobs:
-  build:
-    name: 🚧 Build binaries
-    runs-on: ubuntu-latest
+  create_installer:
+    runs-on: 'ubuntu-20.04'
+    name: 🚧 Create Windows Installer Binary
     strategy:
       matrix:
         GOOS: [windows]
@@ -13,6 +13,17 @@ jobs:
       GOARCH: ${{ matrix.GOARCH }}
       GOOS: ${{ matrix.GOOS }}
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Get Version
+        id: get_version
+        uses: battila7/get-version-action@v2
+      - run: echo "MAJORVERSION=${{ steps.get_version.outputs.major }}" >> $GITHUB_ENV
+      - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
+      - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
+      - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
+
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
@@ -26,14 +37,6 @@ jobs:
         run: |
           go get -v -t -d ./...
 
-      - name: Get Version
-        id: get_version
-        uses: battila7/get-version-action@v2
-      - run: echo "MAJORVERSION=${{ steps.get_version.outputs.major }}" >> $GITHUB_ENV
-      - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
-      - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
-      - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
-
       - name: Build
         run: make build-release
 
@@ -41,22 +44,6 @@ jobs:
         with:
           name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.exe
           path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}
-
-  create_installer:
-    runs-on: 'ubuntu-20.04'
-    name: 🚧 Create Windows Installer Binary
-
-    steps:
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-
-      - name: Get Version
-        id: get_version
-        uses: battila7/get-version-action@v2
-      - run: echo "MAJORVERSION=${{ steps.get_version.outputs.major }}" >> $GITHUB_ENV
-      - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
-      - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
-      - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
 
       - name: 'Install makensis (apt)'
         run: sudo apt update && sudo apt install -y nsis nsis-pluginapi
