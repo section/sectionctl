@@ -72,6 +72,7 @@ jobs:
       - run: echo "MAJORVERSION=${{ steps.get_version.outputs.major }}" >> $GITHUB_ENV
       - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
       - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
+      - run: echo "NO_V_VERSION=${{ steps.get_version.outputs.version-without-v }}" >> $GITHUB_ENV
       - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
       - name: create sample script
         run: |
@@ -89,7 +90,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.deb
-          path: sectionctl-${{ env.VERSION }}_${{ env.GOARCH }}.deb
+          path: sectionctl_${{ env.NO_V_VERSION }}_${{ env.GOARCH }}.deb
   build_rpm:
     runs-on: 'ubuntu-latest'
     needs: build
@@ -136,7 +137,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-el7-${{ env.GOARCH }}.rpm
-          path: sectionctl-${{ env.MAJORVERSION }}.${{ env.MINORVERSION }}.${{ env.PATCHVERSION }}.el7.x86_64.rpm
+          path: sectionctl-${{ env.MAJORVERSION }}.${{ env.MINORVERSION }}.${{ env.PATCHVERSION }}-1.el7.x86_64.rpm
   create_installer:
     runs-on: 'ubuntu-20.04'
     needs: build
@@ -160,8 +161,6 @@ jobs:
         with:
           name: dist
           path: dist/
-      - run: ls
-      - run: ls dist/
       - name: Get Version
         id: get_version
         uses: battila7/get-version-action@v2
@@ -184,7 +183,6 @@ jobs:
       - name: 'Set Plugin permissions'
         run: sudo chown -R $(whoami) /usr/share/nsis/Plugins/
         # if: ${{matrix.GOOS == 'windows' }}
-      - run: ls packaging/windows/
       - name: Create nsis installer
         uses: joncloud/makensis-action@v3.3
         with:
@@ -198,9 +196,6 @@ jobs:
             -DBUILDVERSION=${{ env.PATCHVERSION }}
           script-file: 'packaging/windows/nsis.sectionctl.nsi'
         # if: ${{matrix.GOOS == 'windows' }}
-      - run: ls
-      - run: ls dist/
-      - run: ls packaging/windows/
       - name: Upload artifact
         uses: actions/upload-artifact@v1.0.0
         with:
