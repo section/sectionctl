@@ -91,9 +91,8 @@ jobs:
           desc: '${{ env.DESC }}'
       - uses: actions/upload-artifact@v2
         with:
-          name: artifact-deb
-          path: |
-            ./*.deb
+          name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.deb
+          path: sectionctl-${{ env.VERSION }}_${{ env.GOARCH }}.deb
       - uses: jiro4989/build-rpm-action@v2
         with:
           summary: '${{ env.DESC }}'
@@ -106,10 +105,8 @@ jobs:
           license: 'MIT'
       - uses: actions/upload-artifact@v2
         with:
-          name: artifact-rpm
-          path: |
-            ./*.rpm
-            !./*-debuginfo-*.rpm
+          name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-el7-${{ env.GOARCH }}.rpm
+          path: sectionctl-${{ env.MAJORVERSION }}.${{ env.MINORVERSION }}.${{ env.PATCHVERSION }}.el7.x86_64.rpm
   create_installer:
     runs-on: 'ubuntu-20.04'
     needs: build
