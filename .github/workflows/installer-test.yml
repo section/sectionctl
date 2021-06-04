@@ -136,7 +136,7 @@ jobs:
       - run: find . -print
       - uses: actions/upload-artifact@v2
         with:
-          name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-el7-${{ env.GOARCH }}.rpm
+          name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}-el7.rpm
           path: sectionctl-${{ env.MAJORVERSION }}.${{ env.MINORVERSION }}.${{ env.PATCHVERSION }}-1.el7.x86_64.rpm
   create_installer:
     runs-on: 'ubuntu-20.04'
@@ -176,41 +176,24 @@ jobs:
           file-url: https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip
           file-name: envar_plugin.zip
           location: ${{ github.workspace }}
-        # if: ${{ matrix.GOOS == 'windows' }}
       - name: Extract EnVar plugin
         run: 7z x -o"${{ github.workspace }}/NSIS_Plugins" "${{ github.workspace }}/envar_plugin.zip"
-        # if: ${{ matrix.GOOS == 'windows' }}
       - name: 'Set Plugin permissions'
         run: sudo chown -R $(whoami) /usr/share/nsis/Plugins/
-        # if: ${{matrix.GOOS == 'windows' }}
       - name: Create nsis installer
         uses: joncloud/makensis-action@v3.3
         with:
           additional-plugin-paths: ${{ github.workspace }}/NSIS_Plugins/Plugins
           arguments: >
             -DARCH=amd64
-            -DOUTPUTFILE=sectionctl-installer-${{ env.VERSION }}-amd64.exe
+            -DOUTPUTFILE=sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}-installer.exe
             -DSECTIONCTL_VERSION=${{ env.VERSION }}
             -DMAJORVERSION=${{ env.MAJORVERSION }}
             -DMINORVERSION=${{ env.MINORVERSION }}
             -DBUILDVERSION=${{ env.PATCHVERSION }}
           script-file: 'packaging/windows/nsis.sectionctl.nsi'
-        # if: ${{matrix.GOOS == 'windows' }}
       - name: Upload artifact
         uses: actions/upload-artifact@v1.0.0
         with:
-          name: sectionctl-installer-${{ env.VERSION }}-amd64.exe
-          path: packaging/windows/sectionctl-installer-${{ env.VERSION }}-amd64.exe
-        # if: ${{matrix.GOOS == 'windows' }}
-
-      # - name: Upload Installer Asset
-      #   id: upload-installer-asset
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ needs.release.outputs.release_upload_url }}
-      #     asset_path: dist/sectionctl-${{ env.VERSION }}-amd64.exe
-      #     asset_name: sectionctl-${{ env.VERSION }}-amd64.exe
-      #     asset_content_type: application/octet-stream
-      #   if: ${{matrix.GOOS == 'windows' }}
+          name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}-installer.exe
+          path: packaging/windows/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}-installer.exe
