@@ -76,43 +76,43 @@ jobs:
       - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
       - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
       - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
-      
+
       - name: create sample script
           run: |
             mkdir -p .debpkg/usr/bin
             mkdir -p .rpmpkg/usr/bin
             cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .debpkg/usr/bin/
             cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .rpmpkg/usr/bin/
-        - uses: jiro4989/build-deb-action@v2
-          with:
-            package: ${{ env.APP_NAME }}
-            package_root: .debpkg
-            maintainer: ${{ env.MAINTAINER }}
-            version: ${{ env.VERSION }}
-            arch: '${{ env.GOARCH }}'
-            desc: '${{ env.DESC }}'
+      - uses: jiro4989/build-deb-action@v2
+        with:
+          package: ${{ env.APP_NAME }}
+          package_root: .debpkg
+          maintainer: ${{ env.MAINTAINER }}
+          version: ${{ env.VERSION }}
+          arch: '${{ env.GOARCH }}'
+          desc: '${{ env.DESC }}'
 
-        - uses: jiro4989/build-rpm-action@v2
-          with:
-            summary: '${{ env.DESC }}'
-            package: ${{ env.APP_NAME }}
-            package_root: .rpmpkg
-            maintainer: ${{ env.MAINTAINER }}
-            version: ${{ github.ref }}
-            arch: 'x86_64'
-            desc: '${{ env.DESC }}'
+      - uses: jiro4989/build-rpm-action@v2
+        with:
+          summary: '${{ env.DESC }}'
+          package: ${{ env.APP_NAME }}
+          package_root: .rpmpkg
+          maintainer: ${{ env.MAINTAINER }}
+          version: ${{ github.ref }}
+          arch: 'x86_64'
+          desc: '${{ env.DESC }}'
 
-        - uses: actions/upload-artifact@v2
-          with:
-            name: artifact-deb
-            path: |
-              ./*.deb
-        - uses: actions/upload-artifact@v2
-          with:
-            name: artifact-rpm
-            path: |
-              ./*.rpm
-              !./*-debuginfo-*.rpm
+      - uses: actions/upload-artifact@v2
+        with:
+          name: artifact-deb
+          path: |
+            ./*.deb
+      - uses: actions/upload-artifact@v2
+        with:
+          name: artifact-rpm
+          path: |
+            ./*.rpm
+            !./*-debuginfo-*.rpm
   create_installer:
     runs-on: 'ubuntu-20.04'
     needs: build
@@ -131,7 +131,7 @@ jobs:
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
-        
+
       - name: Download dist folder
         uses: actions/download-artifact@v2
         with:
