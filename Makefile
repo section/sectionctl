@@ -5,6 +5,13 @@ export HEAPAPPID := 892134159
 
 staticcheck := /home/runner/go/bin/staticcheck
 
+ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
+    detected_OS := Windows
+else
+    detected_OS := $(shell uname)  # same as "uname -s"
+endif
+
+
 all: test
 
 cidep:
@@ -56,3 +63,40 @@ test-release: check_version
 	git tag -f -a $(VERSION) -m ''
 	git push origin test-release
 	git push origin refs/tags/$(VERSION)
+
+
+
+ifeq ($(detected_OS),Windows)
+windows-installer: nsis-windows
+else
+windows-installer: nsis-ubuntu
+endif
+
+ifeq ($(detected_OS),Linux)
+windows-installer: nsis-ubuntu
+endif
+
+ifeq (,$(wildcard /usr/share/nsis/Plugins/x86-unicode/EnVar.dll))
+nsis-ubuntu: nsis-ubuntu-deps nsis-ubuntu-build
+else
+nsis-ubuntu: check_version nsis-ubuntu-build
+
+endif
+
+nsis-ubuntu-build: build-release
+	version_major=$(shell echo $(VERSION) | cut -c 2- | cut -d. -f1)
+	version_minor=$(shell echo $(VERSION) | cut -d. -f2)
+	version_patch=$(shell echo $(VERSION) | cut -d. -f3)
+	echo $(version_patch)
+	echo $(version_minor)
+	echo $(version_major)
+
+
+nsis-ubuntu-deps:
+	sudo apt update && sudo apt install -y nsis nsis-pluginapi
+	wget https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip
+	sudo unzip EnVar_plugin.zip -d /usr/share/nsis/
+	rm EnVar_plugin.zip
+
+nsis-windows:
+	echo "Not available on Windows yet"
