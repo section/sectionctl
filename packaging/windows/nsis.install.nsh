@@ -30,7 +30,7 @@ OutFile "${OUTPUTFILE}" # set through command line arguments
 !insertmacro MUI_PAGE_LICENSE "../../dist/sectionctl-${SECTIONCTL_VERSION}-windows-amd64/LICENSE"
 
 # Install sectionctl binary
-Section "Sectionctl" SECTIONCTL_IDX
+Section "sectionctl" SECTIONCTL_IDX
   SetOutPath $INSTDIR
   file "../../dist/sectionctl-${SECTIONCTL_VERSION}-windows-amd64/"
 
