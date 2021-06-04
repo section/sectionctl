@@ -85,6 +85,7 @@ jobs:
           version: ${{ env.VERSION }}
           arch: '${{ env.GOARCH }}'
           desc: '${{ env.DESC }}'
+      - run: find . -print
       - uses: actions/upload-artifact@v2
         with:
           name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.deb
@@ -131,6 +132,7 @@ jobs:
           arch: 'x86_64'
           desc: '${{ env.DESC }}'
           license: 'MIT'
+      - run: find . -print
       - uses: actions/upload-artifact@v2
         with:
           name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-el7-${{ env.GOARCH }}.rpm
