@@ -34,7 +34,7 @@ jobs:
       - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
 
       - name: Build
-        run: make build-release
+        run: VERSION=v1.11.2-test make build-release
 
       - uses: actions/upload-artifact@v2
         with:
