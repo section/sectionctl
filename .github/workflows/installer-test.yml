@@ -45,10 +45,10 @@ jobs:
         with:
           name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.tar.gz
           path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}
-  build_linux_packages:
+  build_deb:
     runs-on: 'ubuntu-latest'
     needs: build
-    name: 🚧 Create Linux Packages
+    name: 🚧 Create Deb Package
     strategy:
       matrix:
         GOOS: [linux]
@@ -66,8 +66,6 @@ jobs:
         with:
           name: dist
           path: dist/
-      - run: ls
-      - run: ls dist/
       - name: Get Version
         id: get_version
         uses: battila7/get-version-action@v2
@@ -78,9 +76,7 @@ jobs:
       - name: create sample script
         run: |
           mkdir -p packaging/deb/usr/bin
-          mkdir -p .rpmpkg/usr/bin
           cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl packaging/deb/usr/bin/
-          cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .rpmpkg/usr/bin/
       - uses: jiro4989/build-deb-action@v2
         with:
           package: ${{ env.APP_NAME }}
@@ -93,6 +89,38 @@ jobs:
         with:
           name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.deb
           path: sectionctl-${{ env.VERSION }}_${{ env.GOARCH }}.deb
+  build_rpm:
+    runs-on: 'ubuntu-latest'
+    needs: build
+    name: 🐧 Create RPM Package
+    strategy:
+      matrix:
+        GOOS: [linux]
+        GOARCH: [amd64]
+    env:
+      VERSION: ${{ github.ref }}
+      GOARCH: ${{ matrix.GOARCH }}
+      GOOS: ${{ matrix.GOOS }}
+      DESC: 'Section command line tool.'
+      APP_NAME: 'sectionctl'
+      MAINTAINER: 'alice@section.io'
+    steps:
+      - name: Download dist folder
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: dist/
+      - name: Get Version
+        id: get_version
+        uses: battila7/get-version-action@v2
+      - run: echo "MAJORVERSION=${{ steps.get_version.outputs.major }}" >> $GITHUB_ENV
+      - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
+      - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
+      - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
+      - name: create sample script
+        run: |
+          mkdir -p .rpmpkg/usr/bin
+          cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .rpmpkg/usr/bin/
       - uses: jiro4989/build-rpm-action@v2
         with:
           summary: '${{ env.DESC }}'
@@ -110,7 +138,7 @@ jobs:
   create_installer:
     runs-on: 'ubuntu-20.04'
     needs: build
-    name: 🚧 Create Windows Installer Binary
+    name: 🚧 Create Windows Installer with NSIS
     strategy:
       matrix:
         GOOS: [windows]
