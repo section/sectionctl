@@ -7,7 +7,7 @@ require (
 	github.com/briandowns/spinner v1.15.0
 	github.com/fatih/color v1.12.0
 	github.com/go-git/go-git/v5 v5.3.0
-	github.com/hashicorp/go-version v1.2.1
+	github.com/hashicorp/go-version v1.3.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/mattn/go-colorable v0.1.8
 	github.com/olekukonko/tablewriter v0.0.5
