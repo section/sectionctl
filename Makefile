@@ -24,6 +24,10 @@ goerrcheck:
 
 build: clean
 	go build sectionctl.go
+	mkdir -p tmp
+	mkdir -p luft
+	env GOOS=linux GOARCH=amd64 go build -o tmp/sectionctl sectionctl.go
+	tar --create --gzip --verbose --file luft/sectionctl.tar.gz --directory tmp .
 
 build-release: clean check_version
 	@if [ -z "$(GOOS)" ]; then echo "Missing GOOS"; exit 1 ; fi
@@ -35,7 +39,7 @@ build-release: clean check_version
 	tar --create --gzip --verbose --file dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz --directory dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH) .
 
 clean:
-	rm -rf dist bin
+	rm -rf dist bin luft tmp
 
 check_version:
 	@if [ -z "$(VERSION)" ]; then echo "Missing VERSION"; exit 1 ; fi

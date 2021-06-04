@@ -23,3 +23,8 @@ sectionctl
 __debug_bin
 # Debug outputs
 sectionctl-debug-*.log
+
+# luft
+.idea
+tmp
+!luft/sectionctl

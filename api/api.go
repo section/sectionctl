@@ -22,6 +22,12 @@ var (
 	Timeout = 20 * time.Second
 	// Token is the token for authenticating to the Section API
 	Token string
+	// Username is the username for authenticating to the Section API
+    Username string
+    // Password is the password for authenticating to the Section API
+    Password string
+    // Basic authentication to the Section API
+    BasicAuth string
 
 	// ErrAuthDenied represents all authentication and authorization errors
 	ErrAuthDenied = errors.New("denied")
@@ -60,7 +66,8 @@ func request(ctx context.Context, method string, u url.URL, body io.Reader, head
 		}
 	}
 
-	req.Header.Add("section-token", Token)
+	// req.Header.Add("section-token", Token)
+    req.Header.Add("Authorization", BasicAuth)
 
 	log.Debug().Str("Request Method",method).Str("Request URL", req.URL.String()).Msg("Making Request")
 	for k, vs := range req.Header {

@@ -181,7 +181,8 @@ func (c *DeployCmd) Run(ctx *kong.Context, logWriters *LogWriters) (err error) {
 		return fmt.Errorf("unable to build file upload: %s", err)
 	}
 
-	req.Header.Add("section-token", api.Token)
+	// req.Header.Add("section-token", api.Token)
+	req.Header.Add("Authorization", api.BasicAuth)
 
 	log.Debug().Str("URL",req.URL.String())
 

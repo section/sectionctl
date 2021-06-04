@@ -44,8 +44,10 @@ func (g *GS) UpdateGitViaGit(ctx *kong.Context, c *DeployCmd, response UploadRes
 	log.Debug().Msg(fmt.Sprintln("tempDir: ", tempDir))
 	// Git objects storer based on memory
 	gitAuth := &gitHTTP.BasicAuth{
-		Username: "section-token", // yes, this can be anything except an empty string
-		Password: api.Token,
+// 		Username: "section-token", // yes, this can be anything except an empty string
+// 		Password: api.Token,
+        Username: api.Username,
+		Password: api.Password,
 	}
 	payload := PayloadValue{ID: response.PayloadID}
 	branchRef := fmt.Sprintf("refs/heads/%s",c.Environment)
@@ -58,7 +60,7 @@ func (g *GS) UpdateGitViaGit(ctx *kong.Context, c *DeployCmd, response UploadRes
 		Progress: progressOutput,
 		ReferenceName: plumbing.ReferenceName(branchRef),
 	})
-	
+
 	if err != nil {
 		log.Error().Err(err).Msg("error cloning")
 		return err
@@ -150,7 +152,7 @@ func (g *GS) UpdateGitViaGit(ctx *kong.Context, c *DeployCmd, response UploadRes
 		return fmt.Errorf("could not open contents of new file in git: %w", err)
 	}
 	log.Debug().Msg(fmt.Sprintln("contents in new commit: ", ctt))
-	
+
 	configFile, err := tree.File("section.config.json")
 	if err != nil {
 		log.Error().Err(err).Msg("unable to open section.config.json which is used to log the image name and version")
@@ -188,6 +190,6 @@ func (g *GS) UpdateGitViaGit(ctx *kong.Context, c *DeployCmd, response UploadRes
 	if err != nil {
 		return fmt.Errorf("failed to push git changes: %w", err)
 	}
-	
+
 	return nil
 }
