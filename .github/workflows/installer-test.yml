@@ -71,12 +71,15 @@ jobs:
           arguments: '-DOUTPUTFILE=sectionctl-${{ env.VERSION }}-amd64.exe -DSECTIONCTL_VERSION=${{ env.VERSION }} -DMAJORVERSION=${{ env.MAJORVERSION }} -DMINORVERSION=${{ env.MINORVERSION }} -DBUILDVERSION=${{ env.PATCHVERSION }}'
           script-file: 'packaging/windows/nsis.sectionctl.nsi'
         # if: ${{matrix.GOOS == 'windows' }}
+      - run: ls
+      - run: ls dist/
+      - run: ls packaging/windows/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v1.0.0
         with:
-          name: packaging/windows/sectionctl-${{ env.VERSION }}-amd64.exe
-          path: dist/sectionctl-${{ env.VERSION }}-amd64.exe
+          name: sectionctl-${{ env.VERSION }}-amd64.exe
+          path: packaging/windows/sectionctl-${{ env.VERSION }}-amd64.exe
         # if: ${{matrix.GOOS == 'windows' }}
 
       # - name: Upload Installer Asset
