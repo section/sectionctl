@@ -48,3 +48,11 @@ release: check_version
 	git tag -f -a $(VERSION) -m ''
 	git push origin main
 	git push origin refs/tags/$(VERSION)
+
+test-release: check_version
+	@if [ "$(shell git rev-parse --abbrev-ref HEAD)" != "test-release" ]; then echo "Must be on the 'test-release' branch"; exit 1 ; fi
+	@git update-index --refresh
+	@git diff-index --quiet HEAD --
+	git tag -f -a $(VERSION) -m ''
+	git push origin test-release
+	git push origin refs/tags/$(VERSION)
