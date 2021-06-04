@@ -1,4 +1,3 @@
-
 on: [push]
 
 jobs:
@@ -67,8 +66,8 @@ jobs:
         if: ${{ matrix.GOOS == 'windows' }}
 
       - name: 'Set Plugin permissions'
-      run: sudo chown -R $(whoami) /usr/share/nsis/Plugins/
-      if: ${{matrix.GOOS == 'windows' }}
+        run: sudo chown -R $(whoami) /usr/share/nsis/Plugins/
+        if: ${{matrix.GOOS == 'windows' }}
 
       - name: Create nsis installer
         uses: joncloud/makensis-action@v3.3
