@@ -27,12 +27,12 @@ OutFile "${OUTPUTFILE}" # set through command line arguments
   !insertmacro MUI_LANGUAGE "English"
  
 ;-------------------------------- 
-!insertmacro MUI_PAGE_LICENSE "..\..\dist\sectionctl-${SECTIONCTL_VERSION}-windows-amd64\LICENSE"
+!insertmacro MUI_PAGE_LICENSE "../../dist/sectionctl-${SECTIONCTL_VERSION}-windows-amd64\LICENSE"
 
 # Install sectionctl binary
 Section "Sectionctl" SECTIONCTL_IDX
   SetOutPath $INSTDIR
-  file "..\..\dist\sectionctl-${SECTIONCTL_VERSION}-windows-amd64\"
+  file "../../dist/sectionctl-${SECTIONCTL_VERSION}-windows-amd64\"
 
   # Create start menu launcher
   createDirectory "$SMPROGRAMS\${APPNAME}"
