@@ -1,8 +1,125 @@
 on: [push]
 
 jobs:
+  build:
+    name: 🚧 Build binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GOOS: [ linux, darwin, windows ]
+        GOARCH: [ amd64, arm64 ]
+        exclude:
+          - GOOS: linux
+            GOARCH: arm64
+          - GOOS: windows
+            GOARCH: arm64
+    env:
+      VERSION: ${{ github.ref }}
+      GOARCH: ${{ matrix.GOARCH }}
+      GOOS: ${{ matrix.GOOS }}
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.16
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: |
+        go get -v -t -d ./...
+
+    - name: Get version from tag ref
+      id: get_version_from_tag
+      run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+    - name: Build
+      run: make build-release
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}
+        path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl
+      if: ${{matrix.GOOS != 'windows' }}
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.exe
+        path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl.exe
+      if: ${{matrix.GOOS == 'windows' }}
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.tar.gz
+        path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}
+
+  build_linux_packages:
+    runs-on: 'ubuntu-latest'
+    needs: build
+    name: 🚧 Create Linux Packages
+    strategy:
+      matrix:
+        GOOS: [linux]
+        GOARCH: [amd64]
+    env:
+      VERSION: ${{ github.ref }}
+      GOARCH: ${{ matrix.GOARCH }}
+      GOOS: ${{ matrix.GOOS }}
+      DESC: 'Section command line tool.'
+      APP_NAME: 'sectionctl'
+      MAINTAINER: 'alice@section.io'
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Get Version
+        id: get_version
+        uses: battila7/get-version-action@v2
+      - run: echo "MAJORVERSION=${{ steps.get_version.outputs.major }}" >> $GITHUB_ENV
+      - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
+      - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
+      - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
+      - name: create sample script
+          run: |
+            mkdir -p .debpkg/usr/bin
+            mkdir -p .rpmpkg/usr/bin
+            cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .debpkg/usr/bin/
+            cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .rpmpkg/usr/bin/
+        - uses: jiro4989/build-deb-action@v2
+          with:
+            package: ${{ env.APP_NAME }}
+            package_root: .debpkg
+            maintainer: ${{ env.MAINTAINER }}
+            version: ${{ env.VERSION }}
+            arch: '${{ env.GOARCH }}'
+            desc: '${{ env.DESC }}'
+
+        - uses: jiro4989/build-rpm-action@v2
+          with:
+            summary: '${{ env.DESC }}'
+            package: ${{ env.APP_NAME }}
+            package_root: .rpmpkg
+            maintainer: ${{ env.MAINTAINER }}
+            version: ${{ github.ref }}
+            arch: 'x86_64'
+            desc: '${{ env.DESC }}'
+
+        - uses: actions/upload-artifact@v2
+          with:
+            name: artifact-deb
+            path: |
+              ./*.deb
+        - uses: actions/upload-artifact@v2
+          with:
+            name: artifact-rpm
+            path: |
+              ./*.rpm
+              !./*-debuginfo-*.rpm
   create_installer:
     runs-on: 'ubuntu-20.04'
+    needs: build
     name: 🚧 Create Windows Installer Binary
     strategy:
       matrix:
@@ -26,64 +143,6 @@ jobs:
       - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
       - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
       - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
-
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.16
-        id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-
-      - name: Get dependencies
-        run: |
-          go get -v -t -d ./...
-
-      - name: Build
-        run: make build-release
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.exe
-          path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}
-
-      - name: create sample script
-        run: |
-          mkdir -p .debpkg/usr/bin
-          mkdir -p .rpmpkg/usr/bin
-          cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .debpkg/usr/bin/
-          cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .rpmpkg/usr/bin/
-      - uses: jiro4989/build-deb-action@v2
-        with:
-          package: ${{ env.APP_NAME }}
-          package_root: .debpkg
-          maintainer: ${{ env.MAINTAINER }}
-          version: ${{ env.VERSION }}
-          arch: '${{ env.GOARCH }}'
-          desc: '${{ env.DESC }}'
-
-      - uses: jiro4989/build-rpm-action@v2
-        with:
-          summary: '${{ env.DESC }}'
-          package: ${{ env.APP_NAME }}
-          package_root: .rpmpkg
-          maintainer: ${{ env.MAINTAINER }}
-          version: ${{ github.ref }}
-          arch: 'x86_64'
-          desc: '${{ env.DESC }}'
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: artifact-deb
-          path: |
-            ./*.deb
-      - uses: actions/upload-artifact@v2
-        with:
-          name: artifact-rpm
-          path: |
-            ./*.rpm
-            !./*-debuginfo-*.rpm
 
       - name: 'Install makensis (apt)'
         run: sudo apt update && sudo apt install -y nsis nsis-pluginapi
