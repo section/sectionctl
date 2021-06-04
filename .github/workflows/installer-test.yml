@@ -6,8 +6,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GOOS: [ linux, darwin, windows ]
-        GOARCH: [ amd64, arm64 ]
+        GOOS: [linux, darwin, windows]
+        GOARCH: [amd64, arm64]
         exclude:
           - GOOS: linux
             GOARCH: arm64
@@ -18,35 +18,35 @@ jobs:
       GOARCH: ${{ matrix.GOARCH }}
       GOOS: ${{ matrix.GOOS }}
     steps:
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v2
-      with:
-        go-version: ^1.16
-      id: go
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.16
+        id: go
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
 
-    - name: Get dependencies
-      run: |
-        go get -v -t -d ./...
+      - name: Get dependencies
+        run: |
+          go get -v -t -d ./...
 
-    - name: Get version from tag ref
-      id: get_version_from_tag
-      run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+      - name: Get version from tag ref
+        id: get_version_from_tag
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
-    - name: Build
-      run: make build-release
+      - name: Build
+        run: make build-release
 
-    - uses: actions/upload-artifact@v2
-      with:
-        name: dist/
-        path: dist/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist/
+          path: dist/
 
-    - uses: actions/upload-artifact@v2
-      with:
-        name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.tar.gz
-        path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.tar.gz
+          path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}
 
   build_linux_packages:
     runs-on: 'ubuntu-latest'
@@ -78,11 +78,11 @@ jobs:
       - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
 
       - name: create sample script
-          run: |
-            mkdir -p .debpkg/usr/bin
-            mkdir -p .rpmpkg/usr/bin
-            cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .debpkg/usr/bin/
-            cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .rpmpkg/usr/bin/
+        run: |
+          mkdir -p .debpkg/usr/bin
+          mkdir -p .rpmpkg/usr/bin
+          cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .debpkg/usr/bin/
+          cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .rpmpkg/usr/bin/
       - uses: jiro4989/build-deb-action@v2
         with:
           package: ${{ env.APP_NAME }}
