@@ -31,10 +31,11 @@ jobs:
         uses: battila7/get-version-action@v2
       - run: echo "MAJORVERSION=${{ steps.get_version.outputs.major }}" >> $GITHUB_ENV
       - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
+      - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
       - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
 
       - name: Build
-        run: VERSION=v1.11.2-test make build-release
+        run: make build-release
 
       - uses: actions/upload-artifact@v2
         with:
@@ -53,6 +54,7 @@ jobs:
         uses: battila7/get-version-action@v2
       - run: echo "MAJORVERSION=${{ steps.get_version.outputs.major }}" >> $GITHUB_ENV
       - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
+      - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
       - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
 
       - name: 'Install makensis (apt)'
@@ -79,7 +81,7 @@ jobs:
         uses: joncloud/makensis-action@v3.3
         with:
           additional-plugin-paths: ${{ github.workspace }}/NSIS_Plugins/Plugins
-          arguments: '/DOUTPUTFILE=sectionctl-${{ env.VERSION }}-amd64.exe /DSECTIONCTL_VERSION=${{ env.VERSION }} /DMAJORVERSION=${{ env.MAJORVERSION }} /DMINORVERSION=${{ env.MINORVERSION }} /DBUILDVERSION=release'
+          arguments: '/DOUTPUTFILE=sectionctl-${{ env.VERSION }}-amd64.exe /DSECTIONCTL_VERSION=${{ env.VERSION }} /DMAJORVERSION=${{ env.MAJORVERSION }} /DMINORVERSION=${{ env.MINORVERSION }} /DBUILDVERSION=${{ env.PATCHVERSION }}'
           script-file: 'packaging/windows/nsis.sectionctl.nsi'
         # if: ${{matrix.GOOS == 'windows' }}
 
