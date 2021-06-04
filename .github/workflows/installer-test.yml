@@ -26,9 +26,12 @@ jobs:
         run: |
           go get -v -t -d ./...
 
-      - name: Get version from tag ref
-        id: get_version_from_tag
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+      - name: Get Version
+        id: get_version
+        uses: battila7/get-version-action@v2
+      - run: echo "MAJORVERSION=${{ steps.get_version.outputs.major }}" >> $GITHUB_ENV
+      - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
+      - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
 
       - name: Build
         run: make build-release
