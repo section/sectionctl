@@ -100,21 +100,22 @@ jobs:
           arch: '${{ env.GOARCH }}'
           desc: '${{ env.DESC }}'
 
+      - uses: actions/upload-artifact@v2
+        with:
+          name: artifact-deb
+          path: |
+            ./*.deb
+
       - uses: jiro4989/build-rpm-action@v2
         with:
           summary: '${{ env.DESC }}'
           package: ${{ env.APP_NAME }}
           package_root: .rpmpkg
           maintainer: ${{ env.MAINTAINER }}
-          version: ${{ env.VERSION }}
+          version: '${{ env.MAJORVERSION }}.${{ env.MINORVERSION }}.${{ env.PATCHVERSION }}'
           arch: 'x86_64'
           desc: '${{ env.DESC }}'
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: artifact-deb
-          path: |
-            ./*.deb
       - uses: actions/upload-artifact@v2
         with:
           name: artifact-rpm
