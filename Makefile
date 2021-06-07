@@ -30,18 +30,16 @@ goerrcheck:
 	errcheck -exclude .lint/errcheck-excludes -blank -ignoretests ./...
 
 build: clean
-	go install github.com/tc-hib/go-winres@latest
-	go-winres make --product-version=git-tag --file-version=git-tag
-	go build
+	go build -o sectionctl -ldflags "-X 'github.com/section/sectionctl/version.Version=$(shell echo $(VERSION) | cut -c 2-)'"
+
 
 build-release: clean check_version
 	@if [ -z "$(GOOS)" ]; then echo "Missing GOOS"; exit 1 ; fi
 	@if [ -z "$(GOARCH)" ]; then echo "Missing GOARCH"; exit 1 ; fi
-	go install github.com/tc-hib/go-winres@latest
-	go-winres make --product-version=git-tag --file-version=git-tag
 	go build -o sectionctl -ldflags "-X 'github.com/section/sectionctl/version.Version=$(shell echo $(VERSION) | cut -c 2-)'"
 	mkdir -p dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
 	cp README.md LICENSE sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/
+	chmod +x dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/sectionctl
 	@if [ "$(GOOS)" = "windows" ]; then mv dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/sectionctl dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH)/sectionctl.exe  ; fi
 	tar --create --gzip --verbose --file dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz --directory dist/sectionctl-$(VERSION)-$(GOOS)-$(GOARCH) .
 

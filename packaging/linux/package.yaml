@@ -1,0 +1,11 @@
+meta:
+  description: Section Commandline Tools
+  vendor: Section
+  maintainer: tech@section.io
+  license: MIT
+
+files:
+  '/usr/bin/sectionctl':
+    file: sectionctl
+    mode: '0755'
+    user: 'root'

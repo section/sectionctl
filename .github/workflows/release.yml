@@ -25,18 +25,14 @@ jobs:
           release_name: ${{ github.ref }}
           draft: true
           prerelease: false
-
   build:
     name: 🚧 Build binaries
     runs-on: ubuntu-latest
-    needs: release
     strategy:
       matrix:
         GOOS: [linux, darwin, windows]
         GOARCH: [amd64, arm64]
         exclude:
-          - GOOS: linux
-            GOARCH: arm64
           - GOOS: windows
             GOARCH: arm64
     env:
@@ -72,7 +68,6 @@ jobs:
         with:
           name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.tar.gz
           path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}
-
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
@@ -83,14 +78,14 @@ jobs:
           asset_path: dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.tar.gz
           asset_name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.tar.gz
           asset_content_type: application/gzip
-  build_deb:
+  build_linux_packages:
     runs-on: 'ubuntu-latest'
     needs: [build, release]
-    name: 🐧 Create Deb Package
+    name: 🐧 Build Linux Packages (deb, rpm)
     strategy:
       matrix:
         GOOS: [linux]
-        GOARCH: [amd64]
+        GOARCH: [amd64, arm64]
     env:
       VERSION: ${{ github.ref }}
       GOARCH: ${{ matrix.GOARCH }}
@@ -99,6 +94,8 @@ jobs:
       APP_NAME: 'sectionctl'
       MAINTAINER: 'alice@section.io'
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
       - name: Download dist folder
         uses: actions/download-artifact@v2
         with:
@@ -110,84 +107,40 @@ jobs:
       - run: echo "MAJORVERSION=${{ steps.get_version.outputs.major }}" >> $GITHUB_ENV
       - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
       - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
+      - run: echo "VER={{env.MAJORVERSION}}.${{env.MINORVERSION}}.${{env.PATCHVERSION}}" >> $GITHUB_ENV
       - run: echo "NO_V_VERSION=${{ steps.get_version.outputs.version-without-v }}" >> $GITHUB_ENV
       - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
+      - run: echo "ARCHSTRING=x86_64" >> $GITHUB_ENV
+        if: ${{ env.GOARCH == 'amd64' }}
+      - run: echo "ARCHSTRING=aarch64" >> $GITHUB_ENV
+        if: ${{ env.GOARCH != 'amd64' }}
       - name: Copy binaries to deb package directory
         run: |
-          mkdir -p packaging/deb/usr/bin
-          cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl packaging/deb/usr/bin/
-          chmod +x packaging/deb/usr/bin/sectionctl
-      - uses: jiro4989/build-deb-action@632a1e27489ec4171f659f1cd441fe996154b338
+          cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .
+          chmod +x sectionctl
+      - uses: kentik/pkg@v1.0.0-rc7
         with:
-          package: ${{ env.APP_NAME }}
-          package_root: packaging/deb
-          maintainer: ${{ env.MAINTAINER }}
-          version: ${{ env.VERSION }}
-          arch: '${{ env.GOARCH }}'
-          desc: '${{ env.DESC }}'
-      - run: find . -print
+          name: sectionctl
+          version: '${{env.MAJORVERSION}}.${{env.MINORVERSION}}.${{env.PATCHVERSION}}'
+          arch: ${{env.ARCHSTRING}}
+          format: rpm
+          package: packaging/linux/package.yaml
+      - uses: kentik/pkg@v1.0.0-rc7
+        with:
+          name: sectionctl
+          version: '${{env.MAJORVERSION}}.${{env.MINORVERSION}}.${{env.PATCHVERSION}}'
+          arch: ${{env.ARCHSTRING}}
+          format: deb
+          package: packaging/linux/package.yaml
+      - run: ls *.deb *.rpm
       - uses: actions/upload-artifact@v2
         with:
           name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.deb
-          path: sectionctl_${{ env.NO_V_VERSION }}_${{ env.GOARCH }}.deb
-      - name: Add Deb to Release
-        id: add-rpm-to-release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.release.outputs.release_upload_url }}
-          asset_path: sectionctl_${{ env.NO_V_VERSION }}_${{ env.GOARCH }}.deb
-          asset_name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.deb
-          asset_content_type: application/octet-stream
-  build_rpm:
-    runs-on: 'ubuntu-latest'
-    needs: [build, release]
-    name: 🐧 Create RPM Package
-    strategy:
-      matrix:
-        GOOS: [linux]
-        GOARCH: [amd64]
-    env:
-      VERSION: ${{ github.ref }}
-      GOARCH: ${{ matrix.GOARCH }}
-      GOOS: ${{ matrix.GOOS }}
-      DESC: 'Section command line tool.'
-      APP_NAME: 'sectionctl'
-      MAINTAINER: 'alice@section.io'
-    steps:
-      - name: Download dist folder
-        uses: actions/download-artifact@v2
-        with:
-          name: dist
-          path: dist/
-      - name: Get Version
-        id: get_version
-        uses: battila7/get-version-action@v2
-      - run: echo "MAJORVERSION=${{ steps.get_version.outputs.major }}" >> $GITHUB_ENV
-      - run: echo "MINORVERSION=${{ steps.get_version.outputs.minor }}" >> $GITHUB_ENV
-      - run: echo "PATCHVERSION=${{ steps.get_version.outputs.patch }}" >> $GITHUB_ENV
-      - run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $GITHUB_ENV
-      - name: Copy binaries to rpm package directory
-        run: |
-          mkdir -p .rpmpkg/usr/bin
-          cp -p dist/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}/sectionctl .rpmpkg/usr/bin/
-          chmod +x .rpmpkg/usr/bin/*
-      - uses: jiro4989/build-rpm-action@v2
-        with:
-          summary: '${{ env.DESC }}'
-          package: ${{ env.APP_NAME }}
-          package_root: .rpmpkg
-          maintainer: ${{ env.MAINTAINER }}
-          version: '${{ env.MAJORVERSION }}.${{ env.MINORVERSION }}.${{ env.PATCHVERSION }}'
-          arch: 'x86_64'
-          desc: '${{ env.DESC }}'
-          license: 'MIT'
-      - run: find . -print
+          path: sectionctl_${{env.MAJORVERSION}}.${{env.MINORVERSION}}.${{env.PATCHVERSION}}-1_${{ env.GOARCH }}.deb
       - uses: actions/upload-artifact@v2
         with:
-          name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}-el7.rpm
-          path: sectionctl-${{ env.MAJORVERSION }}.${{ env.MINORVERSION }}.${{ env.PATCHVERSION }}-1.el7.x86_64.rpm
+          name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.rpm
+          path: sectionctl-${{env.MAJORVERSION}}.${{env.MINORVERSION}}.${{env.PATCHVERSION}}-1.${{ env.ARCHSTRING }}.rpm
       - name: Add RPM to Release
         id: add-rpm-to-release
         uses: actions/upload-release-asset@v1
@@ -195,13 +148,22 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.release_upload_url }}
-          asset_path: sectionctl-${{ env.MAJORVERSION }}.${{ env.MINORVERSION }}.${{ env.PATCHVERSION }}-1.el7.x86_64.rpm
-          asset_name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}-el7.rpm
+          asset_name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.rpm
+          asset_path: sectionctl-${{env.MAJORVERSION}}.${{env.MINORVERSION}}.${{env.PATCHVERSION}}-1.${{ env.ARCHSTRING }}.rpm
           asset_content_type: application/octet-stream
-
+      - name: Add Deb to Release
+        id: add-rpm-to-release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.release_upload_url }}
+          asset_name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.deb
+          asset_path: sectionctl_${{env.MAJORVERSION}}.${{env.MINORVERSION}}.${{env.PATCHVERSION}}-1_${{ env.GOARCH }}.deb
+          asset_content_type: application/octet-stream
   create_installer:
     runs-on: 'windows-latest'
-    needs: build
+    needs: [build, release]
     name: 🪟 Create Windows Installer with NSIS
     strategy:
       matrix:
@@ -222,7 +184,6 @@ jobs:
         with:
           name: dist
           path: dist/
-      - run: dir -s
       - name: Get Version
         id: get_version
         uses: battila7/get-version-action@v2
@@ -266,3 +227,11 @@ jobs:
           asset_path: packaging/windows/sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}-installer.exe
           asset_name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}-installer.exe
           asset_content_type: application/octet-stream
+  delete_excess_artifacts:
+    runs-on: 'ubuntu-latest'
+    needs: [build, create_installer, build_linux_packages]
+    name: ❌ Delete unnecessary 100mb dist artifact
+    steps:
+      - uses: geekyeggo/delete-artifact@v1
+        with:
+          name: dist
