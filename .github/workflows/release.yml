@@ -253,7 +253,7 @@ jobs:
         with:
           formula-name: sectionctl
           formula-path: Formula/sectionctl.rb
-          homebrew-tap: section/brews
+          homebrew-tap: section/homebrew-brews
           base-branch: main
           download-url: https://github.com/section/sectionctl/archive/refs/tags/${{ steps.extract-version.outputs.tag-name }}.tar.gz
           commit-message: |
