@@ -92,7 +92,10 @@ func ParseSectionConfig(sectionConfigContents string) (SectionConfigJSON, error)
 // Hyphens in flag names are replaced with underscores.
 func PackageJSONResolver(r io.Reader) (kong.Resolver, error) {
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(r)
+	_, err := buf.ReadFrom(r)
+	if err != nil{
+		return nil,nil
+	}
 	s := buf.String()
 	packageJSON, err:= ParsePackageJSON(s)
 	if err != nil {
