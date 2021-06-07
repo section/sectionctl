@@ -1,5 +1,7 @@
-on: [push]
-
+on:
+  pull_request_target:
+    types:
+      - labeled
 jobs:
   build:
     name: 🚧 Build binaries
