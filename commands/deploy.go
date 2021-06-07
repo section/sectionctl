@@ -60,61 +60,8 @@ func (c *DeployCmd) Run(ctx *kong.Context, logWriters *LogWriters) (err error) {
 			dir = abs
 		}
 	}
-	packageJSONPath := filepath.Join(dir, "package.json")
-	if _, err := os.Stat(packageJSONPath); os.IsNotExist(err) {
-		log.Debug().Msg(fmt.Sprintf("[WARN] %s is not a file", packageJSONPath))
-	}else{
-		packageJSONContents, err := ioutil.ReadFile(packageJSONPath)
-		if err != nil {
-			log.Info().Err(err).Msg("Error reading your package.json")
-		}
-		packageJSON ,err:= ParsePackageJSON(string(packageJSONContents))
-		if err != nil {
-			log.Info().Err(err).Msg("Error parsing package.json")
-		}
-		packageName := "your app"
-		if len(packageJSON.Name) > 0 {
-			packageName = packageJSON.Name
-		}
-		accountID,err := strconv.Atoi(packageJSON.Section.AccountID)
-		if err == nil{
-			if c.AccountID == 0 && accountID > 0 {
-				c.AccountID = accountID
-			}
-		}
-		appID, err := strconv.Atoi(packageJSON.Section.AppID)
-		if err == nil{
-			if c.AppID == 0 && appID > 0 {
-				c.AppID = appID
-			}
-		}
-		if c.Environment == "Production" && len(packageJSON.Section.Environment) > 0 {
-			c.Environment = packageJSON.Section.Environment
-		}
-		if c.AppPath == "nodejs" && len(packageJSON.Section.ModuleName) > 0 {
-			c.AppPath = packageJSON.Section.ModuleName
-		}
-		if(c.AccountID == 0 || c.AppID == 0){
-			packageJSONExample := PackageJSON{}
-			packageJSONExample.Dependencies = map[string]string{"serve":"^11.3.2"}
-			packageJSONExample.Section.AccountID = "1234"
-			packageJSONExample.Section.AppID = "4567"
-			packageJSONExample.Section.Environment = "Production"
-			packageJSONExample.Scripts = map[string]string{"start":"serve -s build -l 8080"}
-			exampleStr,err := json.Marshal(packageJSONExample)
-			if err != nil{
-				log.Debug().Err(err).Msg("Failed to generate example package.json")
-			}
-			log.Error().Msg("You must set an accountId and appId in the flags of this command.\nPlease run the following: \n sectionctl deploy --help \n\n======OR======\nIn the package.json, add a \"section\" property. For example: ")
-			log.Info().RawJSON("example",[]byte(exampleStr))
-			err = ctx.PrintUsage(false)
-			if err != nil{
-				log.Error().Err(err).Msg("Errored while trying to error")
-			}
-			os.Exit(1);
-		}
-		log.Info().Msg(Green("Deploying your node.js package named %s to Account ID: %d, App ID: %d, Environment %s",packageName,c.AccountID, c.AppID, c.Environment))
-	}
+
+	log.Info().Msg(Green("Deploying your node.js package to Account ID: %d, App ID: %d, Environment %s",c.AccountID, c.AppID, c.Environment))
 	if !c.SkipValidation {
 		errs := IsValidNodeApp(dir)
 		if len(errs) > 0 {

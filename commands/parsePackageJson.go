@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
+	"github.com/alecthomas/kong"
 	"github.com/rs/zerolog/log"
 )
 
@@ -83,4 +85,40 @@ func ParseSectionConfig(sectionConfigContents string) (SectionConfigJSON, error)
 		return SectionConfigJSON{}, fmt.Errorf("failed to decode JSON: %v", err)
 	}
 	return sectionConfig, nil
+}
+
+// JSON returns a Resolver that retrieves values from a JSON source.
+//
+// Hyphens in flag names are replaced with underscores.
+func PackageJSONResolver(r io.Reader) (kong.Resolver, error) {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r)
+	s := buf.String()
+	packageJSON, err:= ParsePackageJSON(s)
+	if err != nil {
+		log.Info().Err(err).Msg("Error parsing package.json")
+	}
+	var f kong.ResolverFunc = func(context *kong.Context, parent *kong.Path, flag *kong.Flag) (interface{}, error) {
+		accountID,err := strconv.Atoi(packageJSON.Section.AccountID)
+		if err == nil{
+			if accountID > 0 && flag.Name=="account-id" {
+				return packageJSON.Section.AccountID, nil
+			}
+		}
+		appID,err := strconv.Atoi(packageJSON.Section.AppID)
+		if err == nil{
+			if appID > 0 && flag.Name=="app-id" {
+				return packageJSON.Section.AppID, nil
+			}
+		}
+		if len(packageJSON.Section.Environment) > 0 && flag.Name=="environment" {
+			return packageJSON.Section.Environment, nil
+		}
+		if len(packageJSON.Section.ModuleName) > 0 && flag.Name=="app-path" {
+			return packageJSON.Section.ModuleName, nil
+		}
+		return nil, nil
+	}
+
+	return f, nil
 }

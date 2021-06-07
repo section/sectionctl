@@ -67,6 +67,7 @@ func bootstrap(c *commands.CLI, cmd *kong.Context) {
 		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 		logWriters.CarriageReturnWriter = logWriters.FileWriter
 	}
+
 	ctx.Bind(&logWriters)
 	switch {
 	case cmd.Command() == "version":
@@ -101,6 +102,7 @@ func main() {
 		kong.Description("CLI to interact with Section."),
 		kong.UsageOnError(),
 		kong.Bind(&c),
+		kong.Configuration(commands.PackageJSONResolver, "package.json"),
 		kong.ConfigureHelp(kong.HelpOptions{Tree: true}),
 	)
 
