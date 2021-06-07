@@ -172,7 +172,7 @@ jobs:
         with:
           name: dist
   homebrew:
-    name: Bump Homebrew formula
+    name: 🍎 Bump Homebrew formula
     runs-on: ubuntu-latest
     steps:
       - name: Get Version

@@ -142,7 +142,6 @@ jobs:
           name: sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}.rpm
           path: sectionctl-${{env.MAJORVERSION}}.${{env.MINORVERSION}}.${{env.PATCHVERSION}}-1.${{ env.ARCHSTRING }}.rpm
       - name: Add RPM to Release
-        id: add-rpm-to-release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -152,7 +151,6 @@ jobs:
           asset_path: sectionctl-${{env.MAJORVERSION}}.${{env.MINORVERSION}}.${{env.PATCHVERSION}}-1.${{ env.ARCHSTRING }}.rpm
           asset_content_type: application/octet-stream
       - name: Add Deb to Release
-        id: add-rpm-to-release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -235,3 +233,33 @@ jobs:
       - uses: geekyeggo/delete-artifact@v1
         with:
           name: dist
+  homebrew:
+    name: 🍎 Bump Homebrew formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Version
+        id: get_version
+        uses: battila7/get-version-action@v2
+      - run: echo 'MAJORVERSION=${{ steps.get_version.outputs.major }}' >> $env:GITHUB_ENV
+      - run: echo 'MINORVERSION=${{ steps.get_version.outputs.minor }}' >> $env:GITHUB_ENV
+      - run: echo 'PATCHVERSION=${{ steps.get_version.outputs.patch }}' >> $env:GITHUB_ENV
+      - run: echo 'VERSION=${{ steps.get_version.outputs.version }}' >> $env:GITHUB_ENV
+      - name: Extract version
+        id: extract-version
+        run: |
+          printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"
+      - uses: mislav/bump-homebrew-formula-action@v1
+        if: "!contains(github.ref, '-')" # skip prereleases
+        with:
+          formula-name: sectionctl
+          formula-path: Formula/sectionctl.rb
+          homebrew-tap: section/brews
+          base-branch: main
+          download-url: https://github.com/section/sectionctl/archive/refs/tags/${{ steps.extract-version.outputs.tag-name }}.tar.gz
+          commit-message: |
+            {{formulaName}} {{env.MAJORVERSION}}.{{env.MINORVERSION}}.{{env.PATCHVERSION}}
+
+            Created by https://github.com/mislav/bump-homebrew-formula-action
+        env:
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
