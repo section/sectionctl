@@ -3,7 +3,7 @@ module github.com/section/sectionctl
 go 1.15
 
 require (
-	github.com/alecthomas/kong v0.2.16
+	github.com/alecthomas/kong v0.2.17
 	github.com/briandowns/spinner v1.15.0
 	github.com/fatih/color v1.12.0
 	github.com/go-git/go-git/v5 v5.3.0
