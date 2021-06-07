@@ -19,6 +19,7 @@ import (
 	"github.com/willabides/kongplete"
 )
 
+//go:generate go-winres make --product-version=git-tag --file-version=git-tag
 func bootstrap(c *commands.CLI, cmd *kong.Context) {
 
 	api.PrefixURI = c.SectionAPIPrefix
