@@ -28,11 +28,28 @@ sectionctl install-completions
 
 You can set credentials via the `SECTION_TOKEN` environment variable:
 
-``` bash
+```bash
 SECTION_TOKEN=s3cr3t sectionctl accounts list
 ```
 
 ## Installing
+
+### Mac
+
+```
+brew tap section/brews
+brew install sectionctl
+```
+
+### Linux
+
+Install the .deb or .rpm, or download the binaries for your system and put sectionctl in your PATH.
+
+### Windows
+
+Install with the installer exe on [the latest release](https://github.com/section/sectionctl/releases/latest).
+
+### Manual Installation
 
 The easiest way to install `sectionctl` is by downloading [the latest release](https://github.com/section/sectionctl/releases/latest) and putting it on your `PATH`.
 
