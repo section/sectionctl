@@ -134,9 +134,9 @@ jobs:
         with:
           name: dist
           path: dist/
-      - run: echo 'MAJORVERSION="0"' >> $GITHUB_ENV
-      - run: echo 'MINORVERSION="0"' >> $GITHUB_ENV
-      - run: echo 'PATCHVERSION="0"' >> $GITHUB_ENV
+      - run: echo "MAJORVERSION=0" >> $GITHUB_ENV
+      - run: echo "MINORVERSION=0" >> $GITHUB_ENV
+      - run: echo "PATCHVERSION=0" >> $GITHUB_ENV
       - run: echo "VERSION=v0.0.0" >> $GITHUB_ENV
       - run: echo "VER=0.0.0" >> $GITHUB_ENV
       - run: echo "NO_V_VERSION=0.0.0" >> $GITHUB_ENV
@@ -157,9 +157,9 @@ jobs:
             -DARCH=amd64
             -DOUTPUTFILE=sectionctl-${{ env.VERSION }}-${{ env.GOOS }}-${{ env.GOARCH }}-installer.exe
             -DSECTIONCTL_VERSION=${{ env.VERSION }}
-            -DMAJORVERSION=${{ env.MAJORVERSION }}
-            -DMINORVERSION=${{ env.MINORVERSION }}
-            -DBUILDVERSION=${{ env.PATCHVERSION }}
+            -DMAJORVERSION=0
+            -DMINORVERSION=0
+            -DBUILDVERSION=0
           script-file: 'packaging/windows/nsis.sectionctl.nsi'
       - name: Upload artifact
         uses: actions/upload-artifact@v1.0.0
