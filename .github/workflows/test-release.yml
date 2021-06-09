@@ -1,6 +1,6 @@
 name: Build and release sectionctl binaries
 
-on: push
+on:
 
 jobs:
   build:
@@ -14,7 +14,7 @@ jobs:
           - GOOS: windows
             GOARCH: arm64
     env:
-      VERSION: ${{ github.ref }}
+      VERSION: v0.0.0
       GOARCH: ${{ matrix.GOARCH }}
       GOOS: ${{ matrix.GOOS }}
     steps:
@@ -55,7 +55,7 @@ jobs:
         GOOS: [linux]
         GOARCH: [amd64, arm64]
     env:
-      VERSION: ${{ github.ref }}
+      VERSION: v0.0.0
       GOARCH: ${{ matrix.GOARCH }}
       GOOS: ${{ matrix.GOOS }}
       DESC: 'Section command line tool.'
@@ -118,7 +118,7 @@ jobs:
         GOOS: [windows]
         GOARCH: [amd64]
     env:
-      VERSION: ${{ github.ref }}
+      VERSION: v0.0.0
       GOARCH: ${{ matrix.GOARCH }}
       GOOS: ${{ matrix.GOOS }}
       DESC: 'Section command line tool.'
