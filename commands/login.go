@@ -46,7 +46,7 @@ func (c *LoginCmd) Run() (err error) {
 		}
 		api.Token = t
 	}
-	log.Print("[INFO]\nValidating credentials...")
+	log.Info().Msg("Validating credentials...")
 	_, err = api.CurrentUser()
 	if err != nil {
 		fmt.Println("error!")

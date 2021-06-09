@@ -258,7 +258,7 @@ jobs:
           base-branch: main
           download-url: https://github.com/section/sectionctl/archive/refs/tags/${{ steps.extract-version.outputs.tag-name }}.tar.gz
           commit-message: |
-            {{formulaName}} {{env.MAJORVERSION}}.{{env.MINORVERSION}}.{{env.PATCHVERSION}}
+            {{formulaName}} ${{env.VERSION}}
 
             Created by https://github.com/mislav/bump-homebrew-formula-action
         env:
