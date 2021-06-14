@@ -59,4 +59,17 @@ type LogWriters struct {
 
 var (
 	Green = color.New(color.Bold, color.FgGreen).SprintfFunc()
+	HiGreen = color.New(color.Bold, color.FgHiGreen).SprintfFunc()
+	Cyan = color.New(color.Bold, color.FgCyan).SprintfFunc()
+	HiCyan = color.New(color.Bold, color.FgHiCyan).SprintfFunc()
+	Magenta = color.New(color.Bold, color.FgMagenta).SprintfFunc()
+	HiMagenta = color.New(color.Bold, color.FgHiMagenta).SprintfFunc()
+	Red = color.New(color.Bold, color.FgRed).SprintfFunc()
+	HiRed = color.New(color.Bold, color.FgHiRed).SprintfFunc()
+	Blue = color.New(color.Bold, color.FgBlue).SprintfFunc()
+	HiBlue = color.New(color.Bold, color.FgHiBlue).SprintfFunc()
+	HiWhite = color.New(color.Bold, color.FgHiWhite).SprintfFunc()
+	White = color.New(color.Bold, color.FgWhite).SprintfFunc()
+	Yellow = color.New(color.Bold, color.FgYellow).SprintfFunc()
+	HiYellow = color.New(color.Bold, color.FgHiYellow).SprintfFunc()
 )
