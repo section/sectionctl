@@ -217,7 +217,6 @@ func Applications(accountID int) (as []App, err error) {
 	if err != nil {
 		return as, err
 	}
-
 	err = json.Unmarshal(body, &as)
 	if err != nil {
 		return as, err
@@ -245,7 +244,7 @@ func ApplicationEnvironmentModuleUpdate(accountID int, applicationID int, env st
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute) // because these requests can take a long time to complete on Section's side
 	defer cancel()
-	headers := map[string][]string{"filepath": []string{filePath}}
+	headers := map[string][]string{"filepath": {filePath}}
 
 	resp, err := request(ctx, http.MethodPatch, u, bytes.NewBuffer(b), headers)
 	if err != nil {
