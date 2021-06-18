@@ -16,12 +16,13 @@ type Account struct {
 	IsAdmin     bool   `json:"is_admin"`
 	BillingUser int    `json:"billing_user"`
 	Requires2FA bool   `json:"requires_2fa"`
+	Applications []App `json:"applications"`
 }
 
 // Accounts returns a list of account the current user has access to.
 func Accounts() (as []Account, err error) {
 	u := BaseURL()
-	u.Path += "/account"
+	u.Path += "/account/graph"
 
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()

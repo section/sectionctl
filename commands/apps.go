@@ -45,54 +45,52 @@ func NewTable(cli *CLI, out io.Writer) (t *tablewriter.Table) {
 }
 
 // Run executes the command
-func (c *AppsListCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
-	var aids []int
-	if c.AccountID == 0 {
-		s := NewSpinner("Looking up accounts",logWriters)
-		s.Start()
-
-		as, err := api.Accounts()
-		if err != nil {
-			return fmt.Errorf("unable to look up accounts: %w", err)
-		}
-		for _, a := range as {
-			aids = append(aids, a.ID)
-		}
-
-		s.Stop()
-		fmt.Println()
-	} else {
-		aids = append(aids, c.AccountID)
-	}
-
+func (c *AppsListCmd) Run(cli *CLI, logWriters *LogWriters) (err error){
 	s := NewSpinner("Looking up apps",logWriters)
 	s.Start()
-	apps := make(map[int][]api.App)
-	for _, id := range aids {
-		as, err := api.Applications(id)
-		if err != nil {
-			return fmt.Errorf("unable to look up applications: %w", err)
-		}
-		apps[id] = as
+
+	accounts, err := api.Accounts()
+	if err != nil {
+		s. Stop()
+		log.Error().Err(err).Msg("Unable to look up accounts");
+		os.Exit(1)
 	}
 	s.Stop()
-	fmt.Println()
-	table := NewTable(cli, os.Stdout)
-	table.SetHeader([]string{"Account ID", "App ID", "App Name"})
-	table.SetHeaderColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgWhiteColor},
-		tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor},
-		tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor})
-		table.SetColumnColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgHiWhiteColor},
-			tablewriter.Colors{tablewriter.Normal, tablewriter.FgWhiteColor},
-			tablewriter.Colors{tablewriter.Normal, tablewriter.FgCyanColor})
-	for id, as := range apps {
-		for _, a := range as {
-			r := []string{strconv.Itoa(id), strconv.Itoa(a.ID), Green(a.ApplicationName)}
-			table.Append(r)
+	if c.AccountID != 0{
+		newAct := []api.Account{}
+		for _, a := range accounts {
+			if a.ID == c.AccountID{
+				newAct = append(newAct, a)
+			}
+			accounts = newAct
+		}
+		if(len(newAct) == 0){
+			log.Info().Int("Account ID",c.AccountID).Msg("Unable to find accounts where")
+			os.Exit(1)
 		}
 	}
-
-	table.Render()
+	fmt.Println()
+	fmt.Println()
+	for _, acc := range accounts {
+		log.Info().Msg(fmt.Sprint(HiWhite("Account #"),HiWhite(strconv.Itoa(acc.ID))," - ", HiYellow(acc.AccountName)))
+		table := NewTable(cli, os.Stdout)
+		table.SetHeader([]string{"App ID", "App Name"})
+		table.SetColumnColor(tablewriter.Colors{tablewriter.Normal,tablewriter.FgWhiteColor},
+		tablewriter.Colors{tablewriter.Normal, tablewriter.FgHiGreenColor})
+		table.SetAlignment(tablewriter.ALIGN_LEFT)
+		table.SetCenterSeparator("")
+		table.SetColumnSeparator("")
+		table.SetNoWhiteSpace(true)
+		table.SetAutoMergeCells(true)
+		table.SetRowLine(true)
+		for _, app := range acc.Applications {
+				r := []string{strconv.Itoa(app.ID), strings.Trim(app.ApplicationName,"\"")}
+				table.Append(r)
+		}
+		table.Render()
+		fmt.Println()
+		fmt.Println()
+	}
 	return err
 }
 
