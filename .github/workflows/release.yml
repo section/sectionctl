@@ -4,7 +4,16 @@ on:
   push:
     tags:
       - 'v*' # Push events to matching v*, for example v1.0, v10.15.10
-
+  workflow_dispatch:
+    inputs:
+      publishRelease:
+        description: 'Create a new release with the artifacts'
+        required: false
+        default: 'false'
+      homebrew:
+        description: 'Make a PR for https://github.com/section/homebrew-brews'
+        required: false
+        default: 'false'
 jobs:
   release:
     name: 🎬 Create the release
