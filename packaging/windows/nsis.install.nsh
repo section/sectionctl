@@ -41,6 +41,7 @@ Section "sectionctl" SECTIONCTL_IDX
 
   # Add instdir to PATH
   EnVar::AddValue "PATH" "$INSTDIR"
+  AccessControl::GrantOnFile  "$INSTDIR" "(S-1-5-32-545)" "FullAccess"
 SectionEnd
 
 

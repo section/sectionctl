@@ -2,13 +2,22 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "version",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/sectionctl.go",
+      "args": ["version"]
+    },
+    {
       "name": "deploy",
       "type": "go",
       "request": "launch",
       "mode": "debug",
       "cwd": "${workspaceFolder}/commands/testdata/deploy/api-routes-app",
       "program": "${workspaceFolder}/sectionctl.go",
-      "args": ["deploy", "-a", "replaceMeWithYourAccountID", "-i", "replaceMeWithYourApplicationID"]
+      "args": ["deploy"]
     },
     {
       "name": "accounts/list",
@@ -26,7 +35,7 @@
       "mode": "debug",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/sectionctl.go",
-      "args": ["apps", "list", "-a", "replaceMeWithYourAccountID"]
+      "args": ["apps", "list", "-a", "1887"]
     },
     {
       "name": "apps/info",
@@ -35,7 +44,7 @@
       "mode": "debug",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/sectionctl.go",
-      "args": ["apps", "info", "-a", "replaceMeWithYourAccountID", "-i", "replaceMeWithYourApplicationID"]
+      "args": ["apps", "info", "-a", "1887", "-i", "7749"]
     },
     {
       "name": "apps/stacks",
@@ -62,7 +71,7 @@
       "mode": "debug",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/sectionctl.go",
-      "args": ["logs", "-a", "replaceMeWithYourAccountID", "-i", "replaceMeWithYourApplicationID"]
+      "args": ["logs", "-a", "1887", "-i", "7749"]
     },
     {
       "name": "ps",
@@ -71,7 +80,7 @@
       "mode": "debug",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/sectionctl.go",
-      "args": ["ps", "-a", "replaceMeWithYourAccountID"]
+      "args": ["ps", "-a", "1887"]
     },
     {
       "name": "login",

@@ -1,0 +1,15 @@
+{
+  // "runOnSave.commands": [
+  //   // {
+  //   //   "match": "section-graphql-api/.*.go",
+  //   //   "command": "../../run-docker-local.sh recompile",
+  //   //   "runningStatusMessage": "Run On Save is running!",
+  //   //   "runIn": "terminal"
+  //   // },
+  //   {
+  //     "match": ".*\\.go$",
+  //     "command": "gofmt -s -w ${file}",
+  //     "runIn": "terminal"
+  //   }
+  // ]
+}
