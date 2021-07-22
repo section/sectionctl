@@ -61,7 +61,7 @@ func (c *DeployCmd) Run(ctx *kong.Context, logWriters *LogWriters) (err error) {
 		}
 	}
 
-	log.Info().Msg(Green("Deploying your node.js package to Account ID: %d, App ID: %d, Environment %s",c.AccountID, c.AppID, c.Environment))
+	log.Info().Msg(Green("Deploying your node.js package to Account ID: %d, App ID: %d, Environment %s", c.AccountID, c.AppID, c.Environment))
 	if !c.SkipValidation {
 		errs := IsValidNodeApp(dir)
 		if len(errs) > 0 {
@@ -86,7 +86,7 @@ func (c *DeployCmd) Run(ctx *kong.Context, logWriters *LogWriters) (err error) {
 	s.Stop()
 	log.Debug().Msg("Archiving files:")
 	for _, file := range files {
-		log.Debug().Str("file",file)
+		log.Debug().Str("file", file)
 	}
 
 	tempFile, err := ioutil.TempFile("", "sectionctl-deploy.*.tar.gz")
@@ -130,11 +130,11 @@ func (c *DeployCmd) Run(ctx *kong.Context, logWriters *LogWriters) (err error) {
 
 	req.Header.Add("section-token", api.Token)
 
-	log.Debug().Str("URL",req.URL.String())
+	log.Debug().Str("URL", req.URL.String())
 
 	artifactSizeMB := stat.Size() / 1024 / 1024
 	log.Debug().Msg(fmt.Sprintf("Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size()))
-	s = NewSpinner(fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB),logWriters)
+	s = NewSpinner(fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB), logWriters)
 	s.Start()
 	client := &http.Client{
 		Timeout: c.Timeout,
