@@ -271,7 +271,7 @@ func addFileToTarWriter(filePath string, tarWriter *tar.Writer, prefix string) e
 	if runtime.GOOS == "windows" {
 		match := strings.Contains(baseFilePath, "node_modules\\.bin")
 		if match {
-			header.Mode = 0o755
+			header.Mode = 0755
 		}
 	}
 	err = tarWriter.WriteHeader(header)

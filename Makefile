@@ -6,13 +6,23 @@ export HEAPAPPID := 892134159
 staticcheck := /home/runner/go/bin/staticcheck
 
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
-    detected_OS := Windows
+	detected_OS := Windows
 else
-    detected_OS := $(shell uname)  # same as "uname -s"
+	detected_OS := $(shell uname)  # same as "uname -s"
 endif
 
+HAS_STATICCHECK := $(shell command -v staticcheck 2> /dev/null)
+HAS_ERRCHECK := $(shell command -v errcheck 2> /dev/null)
 
 all: test
+
+check_environment:
+ifndef HAS_STATICCHECK
+	$(error "staticcheck is not on PATH")
+endif
+ifndef HAS_ERRCHECK
+	$(error "errcheck is not on PATH")
+endif
 
 cidep:
 	go get -u honnef.co/go/tools/cmd/staticcheck
@@ -23,10 +33,10 @@ test: gotest gostaticcheck goerrcheck
 gotest:
 	go test ./... -v -timeout=45s -failfast
 
-gostaticcheck:
+gostaticcheck: check_environment
 	staticcheck ./...
 
-goerrcheck:
+goerrcheck: check_environment
 	errcheck -exclude .lint/errcheck-excludes -blank -ignoretests ./...
 
 build: clean
@@ -66,8 +76,6 @@ test-release: check_version
 	git push origin v0.0.0-test
 	git push origin refs/tags/$(VERSION)
 
-
-
 ifeq ($(detected_OS),Windows)
 windows-installer: nsis-windows
 else
@@ -92,7 +100,8 @@ nsis-ubuntu-build: build-release
 	echo $(version_patch)
 	echo $(version_minor)
 	echo $(version_major)
-	makensis -DARCH=amd64 -DOUTPUTFILE=sectionctl-$(VERSION)-windows-amd64-installer.exe -DSECTIONCTL_VERSION=$(VERSION) -DMAJORVERSION=$(version_major) -DDMINORVERSION=$(version_minor) -DBUILDVERSION=$(version_patch) packaging/windows/nsis.sectionctl.nsi 
+	makensis -DARCH=amd64 -DOUTPUTFILE=sectionctl-$(VERSION)-windows-amd64-installer.exe -DSECTIONCTL_VERSION=$(VERSION) -DMAJORVERSION=$(version_major) -DDMINORVERSION=$(version_minor) -DBUILDVERSION=$(version_patch) packaging/windows/nsis.sectionctl.nsi
+
 nsis-ubuntu-deps:
 	sudo apt update && sudo apt install -y nsis nsis-pluginapi
 	wget https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip
