@@ -13,16 +13,21 @@ endif
 
 HAS_STATICCHECK := $(shell command -v staticcheck 2> /dev/null)
 HAS_ERRCHECK := $(shell command -v errcheck 2> /dev/null)
+GO_VERSION := $(shell go version | cut -d' ' -f3)
 
 all: test
 
 check_environment:
+ifneq ("${GO_VERSION}", "go1.16.6")
+	$(error "requires go version 1.16.6 or higher")
+endif
 ifndef HAS_STATICCHECK
 	$(error "staticcheck is not on PATH")
 endif
 ifndef HAS_ERRCHECK
 	$(error "errcheck is not on PATH")
 endif
+	@echo "Has required executables in the PATH"
 
 cidep:
 	go get -u honnef.co/go/tools/cmd/staticcheck
@@ -100,6 +105,7 @@ nsis-ubuntu-build: build-release
 	echo $(version_patch)
 	echo $(version_minor)
 	echo $(version_major)
+	exit 1
 	makensis -DARCH=amd64 -DOUTPUTFILE=sectionctl-$(VERSION)-windows-amd64-installer.exe -DSECTIONCTL_VERSION=$(VERSION) -DMAJORVERSION=$(version_major) -DDMINORVERSION=$(version_minor) -DBUILDVERSION=$(version_patch) packaging/windows/nsis.sectionctl.nsi
 
 nsis-ubuntu-deps:
