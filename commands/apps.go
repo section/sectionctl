@@ -176,7 +176,7 @@ func (c *AppsInfoCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
 type AppsCreateCmd struct {
 	AccountID int    `required short:"a" help:"ID of account to create the app under"`
 	Hostname  string `required short:"d" help:"FQDN the app can be accessed at"`
-	Origin    string `required short:"o" help:"URL to fetch the origin"`
+	Origin    string `required short:"g" help:"URL to fetch the origin"`
 	StackName string `required short:"s" help:"Name of stack to deploy. Try, for example, nodejs-basic"`
 }
 
