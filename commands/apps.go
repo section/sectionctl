@@ -1,12 +1,9 @@
 package commands
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -23,7 +20,6 @@ type AppsCmd struct {
 	Info   AppsInfoCmd   `cmd help:"Show detailed app information on Section."`
 	Create AppsCreateCmd `cmd help:"Create new app on Section."`
 	Delete AppsDeleteCmd `cmd help:"DANGER ZONE. This deletes an existing app on Section."`
-	Init   AppsInitCmd   `cmd help:"Initialize your project for deployment."`
 	Stacks AppsStacksCmd `cmd help:"See the available stacks to create new apps with."`
 }
 
@@ -176,7 +172,7 @@ func (c *AppsInfoCmd) Run(cli *CLI, logWriters *LogWriters) (err error) {
 type AppsCreateCmd struct {
 	AccountID int    `required short:"a" help:"ID of account to create the app under"`
 	Hostname  string `required short:"d" help:"FQDN the app can be accessed at"`
-	Origin    string `required short:"o" help:"URL to fetch the origin"`
+	Origin    string `required short:"g" help:"URL to fetch the origin"`
 	StackName string `required short:"s" help:"Name of stack to deploy. Try, for example, nodejs-basic"`
 }
 
@@ -230,148 +226,6 @@ func (c *AppsDeleteCmd) Run(logWriters *LogWriters) (err error) {
 	
 	log.Info().Msg(fmt.Sprintf("\nSuccess: deleted app with id '%d'\n", c.AppID))
 
-	return err
-}
-
-// AppsInitCmd creates and validates package.json to prepare an app for deployment
-type AppsInitCmd struct {
-	StackName string `optional default:"nodejs-basic" short:"s" help:"Name of stack to deploy. Default is nodejs-basic"`
-	Force     bool   `optional short:"f" help:"Resets deployment specific files to their default configuration"`
-}
-
-// Run executes the command
-func (c *AppsInitCmd) Run() (err error) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	switch c.StackName {
-	case "nodejs-basic":
-		err := c.InitializeNodeBasicApp(stdout, stderr)
-		if err != nil {
-			return fmt.Errorf("[ERROR]: init completed with error %x", err)
-		}
-	default:
-		log.Error().Msg(fmt.Sprintf(": Stack name %s does not have an initialization defined\n", c.StackName))
-	}
-	return err
-}
-
-// Create package.json
-func (c *AppsInitCmd) CreatePkgJSON(stdout, stderr bytes.Buffer) (err error) {
-	cmd := exec.Command("npm", "init", "-y")
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err = cmd.Run()
-	return err
-}
-
-// InitializeNodeBasicApp initializes a basic node app.
-func (c *AppsInitCmd) InitializeNodeBasicApp(stdout bytes.Buffer, stderr bytes.Buffer) (err error) {
-	if c.Force {
-		log.Info().Msg(fmt.Sprintln("Removing old version of package.json"))
-		err = os.Remove("package.json")
-		if err != nil {
-			if !os.IsNotExist(err) {
-				log.Error().Msg(fmt.Sprintln("unable to remove package.json file"))
-				return err
-			}
-		} else {
-			log.Debug().Msg(fmt.Sprintln("Files successfully removed"))
-		}
-	}
-	log.Debug().Msg(fmt.Sprintln("Checking to see if server.conf exists"))
-	checkServConf, err := os.Open("server.conf")
-	if err != nil {
-		if !os.IsNotExist(err) {
-			log.Error().Msg(fmt.Sprintln("server.conf file could not be opened"))
-			return err
-		}
-	}
-	defer checkServConf.Close()
-	if err == nil {
-		log.Info().Msg(fmt.Sprintln("Validating server.conf"))
-		fileinfo, err := checkServConf.Stat()
-		if err != nil {
-			return fmt.Errorf("error in finding stat of server.conf %w", err)
-		}
-		buf := make([]byte, fileinfo.Size())
-		_, err = checkServConf.Read(buf)
-		if err != nil {
-			return fmt.Errorf("error in size stat of server.conf %w", err)
-		}
-		fStr := string(buf)
-		if !strings.Contains(fStr, "location / {") {
-			log.Warn().Msg(fmt.Sprintln("default location unspecified. Edit or delete server.conf and rerun this command"))
-		}
-	}
-	log.Debug().Msg(fmt.Sprintln("Checking to see if package.json exists"))
-	checkPkgJSON, err := os.Open("package.json")
-	if err != nil {
-		log.Warn().Msg(fmt.Sprintln("package.json does not exist. Creating package.json"))
-		err := c.CreatePkgJSON(stdout, stderr)
-		if err != nil {
-			return fmt.Errorf("there was an error creating package.json. Is node installed? %w", err)
-		}
-		log.Info().Msg(fmt.Sprintln("package.json created"))
-	}
-	defer checkPkgJSON.Close()
-	validPkgJSON, err := os.OpenFile("package.json", os.O_RDWR, 0777)
-	if err != nil {
-		return fmt.Errorf("failed to open package.json %w", err)
-	}
-	defer validPkgJSON.Close()
-	log.Info().Msg(fmt.Sprintln("Validating package.json"))
-	buf, err := os.ReadFile("package.json")
-	if err != nil {
-		return fmt.Errorf("failed to read package.json %w", err)
-	}
-	fStr := string(buf)
-	if len(fStr) == 0 {
-		err := os.Remove("package.json")
-		if err != nil {
-			log.Error().Msg(fmt.Sprintln("unable to remove empty package.json"))
-		}
-		log.Warn().Msg(fmt.Sprintln("package.json is empty. Creating package.json"))
-		err = c.CreatePkgJSON(stdout, stderr)
-		if err != nil {
-			return fmt.Errorf("there was an error creating package.json. Is node installed? %w", err)
-		}
-		log.Info().Msg(fmt.Sprintln("package.json created from empty file"))
-		buf, err = os.ReadFile("package.json")
-		if err != nil {
-			return fmt.Errorf("failed to read package.json %w", err)
-		}
-		fStr = string(buf)
-	}
-	jsonMap := make(map[string]interface{})
-	err = json.Unmarshal(buf, &jsonMap)
-	if err != nil {
-		return fmt.Errorf("package.json is not valid JSON %w", err)
-	}
-	lv := jsonMap["scripts"]
-	jsonToStrMap, ok := lv.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("json unable to be read as map[string]interface %w", err)
-	}
-	_, ok = jsonToStrMap["start"]
-	if !ok {
-		jsonToStrMap["start"] = "node YOUR_SERVER_HERE.js"
-		jsonMap["scripts"] = jsonToStrMap
-		err = os.Truncate("package.json", 0)
-		if err != nil {
-			return fmt.Errorf("failed to empty package.json %w", err)
-		}
-		set, err := json.MarshalIndent(jsonMap, "", "  ")
-		if err != nil {
-			log.Error().Msg(fmt.Sprintln("unable to add start script placeholder"))
-		}
-		_, err = validPkgJSON.Write(set)
-		if err != nil {
-			log.Error().Msg(fmt.Sprintln("unable to add start script placeholder"))
-		}
-	}
-	if strings.Contains(fStr, `YOUR_SERVER_HERE.js`) {
-		log.Error().Msg(fmt.Sprintln("start script is required. Please edit the placeholder in package.json"))
-	}
 	return err
 }
 
