@@ -171,9 +171,21 @@ func (c *DeployCmd) Run(ctx *kong.Context, logWriters *LogWriters) (err error) {
 // IsValidNodeApp detects if a Node.js app is present in a given directory
 func IsValidNodeApp(dir string) (errs []error) {
 	packageJSONPath := filepath.Join(dir, "package.json")
-	if _, err := os.Stat(packageJSONPath); os.IsNotExist(err) {
-		errs = append(errs, fmt.Errorf("%s is not a file", packageJSONPath))
+	if _, err := os.Open(packageJSONPath); os.IsNotExist(err) {
+		log.Debug().Msg(fmt.Sprintf("[WARN] %s is not a file", packageJSONPath))
+	}else{
+		packageJSONContents, err := ioutil.ReadFile(packageJSONPath)
+		if err != nil {
+			log.Info().Err(err).Msg("Error reading your package.json")
+		}
+		packageJSON, _ := ParsePackageJSON(string(packageJSONContents))
+		if packageJSON.Section.StartScript == "" && packageJSON.Scripts["start"] == "" {
+			errs = append(errs, fmt.Errorf("package.json does not include a start script. please add one"))
+		}else if packageJSON.Scripts[packageJSON.Section.StartScript] == "" {
+			errs = append(errs, fmt.Errorf("package.json does not include the script: %s", packageJSON.Section.StartScript))
+		}
 	}
+
 	nodeModulesPath := filepath.Join(dir, "node_modules")
 	fi, err := os.Stat(nodeModulesPath)
 	if os.IsNotExist(err) {
