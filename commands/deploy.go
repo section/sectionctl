@@ -178,7 +178,10 @@ func IsValidNodeApp(dir string) (errs []error) {
 		if err != nil {
 			log.Info().Err(err).Msg("Error reading your package.json")
 		}
-		packageJSON, _ := ParsePackageJSON(string(packageJSONContents))
+		packageJSON, err := ParsePackageJSON(string(packageJSONContents))
+		if err != nil {
+			log.Info().Err(err).Msg("Error parsing your package.json")
+		}
 		if len(packageJSON.Section.StartScript) == 0 && packageJSON.Scripts["start"] == "" {
 			errs = append(errs, fmt.Errorf("package.json does not include a start script. please add one"))
 		} else if len(packageJSON.Section.StartScript) > 0 && len(packageJSON.Scripts[packageJSON.Section.StartScript]) == 0 {
