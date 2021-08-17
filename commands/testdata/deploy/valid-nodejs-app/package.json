@@ -1,0 +1,15 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "description": "This is just an example package that you can run sectionctl-helper on to test.",
+  "main": "index.js",
+  "scripts": {
+    "test:static": "node ../cli.js static build/ -a 0002 -i 0001",
+    "test:scripts": "node ../cli.js scripts -a 0002 -i 0002",
+    "predeploy": "npm install",
+    "deploy": "sectionctl deploy",
+    "start": "node server.js"
+  },
+  "author": "section.io",
+  "license": "ISC"
+}
