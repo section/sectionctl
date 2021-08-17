@@ -61,7 +61,7 @@ func (c *DeployCmd) Run(ctx *kong.Context, logWriters *LogWriters) (err error) {
 		}
 	}
 
-	log.Info().Msg(Green("Deploying your node.js package to Account ID: %d, App ID: %d, Environment %s",c.AccountID, c.AppID, c.Environment))
+	log.Info().Msg(Green("Deploying your node.js package to Account ID: %d, App ID: %d, Environment %s", c.AccountID, c.AppID, c.Environment))
 	if !c.SkipValidation {
 		errs := IsValidNodeApp(dir)
 		if len(errs) > 0 {
@@ -86,7 +86,7 @@ func (c *DeployCmd) Run(ctx *kong.Context, logWriters *LogWriters) (err error) {
 	s.Stop()
 	log.Debug().Msg("Archiving files:")
 	for _, file := range files {
-		log.Debug().Str("file",file)
+		log.Debug().Str("file", file)
 	}
 
 	tempFile, err := ioutil.TempFile("", "sectionctl-deploy.*.tar.gz")
@@ -130,11 +130,11 @@ func (c *DeployCmd) Run(ctx *kong.Context, logWriters *LogWriters) (err error) {
 
 	req.Header.Add("section-token", api.Token)
 
-	log.Debug().Str("URL",req.URL.String())
+	log.Debug().Str("URL", req.URL.String())
 
 	artifactSizeMB := stat.Size() / 1024 / 1024
 	log.Debug().Msg(fmt.Sprintf("Upload artifact is %dMB (%d bytes) large", artifactSizeMB, stat.Size()))
-	s = NewSpinner(fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB),logWriters)
+	s = NewSpinner(fmt.Sprintf("Uploading app (%dMB)...", artifactSizeMB), logWriters)
 	s.Start()
 	client := &http.Client{
 		Timeout: c.Timeout,
@@ -173,15 +173,15 @@ func IsValidNodeApp(dir string) (errs []error) {
 	packageJSONPath := filepath.Join(dir, "package.json")
 	if _, err := os.Open(packageJSONPath); os.IsNotExist(err) {
 		log.Debug().Msg(fmt.Sprintf("[WARN] %s is not a file", packageJSONPath))
-	}else{
+	} else {
 		packageJSONContents, err := ioutil.ReadFile(packageJSONPath)
 		if err != nil {
 			log.Info().Err(err).Msg("Error reading your package.json")
 		}
 		packageJSON, _ := ParsePackageJSON(string(packageJSONContents))
-		if packageJSON.Section.StartScript == "" && packageJSON.Scripts["start"] == "" {
+		if len(packageJSON.Section.StartScript) == 0 && packageJSON.Scripts["start"] == "" {
 			errs = append(errs, fmt.Errorf("package.json does not include a start script. please add one"))
-		}else if packageJSON.Scripts[packageJSON.Section.StartScript] == "" {
+		} else if len(packageJSON.Section.StartScript) > 0 && len(packageJSON.Scripts[packageJSON.Section.StartScript]) == 0 {
 			errs = append(errs, fmt.Errorf("package.json does not include the script: %s", packageJSON.Section.StartScript))
 		}
 	}
