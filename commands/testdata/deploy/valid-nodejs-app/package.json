@@ -1,0 +1,13 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "description": "This is just an example package for the go tests.",
+  "main": "index.js",
+  "scripts": {
+    "predeploy": "npm install",
+    "deploy": "sectionctl deploy",
+    "start": "npx serve node_modules -l 8080"
+  },
+  "author": "section.io",
+  "license": "ISC"
+}
