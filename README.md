@@ -59,9 +59,10 @@ Please ensure you're running at least Go 1.16.
 
 To run tests:
 
-```
+```bash
 git clone https://github.com/section/sectionctl
 cd sectionctl
+make cidep # only required the first time
 make test
 ```
 

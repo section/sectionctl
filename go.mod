@@ -14,7 +14,6 @@ require (
 	github.com/posener/complete v1.2.3
 	github.com/rs/zerolog v1.22.0
 	github.com/stretchr/testify v1.7.0
-	github.com/tc-hib/go-winres v0.2.0 // indirect
 	github.com/willabides/kongplete v0.2.0
 	github.com/zalando/go-keyring v0.1.1
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
